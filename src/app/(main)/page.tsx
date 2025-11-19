@@ -120,7 +120,7 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="relative w-full h-screen">
           <Image
-            src="https://i.ibb.co/yFjxDz0w/q1.jpg"
+            src="https://i.ibb.co/1wN1rhJ/NAX-VAN-D-VL-T-UN-VERS-TET-N-N-ZD-ND-G-MNAZ-YA.png"
             alt="Naxçıvan Dövlət Universiteti"
             fill
             className="object-cover"
@@ -131,8 +131,9 @@ export default function HomePage() {
           <div className="relative h-full flex items-center">
             <div className="container mx-auto">
               <div className="max-w-3xl text-white">
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tighter drop-shadow-lg">
-                   Naxçıvan Dövlət Universiteti <span className="text-primary">İstedad Mərkəzi</span>
+                <p className="text-xl md:text-2xl font-medium tracking-tight drop-shadow-md">Naxçıvan Dövlət Universiteti</p>
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tighter drop-shadow-lg text-primary mt-1">
+                   İstedad Mərkəzi
                 </h1>
                 <p className="mt-6 max-w-2xl text-lg text-white/90 drop-shadow-md">
                     Tələbələrimizin bacarıqlarını, layihələrini və nailiyyətlərini kəşf edin. Potensialı reallığa çevirən platforma.
