@@ -296,7 +296,6 @@ export default function RegisterStudentPage() {
                       render={({ field }) => {
                         return (
                           <FormItem
-                            key={item.id}
                             className="flex flex-row items-start space-x-3 space-y-0"
                           >
                             <FormControl>
@@ -304,9 +303,9 @@ export default function RegisterStudentPage() {
                                 checked={field.value?.includes(item.name)}
                                 onCheckedChange={(checked) => {
                                   return checked
-                                    ? field.onChange([...field.value, item.name])
+                                    ? field.onChange([...(field.value || []), item.name])
                                     : field.onChange(
-                                        field.value?.filter(
+                                        (field.value || [])?.filter(
                                           (value) => value !== item.name
                                         )
                                       )
