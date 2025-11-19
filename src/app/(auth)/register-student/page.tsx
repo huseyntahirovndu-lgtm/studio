@@ -71,6 +71,15 @@ export default function RegisterStudentPage() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
+    if (!auth || !firestore) {
+      toast({
+          variant: "destructive",
+          title: "Xəta",
+          description: "Firebase xidmətləri mövcud deyil. Zəhmət olmasa, daha sonra yenidən cəhd edin.",
+      });
+      setIsLoading(false);
+      return;
+    }
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
@@ -82,7 +91,7 @@ export default function RegisterStudentPage() {
       const userDocRef = doc(firestore, 'users', user.uid);
       const newUserProfile = {
         id: user.uid,
-        role: 'student', // Assign default role
+        role: 'student' as const,
         firstName: values.firstName,
         lastName: values.lastName,
         email: values.email,

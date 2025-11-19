@@ -350,116 +350,41 @@
     ]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/users/{userId}",
-        "definition": {
-          "entityName": "Student",
-          "schema": {
-            "$ref": "#/backend/entities/Student"
-          },
-          "description": "Stores user profile data, primarily for students. The document ID is the user's Auth UID. The 'role' field differentiates user types.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user, matching their Firebase Auth UID."
-            }
-          ]
-        }
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/Student"
       },
-      {
-        "path": "/users/{userId}/projects/{projectId}",
-        "definition": {
-          "entityName": "Project",
-          "schema": {
-            "$ref": "#/backend/entities/Project"
-          },
-          "description": "Stores project information for a specific user. 'studentId' is denormalized for ownership verification.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user who owns the project."
-            },
-            {
-              "name": "projectId",
-              "description": "The unique identifier of the project."
-            }
-          ]
-        }
+      "description": "Stores user profile data, primarily for students. The document ID is the user's Auth UID. The 'role' field differentiates user types."
+    },
+    "/users/{userId}/projects/{projectId}": {
+      "schema": {
+        "$ref": "#/entities/Project"
       },
-      {
-        "path": "/users/{userId}/achievements/{achievementId}",
-        "definition": {
-          "entityName": "Achievement",
-          "schema": {
-            "$ref": "#/backend/entities/Achievement"
-          },
-          "description": "Stores achievement information for a specific user. 'studentId' is denormalized for ownership verification.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user who earned the achievement."
-            },
-            {
-              "name": "achievementId",
-              "description": "The unique identifier of the achievement."
-            }
-          ]
-        }
+      "description": "Stores project information for a specific user. 'studentId' is denormalized for ownership verification."
+    },
+    "/users/{userId}/achievements/{achievementId}": {
+      "schema": {
+        "$ref": "#/entities/Achievement"
       },
-      {
-        "path": "/users/{userId}/certificates/{certificateId}",
-        "definition": {
-          "entityName": "Certificate",
-          "schema": {
-            "$ref": "#/backend/entities/Certificate"
-          },
-          "description": "Stores certificate information for a specific user. 'studentId' is denormalized for ownership verification.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user who earned the certificate."
-            },
-            {
-              "name": "certificateId",
-              "description": "The unique identifier of the certificate."
-            }
-          ]
-        }
+      "description": "Stores achievement information for a specific user. 'studentId' is denormalized for ownership verification."
+    },
+    "/users/{userId}/certificates/{certificateId}": {
+      "schema": {
+        "$ref": "#/entities/Certificate"
       },
-      {
-        "path": "/organizations/{organizationId}",
-        "definition": {
-          "entityName": "Organization",
-          "schema": {
-            "$ref": "#/backend/entities/Organization"
-          },
-          "description": "Stores organization profile data. The document ID is the organization's Auth UID.",
-          "params": [
-            {
-              "name": "organizationId",
-              "description": "The unique identifier of the organization, matching their Firebase Auth UID."
-            }
-          ]
-        }
+      "description": "Stores certificate information for a specific user. 'studentId' is denormalized for ownership verification."
+    },
+    "/organizations/{organizationId}": {
+      "schema": {
+        "$ref": "#/entities/Organization"
       },
-      {
-        "path": "/categories/{categoryId}",
-        "definition": {
-          "entityName": "Category",
-          "schema": {
-            "$ref": "#/backend/entities/Category"
-          },
-          "description": "Stores talent category data.",
-          "params": [
-            {
-              "name": "categoryId",
-              "description": "The unique identifier of the category."
-            }
-          ]
-        }
-      }
-    ],
-    "reasoning": "The Firestore data structure is designed to support a multi-role system (student, organization, admin). The primary user collection is `/users/{userId}`, where the `role` field within each document determines the user's permissions. This approach consolidates user management while allowing for distinct data models and security rules for each role. Organization data is stored separately in `/organizations/{organizationId}` to maintain a clear distinction. Subcollections under `/users/{userId}` store user-specific data like projects and achievements, ensuring data ownership is easily verifiable through path-based security rules. Publicly accessible data like categories and faculties are in top-level collections for easy, unrestricted read access."
+      "description": "Stores organization profile data. The document ID is the organization's Auth UID."
+    },
+    "/categories/{categoryId}": {
+      "schema": {
+        "$ref": "#/entities/Category"
+      },
+      "description": "Stores talent category data."
+    }
   }
 }

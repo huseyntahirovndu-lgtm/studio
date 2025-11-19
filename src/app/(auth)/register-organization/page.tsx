@@ -58,6 +58,15 @@ export default function RegisterOrganizationPage() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
+    if (!auth || !firestore) {
+        toast({
+            variant: "destructive",
+            title: "Xəta",
+            description: "Firebase xidmətləri mövcud deyil. Zəhmət olmasa, daha sonra yenidən cəhd edin.",
+        });
+        setIsLoading(false);
+        return;
+    }
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
@@ -69,7 +78,7 @@ export default function RegisterOrganizationPage() {
       const orgDocRef = doc(firestore, 'organizations', user.uid);
       const newOrgProfile = {
         id: user.uid,
-        role: 'organization',
+        role: 'organization' as const,
         name: values.name,
         companyName: values.companyName,
         sector: values.sector,
