@@ -22,6 +22,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuItem
 } from "@/components/ui/dropdown-menu"
 import {
   Table,
@@ -138,7 +139,6 @@ export default function AdminStudentsPage() {
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuLabel>Əməliyyatlar</DropdownMenuLabel>
                                     <DropdownMenuItem>Redaktə et</DropdownMenuItem>
-                                    <DropdownMenuItem>Sil</DropdownMenuItem>
                                 </DropdownMenuContent>
                                 </DropdownMenu>
                             </TableCell>
