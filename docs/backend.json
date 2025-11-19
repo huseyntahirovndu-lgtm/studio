@@ -35,6 +35,14 @@
           "type": "number",
           "description": "The current year of study for the student (1-4)."
         },
+        "educationForm": {
+            "type": "string",
+            "description": "The form of education (e.g., full-time, part-time)."
+        },
+        "gpa": {
+            "type": "number",
+            "description": "The student's Grade Point Average."
+        },
         "skills": {
           "type": "array",
           "description": "An array of skills possessed by the student.",
@@ -144,6 +152,17 @@
           "type": "string",
           "description": "A URL to an image or video showcasing the project.",
           "format": "uri"
+        },
+        "teamMembers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Names of team members in the project."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the project (e.g., 'davam edir', 'tamamlanıb')."
         }
       },
       "required": [
@@ -172,6 +191,10 @@
           "type": "string",
           "description": "The name of the competition or award."
         },
+        "description": {
+          "type": "string",
+          "description": "A brief description of the achievement."
+        },
         "position": {
           "type": "string",
           "description": "The student's position or rank in the competition."
@@ -184,6 +207,11 @@
         "level": {
           "type": "string",
           "description": "The level of the competition (e.g., International, Respublika)."
+        },
+        "link": {
+          "type": "string",
+          "description": "A URL to a page verifying the achievement.",
+          "format": "uri"
         }
       },
       "required": [
@@ -402,6 +430,8 @@
         }
       }
     ],
-    "reasoning": "The Firestore data structure is designed to support the İstedad Mərkəzi platform, focusing on students, projects, achievements, certificates, organizations, and talent categories. The design prioritizes authorization independence, clarity, and scalability. All paths are designed to enable QAPs.\n\nAuthorization Independence (CRITICAL): User-owned data such as projects, achievements, and certificates are stored as subcollections of the `/users/{userId}` collection. This design allows for direct access to user data without needing to query parent documents, simplifying security rules and making them more robust. Each subcollection includes the studentId, which is the same as the user ID.\n\nStructural Segregation: Each entity type is stored in its own collection or subcollection, ensuring homogeneous security posture. For instance, student profiles are stored in `/users/{userId}`, projects are in `/users/{userId}/projects/{projectId}`, and so on. This segregation simplifies security rules by ensuring all documents in a collection share the same access requirements.\n\nAccess Modeling:  Path-based ownership is used for private user data. For instance, student profiles and their associated projects, achievements, and certificates are stored under `/users/{userId}`.\n\nData Clarity and Predictability: Explicit state modeling and predictable schema are enforced. Document IDs are used consistently. Wildcards like `{studentId}`, `{projectId}`, `{achievementId}`, and `{certificateId}` are used consistently to represent resource IDs. Consistent naming of the entities and fields makes it easy to debug."
+    "reasoning": "The Firestore data structure is designed to support the İstedad Mərkəzi platform, focusing on students, projects, achievements, certificates, organizations, and talent categories. The design prioritizes authorization independence, clarity, and scalability. All paths are designed to enable QAPs.\n\nAuthorization Independence (CRITICAL): User-owned data such as projects, achievements, and certificates are stored as subcollections of the `/users/{userId}` collection. This design allows for direct access to user data without needing to query parent documents, simplifying security rules and making them more robust. Each subcollection includes the studentId, which is the same as the user ID.\n\nStructural Segregation: Each entity type is stored in its own collection or subcollection, ensuring a homogeneous security posture. For instance, student profiles are stored in `/users/{userId}`, projects are in `/users/{userId}/projects/{projectId}`, and so on. This segregation simplifies security rules by ensuring all documents in a collection share the same access requirements.\n\nAccess Modeling:  Path-based ownership is used for private user data. For instance, student profiles and their associated projects, achievements, and certificates are stored under `/users/{userId}`.\n\nData Clarity and Predictability: Explicit state modeling and predictable schema are enforced. Document IDs are used consistently. Wildcards like `{studentId}`, `{projectId}`, `{achievementId}`, and `{certificateId}` are used consistently to represent resource IDs. Consistent naming of the entities and fields makes it easy to debug."
   }
 }
+
+    

@@ -15,8 +15,8 @@
  * - /faculties/{facultyId}: Stores faculty data.
  *
  * Key Security Decisions:
- * - Students can only create, read, update, and delete their own profile data and associated subcollections.
- * - Listing of users is disallowed for privacy reasons.
+ * - Students can only create, update, and delete their own profile data and associated subcollections.
+ * - All users (authenticated or not) can read and list student profiles to enable search and ranking features.
  * - Organizations can create, read, update, and delete their own profiles.
  * - Categories and Faculties are publicly readable. Writes are not defined in the schema, defaulting to deny all.
  *
@@ -57,15 +57,15 @@ service cloud.firestore {
     /**
      * @description Security rules for student profiles.
      * @path /users/{studentId}
+     * @allow (get, list) Any user can view and list profiles for search and ranking.
      * @allow (create) User with UID 'user_abc' can create a profile at /users/user_abc.
-     * @allow (get, update, delete) User with UID 'user_abc' can read/update/delete their profile at /users/user_abc.
+     * @allow (update, delete) User with UID 'user_abc' can update/delete their profile at /users/user_abc.
      * @deny (create) User with UID 'user_def' cannot create a profile at /users/user_abc.
-     * @deny (get, update, delete) User with UID 'user_def' cannot read/update/delete the profile at /users/user_abc.
-     * @principle Enforces document ownership for all operations.  Only the authenticated user can manage their own profile.
+     * @deny (update, delete) User with UID 'user_def' cannot update/delete the profile at /users/user_abc.
+     * @principle Enforces document ownership for write operations. Public read access for discoverability.
      */
     match /users/{studentId} {
-      allow get: if isOwner(studentId);
-      allow list: if false; // Prevent listing of all user profiles for privacy.
+      allow get, list: if true;
       allow create: if isOwner(studentId) && request.resource.data.id == studentId;
       allow update: if isExistingOwner(studentId) && request.resource.data.id == resource.data.id;
       allow delete: if isExistingOwner(studentId);
@@ -74,15 +74,12 @@ service cloud.firestore {
     /**
      * @description Security rules for student projects.
      * @path /users/{studentId}/projects/{projectId}
-     * @allow (create) User with UID 'user_abc' can create a project at /users/user_abc/projects/project_123.
-     * @allow (get, update, delete) User with UID 'user_abc' can read/update/delete their project at /users/user_abc/projects/project_123.
-     * @deny (create) User with UID 'user_def' cannot create a project at /users/user_abc/projects/project_123.
-     * @deny (get, update, delete) User with UID 'user_def' cannot read/update/delete the project at /users/user_abc/projects/project_123.
-     * @principle Enforces document ownership for all operations.  Only the owner student can manage their own projects.
+     * @allow (list, get) Any user can view projects of a student profile.
+     * @allow (create, update, delete) Only the owner student can manage their own projects.
+     * @principle Public read access for profile completeness. Owner-only writes.
      */
     match /users/{studentId}/projects/{projectId} {
-      allow get: if isOwner(studentId);
-      allow list: if isOwner(studentId);
+      allow get, list: if true;
       allow create: if isOwner(studentId) && request.resource.data.studentId == studentId;
       allow update: if isExistingOwner(studentId) && request.resource.data.studentId == resource.data.studentId;
       allow delete: if isExistingOwner(studentId);
@@ -91,15 +88,12 @@ service cloud.firestore {
     /**
      * @description Security rules for student achievements.
      * @path /users/{studentId}/achievements/{achievementId}
-     * @allow (create) User with UID 'user_abc' can create an achievement at /users/user_abc/achievements/achievement_123.
-     * @allow (get, update, delete) User with UID 'user_abc' can read/update/delete their achievement at /users/user_abc/achievements/achievement_123.
-     * @deny (create) User with UID 'user_def' cannot create an achievement at /users/user_abc/achievements/achievement_123.
-     * @deny (get, update, delete) User with UID 'user_def' cannot read/update/delete the achievement at /users/user_abc/achievements/achievement_123.
-     * @principle Enforces document ownership for all operations.  Only the owner student can manage their own achievements.
+     * @allow (list, get) Any user can view achievements of a student profile.
+     * @allow (create, update, delete) Only the owner student can manage their own achievements.
+     * @principle Public read access for profile completeness. Owner-only writes.
      */
     match /users/{studentId}/achievements/{achievementId} {
-      allow get: if isOwner(studentId);
-      allow list: if isOwner(studentId);
+      allow get, list: if true;
       allow create: if isOwner(studentId) && request.resource.data.studentId == studentId;
       allow update: if isExistingOwner(studentId) && request.resource.data.studentId == resource.data.studentId;
       allow delete: if isExistingOwner(studentId);
@@ -108,15 +102,12 @@ service cloud.firestore {
     /**
      * @description Security rules for student certificates.
      * @path /users/{studentId}/certificates/{certificateId}
-     * @allow (create) User with UID 'user_abc' can create a certificate at /users/user_abc/certificates/certificate_123.
-     * @allow (get, update, delete) User with UID 'user_abc' can read/update/delete their certificate at /users/user_abc/certificates/certificate_123.
-     * @deny (create) User with UID 'user_def' cannot create a certificate at /users/user_abc/certificates/certificate_123.
-     * @deny (get, update, delete) User with UID 'user_def' cannot read/update/delete the certificate at /users/user_abc/certificates/certificate_123.
-     * @principle Enforces document ownership for all operations.  Only the owner student can manage their own certificates.
+     * @allow (list, get) Any user can view certificates of a student profile.
+     * @allow (create, update, delete) Only the owner student can manage their own certificates.
+     * @principle Public read access for profile completeness. Owner-only writes.
      */
     match /users/{studentId}/certificates/{certificateId} {
-      allow get: if isOwner(studentId);
-      allow list: if isOwner(studentId);
+      allow get, list: if true;
       allow create: if isOwner(studentId) && request.resource.data.studentId == studentId;
       allow update: if isExistingOwner(studentId) && request.resource.data.studentId == resource.data.studentId;
       allow delete: if isExistingOwner(studentId);
@@ -125,15 +116,13 @@ service cloud.firestore {
     /**
      * @description Security rules for organizations.
      * @path /organizations/{organizationId}
-     * @allow (create) User with UID 'org_abc' can create an organization at /organizations/org_abc.
-     * @allow (get, update, delete) User with UID 'org_abc' can read/update/delete their organization at /organizations/org_abc.
-     * @deny (create) User with UID 'user_def' cannot create an organization at /organizations/org_abc.
-     * @deny (get, update, delete) User with UID 'user_def' cannot read/update/delete the organization at /organizations/org_abc.
-     * @principle Enforces document ownership for all operations.  Only the owner organization can manage their own profile.
+     * @allow (get) Any signed-in user can view organization profiles.
+     * @allow (create, update, delete) Only the owner organization can manage their own profile.
+     * @principle Enforces document ownership for write operations. Signed-in read access.
      */
     match /organizations/{organizationId} {
       allow get: if isSignedIn();
-      allow list: if false;
+      allow list: if false; // Listing all organizations is disabled for now.
       allow create: if isSignedIn() && request.auth.uid == organizationId && request.resource.data.id == organizationId;
       allow update: if isSignedIn() && request.auth.uid == organizationId && resource.data.id == organizationId;
       allow delete: if isSignedIn() && request.auth.uid == organizationId && resource != null;
@@ -143,8 +132,8 @@ service cloud.firestore {
      * @description Security rules for talent categories.
      * @path /categories/{categoryId}
      * @allow (get, list) Any user can read and list talent categories.
-     * @deny (create, update, delete) No one can create, update, or delete talent categories (unspecified in requirements).
-     * @principle Public read access for talent categories.
+     * @deny (create, update, delete) No one can write to categories (managed by admin).
+     * @principle Public read access for categories.
      */
     match /categories/{categoryId} {
       allow get, list: if true;
@@ -155,7 +144,7 @@ service cloud.firestore {
      * @description Security rules for faculties.
      * @path /faculties/{facultyId}
      * @allow (get, list) Any user can read and list faculties.
-     * @deny (create, update, delete) No one can create, update, or delete faculties.
+     * @deny (create, update, delete) No one can write to faculties (managed by admin).
      * @principle Public read access for faculties.
      */
     match /faculties/{facultyId} {
@@ -164,3 +153,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

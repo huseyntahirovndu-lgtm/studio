@@ -22,15 +22,19 @@ export interface Project {
   role: string;
   link?: string;
   mediaLink?: string;
+  teamMembers?: string[];
+  status?: 'davam edir' | 'tamamlanıb';
 }
 
 export interface Achievement {
   id: string;
   studentId: string;
   name: string;
+  description?: string;
   position: string;
   date: string; // ISO 8601 format
   level: AchievementLevel;
+  link?: string;
 }
 
 export interface Certificate {
@@ -47,6 +51,8 @@ export interface Student {
   faculty: string;
   major: string;
   courseYear: number;
+  educationForm?: string;
+  gpa?: number;
   skills: string[];
   category: string;
   projectIds?: string[];
@@ -62,3 +68,5 @@ export interface Student {
   profilePictureHint?: string;
   createdAt?: any; // Allow serverTimestamp
 }
+
+    
