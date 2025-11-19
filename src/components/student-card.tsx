@@ -1,7 +1,6 @@
-import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowUpRight, Star } from 'lucide-react';
-import type { Student } from '@/types';
+import { ArrowUpRight, Star, Bookmark } from 'lucide-react';
+import type { Student, Organization } from '@/types';
 import {
   Card,
   CardContent,
@@ -12,6 +11,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { doc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 interface StudentCardProps {
   student: Student;
@@ -29,6 +31,13 @@ const categoryColors: { [key: string]: string } = {
 
 
 export function StudentCard({ student, className }: StudentCardProps) {
+  const { profile: currentUserProfile } = useUser();
+  const firestore = useFirestore();
+  const { toast } = useToast();
+
+  const organization = currentUserProfile?.role === 'organization' ? currentUserProfile as Organization : null;
+  const isSaved = organization?.savedStudentIds?.includes(student.id);
+
   const {
     firstName,
     lastName,
@@ -43,10 +52,42 @@ export function StudentCard({ student, className }: StudentCardProps) {
   
   const categoryColor = categoryColors[category] || 'bg-muted';
 
+  const handleBookmark = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent link navigation
+    if (!organization || !firestore) return;
+
+    const orgDocRef = doc(firestore, 'organizations', organization.id);
+    const updateData = {
+      savedStudentIds: isSaved ? arrayRemove(student.id) : arrayUnion(student.id)
+    };
+
+    updateDocumentNonBlocking(orgDocRef, updateData);
+
+    toast({
+      title: isSaved ? "Siyahıdan çıxarıldı" : "Yadda saxlanıldı",
+      description: `${student.firstName} ${student.lastName} ${isSaved ? 'yaddaş siyahısından çıxarıldı.' : 'yaddaş siyahısına əlavə edildi.'}`,
+    });
+  };
+
+
   return (
-    <Card className={cn("flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1", className)}>
+    <Card className={cn("flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group", className)}>
       <CardHeader className="p-0 relative">
         <div className={`h-2 w-full ${categoryColor}`}></div>
+        {organization && (
+          <Button
+            size="icon"
+            variant="ghost"
+            className={cn(
+              "absolute top-3 right-3 h-8 w-8 rounded-full bg-black/20 text-white backdrop-blur-sm hover:bg-black/40",
+              "opacity-0 group-hover:opacity-100 transition-opacity",
+              isSaved && "opacity-100"
+            )}
+            onClick={handleBookmark}
+          >
+            <Bookmark className={cn("h-5 w-5", isSaved && "fill-current")} />
+          </Button>
+        )}
         <div className="p-6 flex items-center gap-4">
           <Avatar className="h-16 w-16 border-4 border-background shadow-md">
             <AvatarImage src={profilePictureUrl} alt={`${firstName} ${lastName}`} data-ai-hint={profilePictureHint} />

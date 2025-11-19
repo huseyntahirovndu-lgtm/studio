@@ -1,22 +1,27 @@
 'use client';
-import { useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, where } from 'firebase/firestore';
+import { useUser, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { doc, collection, query, where, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { useFirestore } from '@/firebase/provider';
 import { useParams } from 'next/navigation';
-import { Student, Project, Achievement, Certificate } from '@/types';
+import { Student, Project, Achievement, Certificate, Organization } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { Star, Linkedin, Github, Dribbble, Instagram, Link as LinkIcon, Award, Briefcase, FileText } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Star, Linkedin, Github, Dribbble, Instagram, Link as LinkIcon, Award, Briefcase, FileText, Bookmark } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useMemo } from 'react';
+import { cn } from '@/lib/utils';
 
 export default function ProfilePage() {
   const { id } = useParams();
   const firestore = useFirestore();
+  const { profile: currentUserProfile } = useUser();
+  const { toast } = useToast();
 
   const studentId = typeof id === 'string' ? id : '';
+  const organization = currentUserProfile?.role === 'organization' ? currentUserProfile as Organization : null;
 
   const studentDocRef = useMemoFirebase(() => {
       if (!firestore || !studentId) return null;
@@ -44,7 +49,7 @@ export default function ProfilePage() {
   const { data: certificates, isLoading: isLoadingCertificates } = useCollection<Certificate>(certificatesCollectionRef);
 
 
-  const student = useMemoFirebase(() => {
+  const student = useMemo(() => {
     if (!studentData) return null;
     const placeholder = PlaceHolderImages.find(p => p.id.includes(studentData.id.slice(-1))) || PlaceHolderImages[0];
     return {
@@ -53,7 +58,24 @@ export default function ProfilePage() {
       profilePictureHint: placeholder.imageHint,
     };
   }, [studentData]);
+  
+  const isSaved = organization?.savedStudentIds?.includes(studentId);
 
+  const handleBookmark = () => {
+    if (!organization || !firestore || !student) return;
+
+    const orgDocRef = doc(firestore, 'organizations', organization.id);
+    const updateData = {
+      savedStudentIds: isSaved ? arrayRemove(student.id) : arrayUnion(student.id)
+    };
+
+    updateDocumentNonBlocking(orgDocRef, updateData);
+
+    toast({
+      title: isSaved ? "Siyahıdan çıxarıldı" : "Yadda saxlanıldı",
+      description: `${student.firstName} ${student.lastName} ${isSaved ? 'yaddaş siyahısından çıxarıldı.' : 'yaddaş siyahısına əlavə edildi.'}`,
+    });
+  };
 
   if (isLoadingStudent || isLoadingProjects || isLoadingAchievements || isLoadingCertificates) {
     return <div className="container mx-auto py-8 text-center">Yüklənir...</div>;
@@ -89,6 +111,12 @@ export default function ProfilePage() {
                 </div>
                 <p className="text-sm text-muted-foreground">İstedad Balı</p>
               </div>
+               {organization && (
+                <Button onClick={handleBookmark} variant={isSaved ? 'default' : 'outline'} className="mt-4 w-full">
+                  <Bookmark className={cn("mr-2 h-4 w-4", isSaved && "fill-current")} />
+                  {isSaved ? 'Yaddaşdan çıxar' : 'Yadda saxla'}
+                </Button>
+              )}
             </CardContent>
           </Card>
           <Card>

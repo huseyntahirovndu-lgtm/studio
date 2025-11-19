@@ -90,7 +90,7 @@ export interface Organization extends BaseUser {
     name: string;
     companyName: string;
     sector: string;
-    savedStudentIds?: string[];
+    savedStudentIds: string[];
 }
 
 export interface FacultyData {
