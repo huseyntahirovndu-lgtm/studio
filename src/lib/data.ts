@@ -35,6 +35,13 @@ export const getProjectById = (id: string): Project | undefined => {
     return projects.find(p => p.id === id);
 }
 
+export const getProjects = (): Project[] => {
+    return projects;
+}
+export const getCertificates = (): Certificate[] => {
+    return certificates;
+}
+
 export const getProjectsByIds = (ids: string[]): Project[] => {
     if (!ids) return [];
     return projects.filter(p => ids.includes(p.id));
