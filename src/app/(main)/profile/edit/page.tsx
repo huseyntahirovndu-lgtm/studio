@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useForm, SubmitHandler, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Student, Project, Achievement, Certificate, AchievementLevel, CertificateLevel, AppUser } from '@/types';
+import { Student, Project, Achievement, Certificate, AchievementLevel, CertificateLevel, AppUser, Skill, SkillLevel } from '@/types';
 import { calculateTalentScore } from '@/ai/flows/talent-scoring';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Trash2, PlusCircle, Award, Briefcase, FileText, User as UserIcon, X } from 'lucide-react';
+import { Trash2, PlusCircle, Award, Briefcase, FileText, User as UserIcon, X, Book, Youtube } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -32,6 +32,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { Badge } from '@/components/ui/badge';
 
 
+const skillSchema = z.object({
+    name: z.string().min(1, "Bacarıq adı boş ola bilməz."),
+    level: z.enum(['Başlanğıc', 'Orta', 'İrəli']),
+});
+
 // Schemas
 const profileSchema = z.object({
   firstName: z.string().min(2, "Ad ən azı 2 hərf olmalıdır."),
@@ -40,12 +45,14 @@ const profileSchema = z.object({
   courseYear: z.coerce.number().min(1).max(4),
   educationForm: z.string().optional(),
   gpa: z.coerce.number().optional(),
-  skills: z.array(z.string()).min(1, "Ən azı bir bacarıq daxil edin."),
+  skills: z.array(skillSchema).min(1, "Ən azı bir bacarıq daxil edin."),
   linkedInURL: z.string().url().or(z.literal('')),
   githubURL: z.string().url().or(z.literal('')),
   behanceURL: z.string().url().or(z.literal('')),
   instagramURL: z.string().url().or(z.literal('')),
   portfolioURL: z.string().url().or(z.literal('')),
+  googleScholarURL: z.string().url().or(z.literal('')),
+  youtubeURL: z.string().url().or(z.literal('')),
 });
 
 const projectSchema = z.object({
@@ -72,6 +79,7 @@ const certificateSchema = z.object({
     level: z.enum(['Beynəlxalq', 'Respublika', 'Regional', 'Universitet']),
 });
 
+const SKILL_LEVELS: SkillLevel[] = ['Başlanğıc', 'Orta', 'İrəli'];
 
 export default function EditProfilePage() {
   const { user: currentUser, loading, updateUser } = useAuth();
@@ -88,6 +96,7 @@ export default function EditProfilePage() {
   const [isLoadingData, setIsLoadingData] = useState(true);
 
   const [skillInput, setSkillInput] = useState('');
+  const [skillLevel, setSkillLevel] = useState<SkillLevel>('Başlanğıc');
   const skillInputRef = useRef<HTMLInputElement>(null);
 
 
@@ -117,7 +126,7 @@ export default function EditProfilePage() {
     mode: 'onChange',
   });
   
-  const { control: profileControl, watch: watchProfile, setValue: setProfileValue } = profileForm;
+  const { control: profileControl, watch: watchProfile, setValue: setProfileValue, trigger: triggerProfile } = profileForm;
   const skills = watchProfile('skills', []);
 
   const projectForm = useForm<z.infer<typeof projectSchema>>({
@@ -165,6 +174,8 @@ export default function EditProfilePage() {
         behanceURL: targetUser.behanceURL || '',
         instagramURL: targetUser.instagramURL || '',
         portfolioURL: targetUser.portfolioURL || '',
+        googleScholarURL: targetUser.googleScholarURL || '',
+        youtubeURL: targetUser.youtubeURL || '',
       });
       fetchData();
     }
@@ -275,16 +286,24 @@ export default function EditProfilePage() {
       }
   };
 
-  const handleSkillAdd = () => {
+  const handleSkillAdd = async () => {
     const trimmedInput = skillInput.trim();
-    if (trimmedInput && !skills.includes(trimmedInput)) {
-      setProfileValue('skills', [...skills, trimmedInput]);
-      setSkillInput('');
+    if (trimmedInput) {
+      const newSkill: Skill = { name: trimmedInput, level: skillLevel };
+      const currentSkills = profileForm.getValues('skills');
+      if (!currentSkills.some(s => s.name.toLowerCase() === newSkill.name.toLowerCase())) {
+        setProfileValue('skills', [...currentSkills, newSkill], { shouldValidate: true });
+        setSkillInput('');
+        setSkillLevel('Başlanğıc');
+        skillInputRef.current?.focus();
+      } else {
+        toast({ variant: 'destructive', title: 'Bu bacarıq artıq mövcuddur.' });
+      }
     }
   };
 
   const handleSkillRemove = (skillToRemove: string) => {
-    setProfileValue('skills', skills.filter(skill => skill !== skillToRemove));
+    setProfileValue('skills', skills.filter(skill => skill.name !== skillToRemove));
   };
 
 
@@ -347,22 +366,25 @@ export default function EditProfilePage() {
                                 ref={skillInputRef}
                                 value={skillInput}
                                 onChange={(e) => setSkillInput(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                        e.preventDefault();
-                                        handleSkillAdd();
-                                    }
-                                }}
-                                placeholder="Bacarıq əlavə et"
+                                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSkillAdd(); } }}
+                                placeholder="Bacarıq adı"
                             />
+                            <Select value={skillLevel} onValueChange={(value: SkillLevel) => setSkillLevel(value)}>
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="Səviyyə seçin" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {SKILL_LEVELS.map(level => <SelectItem key={level} value={level}>{level}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
                             <Button type="button" onClick={handleSkillAdd}>Əlavə et</Button>
                         </div>
                         <FormMessage />
                         <div className="flex flex-wrap gap-2 pt-2">
                             {skills.map((skill) => (
-                                <Badge key={skill} variant="secondary" className="flex items-center gap-1">
-                                    {skill}
-                                    <button type="button" onClick={() => handleSkillRemove(skill)} className="rounded-full hover:bg-muted-foreground/20 p-0.5">
+                                <Badge key={skill.name} variant="secondary" className="flex items-center gap-2 text-sm">
+                                    {skill.name} <span className="text-xs opacity-70">({skill.level})</span>
+                                    <button type="button" onClick={() => handleSkillRemove(skill.name)} className="rounded-full hover:bg-muted-foreground/20 p-0.5">
                                         <X className="h-3 w-3" />
                                     </button>
                                 </Badge>
@@ -386,6 +408,12 @@ export default function EditProfilePage() {
                   )} />
                    <FormField name="portfolioURL" control={profileForm.control} render={({ field }) => (
                     <FormItem><FormLabel>Portfolio URL</FormLabel><FormControl><Input placeholder="https://sizin-saytiniz.com" {...field} /></FormControl><FormMessage /></FormItem>
+                  )} />
+                  <FormField name="googleScholarURL" control={profileForm.control} render={({ field }) => (
+                    <FormItem><FormLabel>Google Scholar URL</FormLabel><FormControl><Input placeholder="https://scholar.google.com/citations?user=..." {...field} /></FormControl><FormMessage /></FormItem>
+                  )} />
+                  <FormField name="youtubeURL" control={profileForm.control} render={({ field }) => (
+                    <FormItem><FormLabel>YouTube URL</FormLabel><FormControl><Input placeholder="https://youtube.com/channel/..." {...field} /></FormControl><FormMessage /></FormItem>
                   )} />
                 <Button type="submit" disabled={isSaving}>
                   {isSaving ? 'Yadda saxlanılır...' : 'Dəyişiklikləri Yadda Saxla'}

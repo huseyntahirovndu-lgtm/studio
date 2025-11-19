@@ -11,13 +11,21 @@
       "courseYear": 3,
       "educationForm": "Əyani",
       "gpa": 92.5,
-      "skills": ["MS Excel", "SQL", "Mühasibat", "Analitika", "Power BI"],
+      "skills": [
+        {"name": "MS Excel", "level": "İrəli"},
+        {"name": "SQL", "level": "Orta"},
+        {"name": "Mühasibat", "level": "Orta"},
+        {"name": "Analitika", "level": "İrəli"},
+        {"name": "Power BI", "level": "Orta"}
+      ],
       "category": "STEM, Sahibkarlıq",
       "projectIds": ["p-1"],
       "achievementIds": ["ach-1"],
       "certificateIds": ["cert-1"],
       "linkedInURL": "https://linkedin.com/in/ayselmammadova",
       "githubURL": "https://github.com/ayselmammadova",
+      "googleScholarURL": "",
+      "youtubeURL": "",
       "talentScore": 95,
       "status": "təsdiqlənmiş",
       "createdAt": "2023-10-26T10:00:00Z"
@@ -33,14 +41,22 @@
       "courseYear": 4,
       "educationForm": "Əyani",
       "gpa": 88.0,
-      "skills": ["React", "Node.js", "Python", "UX/UI Design", "Figma"],
-      "category": "Texnologiya, İncəsənət",
+      "skills": [
+        {"name": "React", "level": "İrəli"},
+        {"name": "Node.js", "level": "Orta"},
+        {"name": "Python", "level": "Orta"},
+        {"name": "UX/UI Design", "level": "İrəli"},
+        {"name": "Figma", "level": "İrəli"}
+      ],
+      "category": "Texnologiya / IT, İncəsənət",
       "projectIds": ["p-2"],
       "achievementIds": ["ach-2"],
       "certificateIds": [],
       "linkedInURL": "https://linkedin.com/in/orxanaliyev",
       "githubURL": "https://github.com/orxanaliyev",
       "behanceURL": "https://behance.net/orxanaliyev",
+      "googleScholarURL": "",
+      "youtubeURL": "",
       "talentScore": 92,
       "status": "təsdiqlənmiş",
       "createdAt": "2023-09-15T14:30:00Z"
@@ -56,7 +72,12 @@
       "courseYear": 2,
       "educationForm": "Əyani",
       "gpa": 95.0,
-      "skills": ["Biologiya", "Kimya", "Tədqiqat", "Laboratoriya işi"],
+      "skills": [
+        {"name": "Biologiya", "level": "İrəli"},
+        {"name": "Kimya", "level": "İrəli"},
+        {"name": "Tədqiqat", "level": "Orta"},
+        {"name": "Laboratoriya işi", "level": "Orta"}
+      ],
       "category": "STEM, Humanitar",
       "projectIds": [],
       "achievementIds": ["ach-3"],
@@ -196,7 +217,10 @@
     { "id": "c-3", "name": "İncəsənət" },
     { "id": "c-4", "name": "İdman" },
     { "id": "c-5", "name": "Sahibkarlıq" },
-    { "id": "c-6", "name": "Texnologiya" }
+    { "id": "c-6", "name": "Texnologiya / IT" },
+    { "id": "c-7", "name": "Startap və innovasiya" },
+    { "id": "c-8", "name": "Sosial fəaliyyət" },
+    { "id": "c-9", "name": "Media və yaradıcılıq" }
   ],
    "invitations": [
     {

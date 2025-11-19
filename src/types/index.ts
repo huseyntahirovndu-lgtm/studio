@@ -4,7 +4,10 @@ export type Category =
   | 'İncəsənət'
   | 'İdman'
   | 'Sahibkarlıq'
-  | 'Texnologiya';
+  | 'Texnologiya / IT'
+  | 'Startap və innovasiya'
+  | 'Sosial fəaliyyət'
+  | 'Media və yaradıcılıq';
 
 export type Faculty = string;
 
@@ -19,6 +22,13 @@ export type CertificateLevel =
   | 'Respublika'
   | 'Regional'
   | 'Universitet';
+  
+export type SkillLevel = 'Başlanğıc' | 'Orta' | 'İrəli';
+
+export interface Skill {
+  name: string;
+  level: SkillLevel;
+}
 
 export interface Project {
   id: string;
@@ -73,8 +83,8 @@ export interface Student extends BaseUser {
   courseYear: number;
   educationForm?: string;
   gpa?: number;
-  skills: string[];
-  category: string; // This will now hold multiple categories as a comma-separated string or be an array. Let's make it an array.
+  skills: Skill[];
+  category: string;
   projectIds?: string[];
   achievementIds?: string[];
   certificateIds?: string[];
@@ -83,6 +93,8 @@ export interface Student extends BaseUser {
   behanceURL?: string;
   instagramURL?: string;
   portfolioURL?: string;
+  googleScholarURL?: string;
+  youtubeURL?: string;
   talentScore?: number;
   profilePictureUrl?: string;
   profilePictureHint?: string;

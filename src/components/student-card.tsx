@@ -23,10 +23,13 @@ interface StudentCardProps {
 const categoryColors: { [key: string]: string } = {
   STEM: 'bg-category-stem',
   Humanitar: 'bg-category-humanitarian',
-  İncəsənət: 'bg-category-art',
-  İdman: 'bg-category-sport',
+  'İncəsənət': 'bg-category-art',
+  'İdman': 'bg-category-sport',
   Sahibkarlıq: 'bg-category-entrepreneurship',
-  Texnologiya: 'bg-category-technology',
+  'Texnologiya / IT': 'bg-category-technology',
+  'Startap və innovasiya': 'bg-purple-500', // Example color
+  'Sosial fəaliyyət': 'bg-pink-500', // Example color
+  'Media və yaradıcılıq': 'bg-orange-500' // Example color
 };
 
 
@@ -49,7 +52,7 @@ export function StudentCard({ student, className }: StudentCardProps) {
     category
   } = student;
   
-  const primaryCategory = Array.isArray(category) ? category[0] : category;
+  const primaryCategory = category.split(',')[0].trim();
   const categoryColor = categoryColors[primaryCategory] || 'bg-muted';
 
   const handleBookmark = (e: React.MouseEvent) => {
@@ -120,7 +123,7 @@ export function StudentCard({ student, className }: StudentCardProps) {
         <div className="flex flex-wrap gap-2">
           {skills?.slice(0, 4).map((skill, index) => (
             <Badge key={index} variant="secondary" className="font-normal">
-              {skill}
+              {skill.name}
             </Badge>
           ))}
           {skills && skills.length > 4 && <Badge variant="outline">+{skills.length - 4}</Badge>}

@@ -1,13 +1,13 @@
 'use client';
 import { useAuth } from '@/hooks/use-auth';
 import { useParams } from 'next/navigation';
-import { Student, Project, Achievement, Certificate, Organization, Invitation } from '@/types';
+import { Student, Project, Achievement, Certificate, Organization, Invitation, Skill } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Star, Linkedin, Github, Dribbble, Instagram, Link as LinkIcon, Award, Briefcase, FileText, Bookmark, MailPlus } from 'lucide-react';
+import { Star, Linkedin, Github, Dribbble, Instagram, Link as LinkIcon, Award, Briefcase, FileText, Bookmark, MailPlus, Book, Youtube } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -147,6 +147,19 @@ export default function ProfilePage() {
     return `${firstName.charAt(0)}${lastName.charAt(0)}`;
   }
 
+  const getSkillBadgeVariant = (level: Skill['level']) => {
+    switch (level) {
+      case 'İrəli':
+        return 'default';
+      case 'Orta':
+        return 'secondary';
+      case 'Başlanğıc':
+        return 'outline';
+      default:
+        return 'secondary';
+    }
+  };
+
   return (
     <div className="container mx-auto max-w-6xl py-8 md:py-12 px-4">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -215,7 +228,9 @@ export default function ProfilePage() {
               </CardHeader>
               <CardContent className="flex flex-wrap gap-2">
                   {student.skills?.map((skill, index) => (
-                      <Badge key={index} variant="secondary">{skill}</Badge>
+                      <Badge key={index} variant={getSkillBadgeVariant(skill.level)} className="text-sm py-1">
+                        {skill.name}
+                      </Badge>
                   ))}
               </CardContent>
           </Card>
@@ -228,7 +243,9 @@ export default function ProfilePage() {
                   {student.githubURL && <SocialLink href={student.githubURL} icon={Github} text="GitHub" />}
                   {student.behanceURL && <SocialLink href={student.behanceURL} icon={Dribbble} text="Behance" />}
                   {student.instagramURL && <SocialLink href={student.instagramURL} icon={Instagram} text="Instagram" />}
-                   {student.portfolioURL && <SocialLink href={student.portfolioURL} icon={LinkIcon} text="Portfolio" />}
+                  {student.portfolioURL && <SocialLink href={student.portfolioURL} icon={LinkIcon} text="Portfolio" />}
+                  {student.googleScholarURL && <SocialLink href={student.googleScholarURL} icon={Book} text="Google Scholar" />}
+                  {student.youtubeURL && <SocialLink href={student.youtubeURL} icon={Youtube} text="YouTube" />}
               </CardContent>
           </Card>
         </div>
