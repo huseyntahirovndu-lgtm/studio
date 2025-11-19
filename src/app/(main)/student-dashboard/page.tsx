@@ -3,7 +3,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { User, ClipboardList, Edit } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Student } from '@/types';
 import { Progress } from '@/components/ui/progress';
 import Link from 'next/link';
@@ -22,25 +22,40 @@ export default function StudentDashboard() {
 
     const studentProfile = user as Student;
 
+    const profileCompletion = useMemo(() => {
+        if (!studentProfile) return 0;
+        
+        const fields = [
+            { value: studentProfile.firstName, weight: 1 },
+            { value: studentProfile.lastName, weight: 1 },
+            { value: studentProfile.major, weight: 1 },
+            { value: studentProfile.educationForm, weight: 1 },
+            { value: studentProfile.gpa, weight: 1 },
+            { value: studentProfile.skills && studentProfile.skills.length > 1, weight: 2 }, 
+            { value: studentProfile.projectIds && studentProfile.projectIds.length > 0, weight: 2 },
+            { value: studentProfile.achievementIds && studentProfile.achievementIds.length > 0, weight: 2 },
+            { value: studentProfile.certificateIds && studentProfile.certificateIds.length > 0, weight: 2 },
+            { value: studentProfile.linkedInURL, weight: 1 },
+            { value: studentProfile.githubURL, weight: 1 },
+            { value: studentProfile.portfolioURL, weight: 1 },
+        ];
+
+        const totalWeight = fields.reduce((sum, field) => sum + field.weight, 0);
+        const completedWeight = fields.reduce((sum, field) => {
+            if (field.value) {
+                return sum + field.weight;
+            }
+            return sum;
+        }, 0);
+        
+        if (totalWeight === 0) return 0;
+        return Math.round((completedWeight / totalWeight) * 100);
+    }, [studentProfile]);
+
+
     if (loading || !user || !studentProfile) {
         return <div className="container mx-auto py-8 text-center">Yüklənir...</div>;
     }
-    
-    // Calculate profile completion
-    const totalFields = 10; // Simple check for a few key fields
-    let completedFields = 0;
-    if (studentProfile.firstName) completedFields++;
-    if (studentProfile.lastName) completedFields++;
-    if (studentProfile.major) completedFields++;
-    if (studentProfile.skills && studentProfile.skills.length > 1) completedFields++; // more than just 'Yeni Tələbə'
-    if (studentProfile.projectIds && studentProfile.projectIds.length > 0) completedFields++;
-    if (studentProfile.achievementIds && studentProfile.achievementIds.length > 0) completedFields++;
-    if (studentProfile.certificateIds && studentProfile.certificateIds.length > 0) completedFields++;
-    if (studentProfile.linkedInURL) completedFields++;
-    if (studentProfile.githubURL) completedFields++;
-    if (studentProfile.portfolioURL) completedFields++;
-    const profileCompletion = Math.round((completedFields / totalFields) * 100);
-
 
     return (
         <div className="container mx-auto py-8 md:py-12 px-4">

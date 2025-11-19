@@ -1,8 +1,8 @@
 'use client';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState, useCallback } from 'react';
-import { useForm, SubmitHandler } from 'react-hook-form';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { useForm, SubmitHandler, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Student, Project, Achievement, Certificate, AchievementLevel, CertificateLevel, AppUser } from '@/types';
@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Trash2, PlusCircle, Award, Briefcase, FileText, User as UserIcon } from 'lucide-react';
+import { Trash2, PlusCircle, Award, Briefcase, FileText, User as UserIcon, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -29,6 +29,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { getStudentById, getProjectsByStudentId, getAchievementsByStudentId, getCertificatesByStudentId, addProject, addAchievement, addCertificate, deleteProject, deleteAchievement, deleteCertificate } from '@/lib/data';
 import { v4 as uuidv4 } from 'uuid';
+import { Badge } from '@/components/ui/badge';
+
 
 // Schemas
 const profileSchema = z.object({
@@ -38,7 +40,7 @@ const profileSchema = z.object({
   courseYear: z.coerce.number().min(1).max(4),
   educationForm: z.string().optional(),
   gpa: z.coerce.number().optional(),
-  skills: z.string().min(1, "Bacarıqlar boş ola bilməz.").transform(val => val.split(',').map(s => s.trim()).filter(Boolean)),
+  skills: z.array(z.string()).min(1, "Ən azı bir bacarıq daxil edin."),
   linkedInURL: z.string().url().or(z.literal('')),
   githubURL: z.string().url().or(z.literal('')),
   behanceURL: z.string().url().or(z.literal('')),
@@ -85,6 +87,10 @@ export default function EditProfilePage() {
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
+  const [skillInput, setSkillInput] = useState('');
+  const skillInputRef = useRef<HTMLInputElement>(null);
+
+
   useEffect(() => {
     const userIdFromQuery = searchParams.get('userId');
     if (currentUser?.role === 'admin' && userIdFromQuery) {
@@ -105,6 +111,9 @@ export default function EditProfilePage() {
     mode: 'onChange',
   });
   
+  const { control: profileControl, watch: watchProfile, setValue: setProfileValue } = profileForm;
+  const skills = watchProfile('skills', []);
+
   const projectForm = useForm<z.infer<typeof projectSchema>>({
     resolver: zodResolver(projectSchema),
     defaultValues: { title: '', description: '', role: '', teamMembers: [], link: '', status: 'davam edir' }
@@ -149,7 +158,7 @@ export default function EditProfilePage() {
         courseYear: targetUser.courseYear || 1,
         educationForm: targetUser.educationForm || '',
         gpa: targetUser.gpa || undefined,
-        skills: targetUser.skills?.join(', ') || '',
+        skills: targetUser.skills || [],
         linkedInURL: targetUser.linkedInURL || '',
         githubURL: targetUser.githubURL || '',
         behanceURL: targetUser.behanceURL || '',
@@ -187,13 +196,13 @@ export default function EditProfilePage() {
     }
   }, [targetUser, toast, updateUser]);
 
-  const handleGenericSubmit = async (submitAction: () => Promise<any>, successMessage: string, formToReset: any) => {
+  const handleGenericSubmit = async (submitAction: () => Promise<any>, successMessage: string, formToReset?: any) => {
     if (!targetUser) return;
     setIsSaving(true);
     try {
       await submitAction();
       toast({ title: successMessage });
-      formToReset.reset();
+      if (formToReset) formToReset.reset();
       fetchData();
       await triggerTalentScoreUpdate();
     } catch (error) {
@@ -203,13 +212,14 @@ export default function EditProfilePage() {
       setIsSaving(false);
     }
   };
-
-  const onProfileSubmit: SubmitHandler<z.infer<typeof profileSchema>> = (data) => {
-    handleGenericSubmit(async () => {
-        const updatedUser = { ...targetUser, ...data };
-        updateUser(updatedUser as AppUser);
-    }, "Profil məlumatları yeniləndi", profileForm);
-  };
+  
+    const onProfileSubmit: SubmitHandler<z.infer<typeof profileSchema>> = (data) => {
+      if (!targetUser) return;
+      handleGenericSubmit(async () => {
+          const updatedUser = { ...targetUser, ...data };
+          updateUser(updatedUser as AppUser);
+      }, "Profil məlumatları yeniləndi");
+    };
   
   const onProjectSubmit: SubmitHandler<z.infer<typeof projectSchema>> = (data) => {
     handleGenericSubmit(async () => {
@@ -238,9 +248,9 @@ export default function EditProfilePage() {
 
       try {
           switch (itemType) {
-              case 'project': await deleteProject(docId); break;
-              case 'achievement': await deleteAchievement(docId); break;
-              case 'certificate': await deleteCertificate(docId); break;
+              case 'project': await deleteProject(docId, targetUser.id); break;
+              case 'achievement': await deleteAchievement(docId, targetUser.id); break;
+              case 'certificate': await deleteCertificate(docId, targetUser.id); break;
           }
           toast({ title: "Element silindi", description: "Seçilmiş element uğurla silindi." });
           fetchData();
@@ -253,6 +263,18 @@ export default function EditProfilePage() {
       }
   };
 
+  const handleSkillAdd = () => {
+    const trimmedInput = skillInput.trim();
+    if (trimmedInput && !skills.includes(trimmedInput)) {
+      setProfileValue('skills', [...skills, trimmedInput]);
+      setSkillInput('');
+    }
+  };
+
+  const handleSkillRemove = (skillToRemove: string) => {
+    setProfileValue('skills', skills.filter(skill => skill !== skillToRemove));
+  };
+
 
   if (loading || !targetUser) {
     return <div className="container mx-auto py-8 text-center">Yüklənir...</div>;
@@ -261,7 +283,7 @@ export default function EditProfilePage() {
   return (
     <div className="container mx-auto max-w-4xl py-8 md:py-12 px-4">
       <div className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-bold mb-2">Profilimi Redaktə Et</h1>
+        <h1 className="text-3xl md:text-4xl font-bold mb-2">Profili Redaktə Et</h1>
         <p className="text-muted-foreground">Profil məlumatlarınızı, layihə və nailiyyətlərinizi buradan idarə edin.</p>
       </div>
 
@@ -305,12 +327,35 @@ export default function EditProfilePage() {
                       <FormItem><FormLabel>ÜOMG (GPA)</FormLabel><FormControl><Input type="number" step="0.1" {...field} placeholder="Məs: 85.5" /></FormControl><FormMessage /></FormItem>
                     )} />
                   </div>
-                 <FormField name="skills" control={profileForm.control} render={({ field }) => (
+                 <FormField name="skills" control={profileControl} render={() => (
                     <FormItem>
-                      <FormLabel>Bacarıqlar</FormLabel>
-                      <FormControl><Input placeholder="Məs: React, Python, UI/UX" {...field} /></FormControl>
-                      <FormDescription>Bacarıqları vergül ilə ayırın.</FormDescription>
-                      <FormMessage />
+                        <FormLabel>Bacarıqlar</FormLabel>
+                        <div className="flex items-center gap-2">
+                            <Input
+                                ref={skillInputRef}
+                                value={skillInput}
+                                onChange={(e) => setSkillInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        handleSkillAdd();
+                                    }
+                                }}
+                                placeholder="Bacarıq əlavə et"
+                            />
+                            <Button type="button" onClick={handleSkillAdd}>Əlavə et</Button>
+                        </div>
+                        <FormMessage />
+                        <div className="flex flex-wrap gap-2 pt-2">
+                            {skills.map((skill) => (
+                                <Badge key={skill} variant="secondary" className="flex items-center gap-1">
+                                    {skill}
+                                    <button type="button" onClick={() => handleSkillRemove(skill)} className="rounded-full hover:bg-muted-foreground/20 p-0.5">
+                                        <X className="h-3 w-3" />
+                                    </button>
+                                </Badge>
+                            ))}
+                        </div>
                     </FormItem>
                   )} />
                 <Separator />

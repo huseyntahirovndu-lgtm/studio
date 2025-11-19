@@ -15,16 +15,25 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { students as allStudents, faculties, categories } from '@/lib/data';
+import { useSearchParams } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+
+type QuickFilter = 'none' | 'high-potential' | 'startup' | 'newcomer';
 
 export default function SearchPage() {
+  const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [facultyFilter, setFacultyFilter] = useState('all');
   const [courseFilter, setCourseFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('talentScore');
+  const [quickFilter, setQuickFilter] = useState<QuickFilter>('none');
+
   const [isLoading, setIsLoading] = useState(true);
   const [enrichedStudents, setEnrichedStudents] = useState<Student[]>([]);
 
   useEffect(() => {
+    // This effect runs when the component mounts
     const studentsWithPics = allStudents.map((student, index) => {
       const placeholder = PlaceHolderImages.find(p => p.id.slice(-1) === student.id.slice(-1)) || PlaceHolderImages[index % PlaceHolderImages.length];
       return {
@@ -35,10 +44,30 @@ export default function SearchPage() {
     });
     setEnrichedStudents(studentsWithPics);
     setIsLoading(false);
-  }, []);
+
+    // Check for URL params to set initial state
+    const sortParam = searchParams.get('sort');
+    if (sortParam === 'newest') {
+      setSortBy('createdAt');
+    }
+  }, []); // Empty dependency array means this runs once on mount
+
 
   const filteredStudents = useMemo(() => {
-    return enrichedStudents.filter(student => {
+    let students = [...enrichedStudents];
+
+    // Apply quick filters first
+    if (quickFilter === 'high-potential') {
+        students = students.filter(s => (s.talentScore || 0) >= 90);
+    } else if (quickFilter === 'startup') {
+        students = students.filter(s => s.category === 'Sahibkarlıq' || s.category === 'Texnologiya');
+    } else if (quickFilter === 'newcomer') {
+        students = students.filter(s => s.courseYear === 1);
+    }
+
+
+    // Apply standard filters
+    students = students.filter(student => {
       if (student.role !== 'student') return false;
 
       const searchTermMatch =
@@ -52,7 +81,21 @@ export default function SearchPage() {
 
       return searchTermMatch && facultyMatch && courseMatch && categoryMatch;
     });
-  }, [enrichedStudents, searchTerm, facultyFilter, courseFilter, categoryFilter]);
+
+     // Apply sorting
+    if (sortBy === 'createdAt') {
+      students.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } else { // Default to talentScore
+      students.sort((a, b) => (b.talentScore || 0) - (a.talentScore || 0));
+    }
+
+
+    return students;
+  }, [enrichedStudents, searchTerm, facultyFilter, courseFilter, categoryFilter, sortBy, quickFilter]);
+
+  const handleQuickFilterClick = (filter: QuickFilter) => {
+    setQuickFilter(current => current === filter ? 'none' : filter);
+  };
 
 
   return (
@@ -73,7 +116,7 @@ export default function SearchPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             {isLoading ? <Skeleton className="h-10 w-full" /> : (
               <Select value={facultyFilter} onValueChange={setFacultyFilter}>
                 <SelectTrigger>
@@ -108,6 +151,21 @@ export default function SearchPage() {
                 </SelectContent>
               </Select>
             )}
+             <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sıralama" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="talentScore">Ən Yüksək Bal</SelectItem>
+                <SelectItem value="createdAt">Ən Yeni</SelectItem>
+              </SelectContent>
+            </Select>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">Sürətli filtrlər:</span>
+            <Button size="sm" variant={quickFilter === 'high-potential' ? 'default' : 'outline'} onClick={() => handleQuickFilterClick('high-potential')}>Yüksək Potensiallı</Button>
+            <Button size="sm" variant={quickFilter === 'startup' ? 'default' : 'outline'} onClick={() => handleQuickFilterClick('startup')}>Startap Potensiallı</Button>
+            <Button size="sm" variant={quickFilter === 'newcomer' ? 'default' : 'outline'} onClick={() => handleQuickFilterClick('newcomer')}>Yeni Başlayanlar</Button>
         </div>
       </div>
 
