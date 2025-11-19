@@ -31,7 +31,7 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="relative w-full flex items-center bg-black">
         <Image
-          src="https://i.ibb.co/3s0Xm5C/banner2.png"
+          src="https://i.ibb.co/cXv2KzRR/q2.jpg"
           alt="Naxçıvan Dövlət Universiteti"
           width={1920}
           height={1080}
@@ -40,7 +40,7 @@ export default function HomePage() {
           data-ai-hint="university building"
         />
         
-        <div className="absolute inset-0 flex items-center">
+        <div className="absolute inset-0 flex items-center bg-black/50">
           <div className="container mx-auto px-4 md:px-8 lg:px-12">
             <div className="max-w-3xl text-left">
               <h1 className="text-xl md:text-2xl lg:text-3xl font-bold mb-4 text-white">
