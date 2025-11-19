@@ -13,7 +13,7 @@ import { StudentCard } from '@/components/student-card';
 import { CategoryPieChart } from '@/components/charts/category-pie-chart';
 import { FacultyBarChart } from '@/components/charts/faculty-bar-chart';
 import { useCollection, useMemoFirebase } from '@/firebase';
-import { collection, serverTimestamp, query, where, limit } from 'firebase/firestore';
+import { collection, query, where, limit, orderBy } from 'firebase/firestore';
 import { useFirestore } from '@/firebase/provider';
 import { Student } from '@/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -29,12 +29,12 @@ export default function HomePage() {
 
   const topTalentsQuery = useMemoFirebase(() => {
       if (!firestore) return null;
-      return query(collection(firestore, 'users'), where('role', '==', 'student'), limit(5));
+      return query(collection(firestore, 'users'), where('role', '==', 'student'), orderBy('talentScore', 'desc'), limit(5));
   }, [firestore]);
 
   const newMembersQuery = useMemoFirebase(() => {
       if (!firestore) return null;
-      return query(collection(firestore, 'users'), where('role', '==', 'student'), limit(5));
+      return query(collection(firestore, 'users'), where('role', '==', 'student'), orderBy('createdAt', 'desc'), limit(5));
   }, [firestore]);
 
 
@@ -60,8 +60,8 @@ export default function HomePage() {
       }) || [];
   }
 
-  const topTalents = enrichStudents(topTalentsData).sort((a, b) => (b.talentScore || 0) - (a.talentScore || 0));
-  const newMembers = enrichStudents(newMembersData).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+  const topTalents = enrichStudents(topTalentsData);
+  const newMembers = enrichStudents(newMembersData);
 
 
   const totalAchievements = students?.reduce((acc, s) => acc + (s.achievementIds?.length || 0), 0) || 0;
