@@ -51,12 +51,20 @@ export interface Certificate {
   level: CertificateLevel;
 }
 
-export interface Student {
-  id: string;
-  role: 'student' | 'organization' | 'admin';
+export type UserRole = 'student' | 'organization' | 'admin';
+
+export interface BaseUser {
+    id: string;
+    role: UserRole;
+    email: string;
+    createdAt?: any;
+}
+
+
+export interface Student extends BaseUser {
+  role: 'student';
   firstName: string;
   lastName: string;
-  email: string;
   faculty: string;
   major: string;
   courseYear: number;
@@ -75,18 +83,14 @@ export interface Student {
   talentScore?: number;
   profilePictureUrl?: string;
   profilePictureHint?: string;
-  createdAt?: any; // Allow serverTimestamp
 }
 
-export interface Organization {
-    id: string;
-    role: 'student' | 'organization' | 'admin';
+export interface Organization extends BaseUser {
+    role: 'organization';
     name: string;
-    email: string;
     companyName: string;
     sector: string;
     savedStudentIds?: string[];
-    createdAt?: any; // Allow serverTimestamp
 }
 
 export interface FacultyData {
@@ -98,3 +102,5 @@ export interface CategoryData {
     id: string;
     name: string;
 }
+
+export type AppUser = Student | Organization;

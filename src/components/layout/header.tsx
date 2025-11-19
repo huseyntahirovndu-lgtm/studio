@@ -9,6 +9,7 @@ import { useUser } from '@/firebase';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { getAuth, signOut } from 'firebase/auth';
+import type { AppUser } from '@/types';
 
 const navLinks = [
   { href: '/', label: 'Ana Səhifə' },
@@ -17,18 +18,25 @@ const navLinks = [
 ];
 
 export function Header() {
-  const { user, isUserLoading } = useUser();
+  const { user, isUserLoading, profile } = useUser();
+  const appUser = profile as AppUser | null;
+
 
   const handleLogout = async () => {
     const auth = getAuth();
     await signOut(auth);
   };
 
-  const getInitials = (firstName?: string, lastName?: string) => {
-    if (!firstName || !lastName) return '';
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`;
-  }
+  const getInitials = (displayName: string | null | undefined): string => {
+    if (!displayName) return '';
+    const names = displayName.split(' ');
+    if (names.length > 1) {
+      return `${names[0].charAt(0)}${names[1].charAt(0)}`;
+    }
+    return names[0].charAt(0);
+  };
 
+  const profileLink = appUser?.role === 'organization' ? '/organization-dashboard' : `/profile/${user?.uid}`;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-primary text-primary-foreground">
@@ -53,13 +61,13 @@ export function Header() {
         <div className="flex flex-1 items-center justify-end space-x-2">
           {isUserLoading ? (
             <div className='h-10 w-10 bg-primary-foreground/10 rounded-full animate-pulse' />
-          ) : user ? (
+          ) : user && appUser ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:bg-primary-foreground/10">
                    <Avatar className="h-10 w-10">
                     <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User'} />
-                    <AvatarFallback>{getInitials(user.displayName?.split(' ')[0], user.displayName?.split(' ')[1])}</AvatarFallback>
+                    <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
@@ -74,7 +82,9 @@ export function Header() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href={`/profile/${user.uid}`}>Profil</Link>
+                  <Link href={profileLink}>
+                    {appUser.role === 'organization' ? 'Panel' : 'Profil'}
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleLogout}>
                   Çıxış
