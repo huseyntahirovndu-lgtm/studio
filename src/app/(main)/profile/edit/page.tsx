@@ -93,17 +93,24 @@ export default function EditProfilePage() {
 
   useEffect(() => {
     const userIdFromQuery = searchParams.get('userId');
+    // Admin editing a specific user
     if (currentUser?.role === 'admin' && userIdFromQuery) {
       getStudentById(userIdFromQuery).then(student => {
-        if (student) setTargetUser(student);
-        else router.push('/admin/students');
+        if (student) {
+          setTargetUser(student);
+        } else {
+          toast({ variant: 'destructive', title: 'Xəta', description: 'Tələbə tapılmadı.' });
+          router.push('/admin/students');
+        }
       });
+    // Student editing their own profile
     } else if (currentUser?.role === 'student') {
       setTargetUser(currentUser as Student);
+    // Not logged in or not authorized
     } else if (!loading) {
       router.push('/login');
     }
-  }, [currentUser, searchParams, loading, router]);
+  }, [currentUser, searchParams, loading, router, toast]);
 
 
   const profileForm = useForm<z.infer<typeof profileSchema>>({
@@ -169,23 +176,28 @@ export default function EditProfilePage() {
     }
   }, [targetUser, profileForm, fetchData]);
 
-  const triggerTalentScoreUpdate = useCallback(async () => {
-    if (!targetUser) return;
+  const triggerTalentScoreUpdate = useCallback(async (updatedStudentProfile: Student) => {
+    if (!updatedStudentProfile) return;
     setIsSaving(true);
     toast({ title: "İstedad Balı Hesablanır...", description: "Profil yenilənir, bu bir az vaxt ala bilər." });
 
     try {
         const fullProfile = {
-            ...targetUser,
-            projects: await getProjectsByStudentId(targetUser.id),
-            achievements: await getAchievementsByStudentId(targetUser.id),
-            certificates: await getCertificatesByStudentId(targetUser.id),
+            ...updatedStudentProfile,
+            projects: await getProjectsByStudentId(updatedStudentProfile.id),
+            achievements: await getAchievementsByStudentId(updatedStudentProfile.id),
+            certificates: await getCertificatesByStudentId(updatedStudentProfile.id),
         };
         
         const scoreResult = await calculateTalentScore({ profileData: JSON.stringify(fullProfile) });
         
-        const updatedStudent = { ...targetUser, talentScore: scoreResult.talentScore };
-        updateUser(updatedStudent as AppUser);
+        const finalUpdatedStudent = { ...updatedStudentProfile, talentScore: scoreResult.talentScore };
+        if (updateUser(finalUpdatedStudent as AppUser)) {
+           // If current user is the one being edited, update the state
+           if (currentUser?.id === finalUpdatedStudent.id) {
+               setTargetUser(finalUpdatedStudent);
+           }
+        }
 
         toast({ title: "Profil Yeniləndi!", description: `Yeni istedad balınız: ${scoreResult.talentScore}. ${scoreResult.reasoning}` });
     } catch (error) {
@@ -194,7 +206,7 @@ export default function EditProfilePage() {
     } finally {
         setIsSaving(false);
     }
-  }, [targetUser, toast, updateUser]);
+  }, [toast, updateUser, currentUser]);
 
   const handleGenericSubmit = async (submitAction: () => Promise<any>, successMessage: string, formToReset?: any) => {
     if (!targetUser) return;
@@ -203,8 +215,11 @@ export default function EditProfilePage() {
       await submitAction();
       toast({ title: successMessage });
       if (formToReset) formToReset.reset();
-      fetchData();
-      await triggerTalentScoreUpdate();
+      await fetchData();
+      const updatedStudent = await getStudentById(targetUser.id);
+      if (updatedStudent) {
+          triggerTalentScoreUpdate(updatedStudent);
+      }
     } catch (error) {
       console.error(`Error: ${error}`);
       toast({ variant: "destructive", title: "Xəta", description: "Əməliyyat zamanı xəta baş verdi." });
@@ -223,22 +238,22 @@ export default function EditProfilePage() {
   
   const onProjectSubmit: SubmitHandler<z.infer<typeof projectSchema>> = (data) => {
     handleGenericSubmit(async () => {
-        const newProject: Omit<Project, 'id'> = { ...data, studentId: targetUser!.id, id: uuidv4() };
-        await addProject(newProject as Project);
+        const newProject: Project = { ...data, id: uuidv4(), studentId: targetUser!.id };
+        await addProject(newProject);
     }, "Layihə əlavə edildi", projectForm);
   };
   
   const onAchievementSubmit: SubmitHandler<z.infer<typeof achievementSchema>> = (data) => {
     handleGenericSubmit(async () => {
-        const newAchievement: Omit<Achievement, 'id'> = { ...data, studentId: targetUser!.id, id: uuidv4() };
-        await addAchievement(newAchievement as Achievement);
+        const newAchievement: Achievement = { ...data, id: uuidv4(), studentId: targetUser!.id };
+        await addAchievement(newAchievement);
     }, "Nailiyyət əlavə edildi", achievementForm);
   };
   
   const onCertificateSubmit: SubmitHandler<z.infer<typeof certificateSchema>> = (data) => {
     handleGenericSubmit(async () => {
-        const newCertificate: Omit<Certificate, 'id'> = { ...data, studentId: targetUser!.id, id: uuidv4() };
-        await addCertificate(newCertificate as Certificate);
+        const newCertificate: Certificate = { ...data, id: uuidv4(), studentId: targetUser!.id };
+        await addCertificate(newCertificate);
     }, "Sertifikat əlavə edildi", certificateForm);
   };
   
@@ -253,8 +268,11 @@ export default function EditProfilePage() {
               case 'certificate': await deleteCertificate(docId, targetUser.id); break;
           }
           toast({ title: "Element silindi", description: "Seçilmiş element uğurla silindi." });
-          fetchData();
-          await triggerTalentScoreUpdate();
+          await fetchData();
+          const updatedStudent = await getStudentById(targetUser.id);
+          if (updatedStudent) {
+              triggerTalentScoreUpdate(updatedStudent);
+          }
       } catch (error) {
           console.error("Error deleting document:", error);
           toast({ variant: "destructive", title: "Xəta", description: "Elementi silərkən xəta baş verdi." });

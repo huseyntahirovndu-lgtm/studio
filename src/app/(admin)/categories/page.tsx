@@ -62,6 +62,8 @@ export default function AdminCategoriesPage() {
       setNewCategoryName('');
       setIsDialogOpen(false);
       toast({ title: "Kateqoriya uğurla əlavə edildi." });
+    } else {
+        toast({ variant: 'destructive', title: "Xəta", description: "Kateqoriya adı boş ola bilməz." });
     }
   };
 
