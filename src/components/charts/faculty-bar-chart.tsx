@@ -14,22 +14,27 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
-import { faculties, students } from '@/lib/data';
-
-const chartData = faculties.map(faculty => ({
-    name: faculty.split(' ')[0],
-    total: students.filter(student => student.faculty === faculty).length
-}));
+import { Student } from '@/types';
 
 
-const chartConfig = {
-  total: {
-    label: 'Tələbə sayı',
-    color: 'hsl(var(--chart-1))',
-  },
-};
+interface FacultyBarChartProps {
+    students: Student[];
+    faculties: string[];
+}
 
-export function FacultyBarChart() {
+export function FacultyBarChart({ students, faculties }: FacultyBarChartProps) {
+  const chartData = faculties.map(faculty => ({
+      name: faculty.split(' ')[0],
+      total: students.filter(student => student.faculty === faculty).length
+  }));
+
+  const chartConfig = {
+    total: {
+      label: 'Tələbə sayı',
+      color: 'hsl(var(--chart-1))',
+    },
+  };
+
   return (
     <Card className="h-full">
       <CardHeader>

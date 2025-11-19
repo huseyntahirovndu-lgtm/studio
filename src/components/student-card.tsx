@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowUpRight, Award, Star } from 'lucide-react';
+import { ArrowUpRight, Star } from 'lucide-react';
 import type { Student } from '@/types';
 import {
   Card,
@@ -18,7 +18,7 @@ interface StudentCardProps {
   className?: string;
 }
 
-const categoryColors: { [key in Student['mainCategory']]: string } = {
+const categoryColors: { [key: string]: string } = {
   STEM: 'bg-category-stem',
   Humanitar: 'bg-category-humanitarian',
   İncəsənət: 'bg-category-art',
@@ -30,18 +30,18 @@ const categoryColors: { [key in Student['mainCategory']]: string } = {
 
 export function StudentCard({ student, className }: StudentCardProps) {
   const {
-    name,
-    surname,
+    firstName,
+    lastName,
     faculty,
     profilePictureUrl,
     profilePictureHint,
     skills,
     talentScore,
     id,
-    mainCategory
+    category
   } = student;
   
-  const categoryColor = categoryColors[mainCategory] || 'bg-muted';
+  const categoryColor = categoryColors[category] || 'bg-muted';
 
   return (
     <Card className={cn("flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1", className)}>
@@ -49,11 +49,11 @@ export function StudentCard({ student, className }: StudentCardProps) {
         <div className={`h-2 w-full ${categoryColor}`}></div>
         <div className="p-6 flex items-center gap-4">
           <Avatar className="h-16 w-16 border-4 border-background shadow-md">
-            <AvatarImage src={profilePictureUrl} alt={`${name} ${surname}`} data-ai-hint={profilePictureHint} />
-            <AvatarFallback>{name.charAt(0)}{surname.charAt(0)}</AvatarFallback>
+            <AvatarImage src={profilePictureUrl} alt={`${firstName} ${lastName}`} data-ai-hint={profilePictureHint} />
+            <AvatarFallback>{firstName?.charAt(0)}{lastName?.charAt(0)}</AvatarFallback>
           </Avatar>
           <div>
-            <h3 className="text-xl font-bold">{`${name} ${surname}`}</h3>
+            <h3 className="text-xl font-bold">{`${firstName} ${lastName}`}</h3>
             <p className="text-sm text-muted-foreground">{faculty}</p>
           </div>
         </div>
@@ -62,7 +62,7 @@ export function StudentCard({ student, className }: StudentCardProps) {
         <div className="flex items-center gap-2 mb-4">
             <div className="flex items-center gap-1 text-amber-500">
                 <Star className="w-5 h-5 fill-current" />
-                <span className="font-bold text-lg text-foreground">{talentScore}</span>
+                <span className="font-bold text-lg text-foreground">{talentScore || 0}</span>
             </div>
             <p className="text-sm text-muted-foreground">İstedad balı</p>
         </div>

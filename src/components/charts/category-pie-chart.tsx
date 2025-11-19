@@ -16,10 +16,19 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
-import { categories, students } from '@/lib/data';
-import { Category } from '@/types';
+import { Student } from '@/types';
 
-const categoryColors: Record<Category, string> = {
+const categories = [
+  'STEM',
+  'Humanitar',
+  'İncəsənət',
+  'İdman',
+  'Sahibkarlıq',
+  'Texnologiya',
+];
+
+
+const categoryColors: Record<string, string> = {
     STEM: 'hsl(var(--category-stem))',
     Humanitar: 'hsl(var(--category-humanitarian))',
     İncəsənət: 'hsl(var(--category-art))',
@@ -28,20 +37,24 @@ const categoryColors: Record<Category, string> = {
     Texnologiya: 'hsl(var(--category-technology))',
 };
 
-const chartData = categories.map((category) => ({
-  name: category,
-  value: students.filter((student) => student.mainCategory === category).length,
-  fill: categoryColors[category],
-}));
+interface CategoryPieChartProps {
+  students: Student[];
+}
 
-const chartConfig = {
-  value: {
-    label: 'Tələbələr',
-  },
-  ...Object.fromEntries(categories.map(cat => [cat, {label: cat}]))
-};
+export function CategoryPieChart({ students }: CategoryPieChartProps) {
+  const chartData = categories.map((category) => ({
+    name: category,
+    value: students.filter((student) => student.category === category).length,
+    fill: categoryColors[category],
+  }));
 
-export function CategoryPieChart() {
+  const chartConfig = {
+    value: {
+      label: 'Tələbələr',
+    },
+    ...Object.fromEntries(categories.map(cat => [cat, {label: cat}]))
+  };
+
   return (
     <Card className="flex flex-col h-full">
       <CardHeader className="items-center pb-0">

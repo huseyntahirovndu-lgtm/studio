@@ -6,15 +6,7 @@ export type Category =
   | 'Sahibkarlıq'
   | 'Texnologiya';
 
-export type Faculty =
-  | 'İqtisadiyyat və İdarəetmə'
-  | 'Mühəndislik'
-  | 'Tibb'
-  | 'Memarlıq'
-  | 'Pedaqoji'
-  | 'Sosial İdarəetmə və Hüquq'
-  | 'Beynəlxalq Münasibətlər və Xarici Dillər'
-  | 'İncəsənət';
+export type Faculty = string;
 
 export type AchievementLevel =
   | 'Beynəlxalq'
@@ -23,40 +15,50 @@ export type AchievementLevel =
   | 'Universitet';
 
 export interface Project {
+  id: string;
+  studentId: string;
   title: string;
   description: string;
   role: string;
   link?: string;
-  imageUrl?: string;
+  mediaLink?: string;
 }
 
 export interface Achievement {
+  id: string;
+  studentId: string;
   name: string;
   position: string;
-  date: string;
+  date: string; // ISO 8601 format
   level: AchievementLevel;
+}
+
+export interface Certificate {
+  id: string;
+  studentId: string;
+  certificateURL: string;
 }
 
 export interface Student {
   id: string;
-  name: string;
-  surname: string;
-  faculty: Faculty;
+  firstName: string;
+  lastName: string;
+  email: string;
+  faculty: string;
   major: string;
-  course: number;
-  profilePictureUrl: string;
-  profilePictureHint: string;
+  courseYear: number;
   skills: string[];
-  mainCategory: Category;
-  projects: Project[];
-  achievements: Achievement[];
-  socialLinks: {
-    linkedin?: string;
-    github?: string;
-    behance?: string;
-    instagram?: string;
-    portfolio?: string;
-  };
-  talentScore: number;
-  joinDate: string; // ISO 8601 format
+  category: string;
+  projectIds?: string[];
+  achievementIds?: string[];
+  certificateIds?: string[];
+  linkedInURL?: string;
+  githubURL?: string;
+  behanceURL?: string;
+  instagramURL?: string;
+  portfolioURL?: string;
+  talentScore?: number;
+  profilePictureUrl?: string; // Not in schema, but useful for UI
+  profilePictureHint?: string; // Not in schema, but useful for UI
+  createdAt?: string; // Not in schema, but useful for UI
 }

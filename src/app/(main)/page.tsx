@@ -3,28 +3,54 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {
   ArrowRight,
-  BarChart,
-  PieChart,
   Users,
-  Trophy,
   Building,
+  Trophy,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StatCard } from '@/components/stat-card';
 import { StudentCard } from '@/components/student-card';
-import { students, faculties } from '@/lib/data';
 import { CategoryPieChart } from '@/components/charts/category-pie-chart';
 import { FacultyBarChart } from '@/components/charts/faculty-bar-chart';
-import { Logo } from '@/components/logo';
+import { useCollection } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import { useFirestore, useMemoFirebase } from '@/firebase/provider';
+import { Student } from '@/types';
 
 export default function HomePage() {
-  const topTalents = [...students]
-    .sort((a, b) => b.talentScore - a.talentScore)
-    .slice(0, 5);
-  const newMembers = [...students]
-    .sort((a, b) => new Date(b.joinDate).getTime() - new Date(a.joinDate).getTime())
-    .slice(0, 5);
-  const totalAchievements = students.reduce((acc, s) => acc + s.achievements.length, 0);
+  const firestore = useFirestore();
+
+  const studentsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'users');
+  }, [firestore]);
+
+  const { data: students, isLoading: isLoadingStudents } = useCollection<Student>(studentsQuery);
+  
+  const facultiesQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'faculties');
+  }, [firestore]);
+  
+  const { data: faculties, isLoading: isLoadingFaculties } = useCollection(facultiesQuery);
+
+  const topTalents = students
+    ? [...students]
+        .sort((a, b) => (b.talentScore || 0) - (a.talentScore || 0))
+        .slice(0, 5)
+    : [];
+  
+  const newMembers = students
+    ? [...students]
+        .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+        .slice(0, 5)
+    : [];
+
+  const totalAchievements = students?.reduce((acc, s) => acc + (s.achievementIds?.length || 0), 0) || 0;
+  
+  if (isLoadingStudents || isLoadingFaculties) {
+    return <div>Yüklənir...</div>
+  }
 
   return (
     <div className="flex flex-col">
@@ -55,17 +81,17 @@ export default function HomePage() {
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
               title="Ümumi Tələbə Sayı"
-              value={students.length.toString()}
+              value={students?.length.toString() ?? '0'}
               icon={Users}
             />
             <StatCard
               title="Aktiv Profillər"
-              value={students.length.toString()}
+              value={students?.length.toString() ?? '0'}
               icon={Users}
             />
             <StatCard
               title="Fakültə Sayı"
-              value={faculties.length.toString()}
+              value={faculties?.length.toString() ?? '0'}
               icon={Building}
             />
             <StatCard
@@ -80,10 +106,10 @@ export default function HomePage() {
         <section className="py-12">
            <div className="grid gap-8 lg:grid-cols-5">
               <div className="lg:col-span-2">
-                  <CategoryPieChart />
+                  <CategoryPieChart students={students || []} />
               </div>
               <div className="lg:col-span-3">
-                  <FacultyBarChart />
+                  <FacultyBarChart students={students || []} faculties={faculties?.map(f => f.name) || []} />
               </div>
           </div>
         </section>
