@@ -113,13 +113,11 @@ export default function RegisterStudentPage() {
         talentScore: 0,
       };
 
-      // Calculate talent score with AI
       try {
         const scoreResult = await calculateTalentScore({ profileData: JSON.stringify(newUserProfile) });
         newUserProfile.talentScore = scoreResult.talentScore;
       } catch (aiError) {
         console.error("AI talent score calculation failed:", aiError);
-        // Proceed with a default score if AI fails
         newUserProfile.talentScore = Math.floor(Math.random() * 30) + 10;
       }
       
