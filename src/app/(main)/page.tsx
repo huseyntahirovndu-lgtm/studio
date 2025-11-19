@@ -29,7 +29,7 @@ export default function HomePage() {
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="relative w-full flex items-center bg-black">
+      <section className="relative w-full flex items-center">
         <Image
           src="https://i.ibb.co/cXv2KzRR/q2.jpg"
           alt="Naxçıvan Dövlət Universiteti"
@@ -40,13 +40,13 @@ export default function HomePage() {
           data-ai-hint="university building"
         />
         
-        <div className="absolute inset-0 flex items-center bg-black/50">
+        <div className="absolute inset-0 flex items-center">
           <div className="container mx-auto px-4 md:px-8 lg:px-12">
             <div className="max-w-3xl text-left">
-              <h1 className="text-xl md:text-2xl lg:text-3xl font-bold mb-4 text-white">
+              <h1 className="text-xl md:text-2xl lg:text-3xl font-bold mb-4 text-foreground">
                 Naxçıvan Dövlət Universiteti <br /> Tələbə İstedad Bankı
               </h1>
-              <p className="text-lg md:text-xl mb-8 text-white">
+              <p className="text-lg md:text-xl mb-8 text-foreground">
                 İstedadını göstərəcək platforma.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
@@ -58,7 +58,7 @@ export default function HomePage() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="bg-transparent border-white text-white hover:bg-white hover:text-primary"
+                  className="bg-transparent border-primary text-primary hover:bg-primary hover:text-primary-foreground"
                   asChild
                 >
                   <Link href="/register">Qeydiyyat</Link>
