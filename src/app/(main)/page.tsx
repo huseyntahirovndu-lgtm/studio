@@ -29,7 +29,7 @@ export default function HomePage() {
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="relative w-full h-screen flex items-center justify-center text-white">
+      <section className="relative w-full h-[550px] md:h-[650px] lg:h-[750px] flex items-center text-white">
         <Image
           src="https://i.ibb.co/cXv2KzRR/q2.jpg"
           alt="Naxçıvan Dövlət Universiteti"
@@ -39,12 +39,11 @@ export default function HomePage() {
           priority
           data-ai-hint="university building"
         />
-        <div className="absolute inset-0" />
+        <div className="absolute inset-0 bg-black/30" />
         <div className="relative z-10 container mx-auto px-4">
           <div className="max-w-3xl text-left">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
-              <span className="block">Naxçıvan Dövlət Universiteti</span>
-              <span className="block">Tələbə İstedad Bankı</span>
+              Naxçıvan Dövlət Universiteti Tələbə İstedad Bankı
             </h1>
             <p className="text-lg md:text-xl mb-8">
               İstedadını göstərəcək platforma.
