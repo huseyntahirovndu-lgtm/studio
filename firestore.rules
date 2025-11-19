@@ -73,7 +73,7 @@ service cloud.firestore {
      * @allow (delete) A user can delete their own profile.
      */
     match /users/{userId} {
-      allow get, list: if isSignedIn();
+      allow get, list: if true;
       allow create: if isValidNewStudentData(userId);
       allow update: if isOwner(userId) && isValidStudentUpdateData();
       allow delete: if isOwner(userId);
