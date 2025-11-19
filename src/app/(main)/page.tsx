@@ -120,7 +120,7 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="relative w-full h-screen">
           <Image
-            src="https://i.ibb.co/1wN1rhJ/NAX-VAN-D-VL-T-UN-VERS-TET-N-N-ZD-ND-G-MNAZ-YA.png"
+            src="https://i.ibb.co/yFjxDz0w/q1.jpg"
             alt="Naxçıvan Dövlət Universiteti"
             fill
             className="object-cover"
