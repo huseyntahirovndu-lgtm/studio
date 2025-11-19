@@ -40,7 +40,7 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-black/30" />
         <div className="relative container mx-auto px-4 z-10">
           <div className="max-w-3xl text-left">
-             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
                <span>Naxçıvan Dövlət Universiteti</span> <br /> <span>Tələbə İstedad Bankı</span>
             </h1>
             <p className="text-lg md:text-xl mb-8">
