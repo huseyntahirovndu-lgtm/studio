@@ -11,8 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
-import { doc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 
 interface StudentCardProps {
@@ -31,11 +30,10 @@ const categoryColors: { [key: string]: string } = {
 
 
 export function StudentCard({ student, className }: StudentCardProps) {
-  const { profile: currentUserProfile } = useUser();
-  const firestore = useFirestore();
+  const { user, updateUser } = useAuth();
   const { toast } = useToast();
 
-  const organization = currentUserProfile?.role === 'organization' ? currentUserProfile as Organization : null;
+  const organization = user?.role === 'organization' ? user as Organization : null;
   const isSaved = organization?.savedStudentIds?.includes(student.id);
 
   const {
@@ -54,14 +52,15 @@ export function StudentCard({ student, className }: StudentCardProps) {
 
   const handleBookmark = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent link navigation
-    if (!organization || !firestore) return;
+    if (!organization) return;
 
-    const orgDocRef = doc(firestore, 'organizations', organization.id);
-    const updateData = {
-      savedStudentIds: isSaved ? arrayRemove(student.id) : arrayUnion(student.id)
-    };
+    const currentSavedIds = organization.savedStudentIds || [];
+    const newSavedStudentIds = isSaved
+      ? currentSavedIds.filter(id => id !== student.id)
+      : [...currentSavedIds, student.id];
 
-    updateDocumentNonBlocking(orgDocRef, updateData);
+    const updatedOrg = { ...organization, savedStudentIds: newSavedStudentIds };
+    updateUser(updatedOrg);
 
     toast({
       title: isSaved ? "Siyahıdan çıxarıldı" : "Yadda saxlanıldı",

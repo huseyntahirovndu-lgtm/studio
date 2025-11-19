@@ -1,48 +1,54 @@
 'use client';
-import { useUser, useCollection, useMemoFirebase } from '@/firebase';
+import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building, Users, FileSearch, Bookmark } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Organization, Student } from '@/types';
 import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
-import { collection, query, where } from 'firebase/firestore';
-import { useFirestore } from '@/firebase/provider';
 import { StudentCard } from '@/components/student-card';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { getStudentById } from '@/lib/data';
 
 export default function OrganizationDashboard() {
-    const { user, isUserLoading, profile } = useUser();
+    const { user, loading } = useAuth();
     const router = useRouter();
-    const firestore = useFirestore();
-    
+    const [savedStudents, setSavedStudents] = useState<Student[]>([]);
+    const [isLoadingStudents, setIsLoadingStudents] = useState(true);
+
+    const orgProfile = user as Organization;
+
     useEffect(() => {
-        if (!isUserLoading && (!user || (profile as Organization)?.role !== 'organization')) {
+        if (!loading && (!user || (user as Organization)?.role !== 'organization')) {
             router.push('/login');
         }
-    }, [user, isUserLoading, profile, router]);
+    }, [user, loading, router]);
 
-    const orgProfile = profile as Organization;
+    useEffect(() => {
+      if (orgProfile?.savedStudentIds) {
+        setIsLoadingStudents(true);
+        const studentPromises = orgProfile.savedStudentIds.map(id => getStudentById(id));
+        Promise.all(studentPromises).then(results => {
+          const students = results.filter((s): s is Student => s !== undefined);
+          const enrichedStudents = students.map((student, index) => {
+            const placeholder = PlaceHolderImages[index % PlaceHolderImages.length];
+            return {
+              ...student,
+              profilePictureUrl: placeholder.imageUrl,
+              profilePictureHint: placeholder.imageHint,
+            };
+          });
+          setSavedStudents(enrichedStudents);
+          setIsLoadingStudents(false);
+        });
+      } else {
+        setIsLoadingStudents(false);
+      }
+    }, [orgProfile]);
 
-    const savedStudentsQuery = useMemoFirebase(() => {
-        if (!firestore || !orgProfile || !orgProfile.savedStudentIds || orgProfile.savedStudentIds.length === 0) return null;
-        return query(collection(firestore, 'users'), where('id', 'in', orgProfile.savedStudentIds));
-    }, [firestore, orgProfile]);
 
-    const { data: savedStudentsData, isLoading: isLoadingSavedStudents } = useCollection<Student>(savedStudentsQuery);
-
-    const savedStudents = savedStudentsData?.map((student, index) => {
-        const placeholder = PlaceHolderImages[index % PlaceHolderImages.length];
-        return {
-          ...student,
-          profilePictureUrl: placeholder.imageUrl,
-          profilePictureHint: placeholder.imageHint,
-        };
-    }) || [];
-
-
-    if (isUserLoading || !user || !orgProfile) {
+    if (loading || !user || !orgProfile) {
         return <div className="container mx-auto py-8 text-center">Yüklənir...</div>;
     }
 
@@ -82,7 +88,7 @@ export default function OrganizationDashboard() {
                         <CardDescription>Bəyəndiyiniz və gələcək layihələr üçün nəzərdə tutduğunuz tələbələrin siyahısı.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        {isLoadingSavedStudents ? (
+                        {isLoadingStudents ? (
                             <p>Yüklənir...</p>
                         ) : savedStudents && savedStudents.length > 0 ? (
                            <div className="grid gap-6 md:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">

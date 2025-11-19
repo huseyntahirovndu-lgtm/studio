@@ -1,27 +1,28 @@
 'use client';
-import { useUser } from '@/firebase';
+import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { User, ClipboardList, PlusCircle, Edit } from 'lucide-react';
+import { User, ClipboardList, Edit } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Student } from '@/types';
 import { Progress } from '@/components/ui/progress';
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import type { LucideIcon } from 'lucide-react';
+
 
 export default function StudentDashboard() {
-    const { user, isUserLoading, profile } = useUser();
+    const { user, loading } = useAuth();
     const router = useRouter();
     
     useEffect(() => {
-        if (!isUserLoading && (!user || (profile as Student)?.role !== 'student')) {
+        if (!loading && (!user || (user as Student)?.role !== 'student')) {
             router.push('/login');
         }
-    }, [user, isUserLoading, profile, router]);
+    }, [user, loading, router]);
 
-    const studentProfile = profile as Student;
+    const studentProfile = user as Student;
 
-    if (isUserLoading || !user || !studentProfile) {
+    if (loading || !user || !studentProfile) {
         return <div className="container mx-auto py-8 text-center">Yüklənir...</div>;
     }
     
@@ -77,7 +78,7 @@ export default function StudentDashboard() {
                     title="İctimai Profilim"
                     description="Profilinizin digər istifadəçilər tərəfindən necə göründüyünə baxın."
                     icon={User}
-                    href={`/profile/${user.uid}`}
+                    href={`/profile/${user.id}`}
                 />
                  <DashboardActionCard
                     title="Reytinqlərə Bax"
@@ -115,8 +116,6 @@ export default function StudentDashboard() {
         </div>
     );
 }
-
-import type { LucideIcon } from 'lucide-react';
 
 interface DashboardActionCardProps {
     title: string;

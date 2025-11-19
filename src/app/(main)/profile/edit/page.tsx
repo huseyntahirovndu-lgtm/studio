@@ -1,6 +1,5 @@
 'use client';
-import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { doc, collection, serverTimestamp, getDocs, getDoc, deleteDoc } from 'firebase/firestore';
+import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
@@ -27,7 +26,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import { getProjectsByStudentId, getAchievementsByStudentId, getCertificatesByStudentId, addProject, addAchievement, addCertificate, deleteProject, deleteAchievement, deleteCertificate } from '@/lib/data';
+import { v4 as uuidv4 } from 'uuid';
 
 // Schemas
 const profileSchema = z.object({
@@ -69,21 +70,17 @@ const certificateSchema = z.object({
 
 
 export default function EditProfilePage() {
-  const { user, isUserLoading, profile: userProfile } = useUser();
-  const firestore = useFirestore();
+  const { user, loading, updateUser } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const student = userProfile as Student;
+  const student = user as Student;
 
   const [isSaving, setIsSaving] = useState(false);
   
-  const projectsRef = useMemoFirebase(() => user ? collection(firestore!, 'users', user.uid, 'projects') : null, [firestore, user]);
-  const achievementsRef = useMemoFirebase(() => user ? collection(firestore!, 'users', user.uid, 'achievements') : null, [firestore, user]);
-  const certificatesRef = useMemoFirebase(() => user ? collection(firestore!, 'users', user.uid, 'certificates') : null, [firestore, user]);
-  
-  const { data: projects, isLoading: projectsLoading, refetch: refetchProjects } = useCollection<Project>(projectsRef);
-  const { data: achievements, isLoading: achievementsLoading, refetch: refetchAchievements } = useCollection<Achievement>(achievementsRef);
-  const { data: certificates, isLoading: certificatesLoading, refetch: refetchCertificates } = useCollection<Certificate>(certificatesRef);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [certificates, setCertificates] = useState<Certificate[]>([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
   const profileForm = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
@@ -105,11 +102,25 @@ export default function EditProfilePage() {
     defaultValues: { name: '', certificateURL: '', level: 'Universitet' }
   });
 
+  const fetchData = useCallback(async () => {
+    if (!user) return;
+    setIsLoadingData(true);
+    const [proj, ach, cert] = await Promise.all([
+      getProjectsByStudentId(user.id),
+      getAchievementsByStudentId(user.id),
+      getCertificatesByStudentId(user.id),
+    ]);
+    setProjects(proj);
+    setAchievements(ach);
+    setCertificates(cert);
+    setIsLoadingData(false);
+  }, [user]);
+
   useEffect(() => {
-    if (!isUserLoading && (!user || student?.role !== 'student')) {
+    if (!loading && (!user || (user as Student)?.role !== 'student')) {
       router.push('/login');
     }
-  }, [user, isUserLoading, student, router]);
+  }, [user, loading, router]);
 
   useEffect(() => {
     if (student) {
@@ -125,37 +136,26 @@ export default function EditProfilePage() {
         instagramURL: student.instagramURL || '',
         portfolioURL: student.portfolioURL || '',
       });
+      fetchData();
     }
-  }, [student, profileForm]);
+  }, [student, profileForm, fetchData]);
 
   const triggerTalentScoreUpdate = useCallback(async () => {
-    if (!user || !firestore) return;
+    if (!user) return;
     setIsSaving(true);
     toast({ title: "İstedad Balı Hesablanır...", description: "Profiliniz yenilənir, bu bir az vaxt ala bilər." });
 
     try {
-        const userDocRef = doc(firestore, 'users', user.uid);
-        
-        // Fetch all data for the profile
-        const studentDoc = await getDoc(userDocRef);
-        const studentData = studentDoc.data() as Student;
-        
-        const projectsSnap = await getDocs(collection(firestore, 'users', user.uid, 'projects'));
-        const achievementsSnap = await getDocs(collection(firestore, 'users', user.uid, 'achievements'));
-        const certificatesSnap = await getDocs(collection(firestore, 'users', user.uid, 'certificates'));
-
         const fullProfile = {
-            ...studentData,
-            projects: projectsSnap.docs.map(d => d.data()),
-            achievements: achievementsSnap.docs.map(d => d.data()),
-            certificates: certificatesSnap.docs.map(d => d.data()),
+            ...user,
+            projects: await getProjectsByStudentId(user.id),
+            achievements: await getAchievementsByStudentId(user.id),
+            certificates: await getCertificatesByStudentId(user.id),
         };
         
-        // Calculate talent score
         const scoreResult = await calculateTalentScore({ profileData: JSON.stringify(fullProfile) });
 
-        // Update score in Firestore
-        updateDocumentNonBlocking(userDocRef, { talentScore: scoreResult.talentScore });
+        updateUser({ ...user, talentScore: scoreResult.talentScore });
 
         toast({ title: "Profil Yeniləndi!", description: `Yeni istedad balınız: ${scoreResult.talentScore}. ${scoreResult.reasoning}` });
     } catch (error) {
@@ -164,7 +164,7 @@ export default function EditProfilePage() {
     } finally {
         setIsSaving(false);
     }
-  }, [user, firestore, toast]);
+  }, [user, toast, updateUser]);
 
   const handleGenericSubmit = async (submitAction: () => Promise<any>, successMessage: string, formToReset: any) => {
     if (!user) return;
@@ -173,11 +173,7 @@ export default function EditProfilePage() {
       await submitAction();
       toast({ title: successMessage });
       formToReset.reset();
-      // Refetch data after submission
-      if (formToReset === projectForm) refetchProjects();
-      if (formToReset === achievementForm) refetchAchievements();
-      if (formToReset === certificateForm) refetchCertificates();
-
+      fetchData();
       await triggerTalentScoreUpdate();
     } catch (error) {
       console.error(`Error: ${error}`);
@@ -189,57 +185,44 @@ export default function EditProfilePage() {
 
   const onProfileSubmit: SubmitHandler<z.infer<typeof profileSchema>> = (data) => {
     handleGenericSubmit(async () => {
-        const userDocRef = doc(firestore!, 'users', user!.uid);
-        return updateDocumentNonBlocking(userDocRef, { ...data, updatedAt: serverTimestamp() });
+        const updatedUser = { ...user, ...data };
+        updateUser(updatedUser);
     }, "Profil məlumatları yeniləndi", profileForm);
   };
   
   const onProjectSubmit: SubmitHandler<z.infer<typeof projectSchema>> = (data) => {
     handleGenericSubmit(async () => {
-        const newProject: Omit<Project, 'id' | 'studentId'> = { ...data };
-        return addDocumentNonBlocking(projectsRef!, { ...newProject, studentId: user!.uid });
+        const newProject: Omit<Project, 'id'> = { ...data, studentId: user!.id, id: uuidv4() };
+        await addProject(newProject as Project);
     }, "Layihə əlavə edildi", projectForm);
   };
   
   const onAchievementSubmit: SubmitHandler<z.infer<typeof achievementSchema>> = (data) => {
     handleGenericSubmit(async () => {
-        const newAchievement: Omit<Achievement, 'id' | 'studentId'> = { ...data };
-        return addDocumentNonBlocking(achievementsRef!, { ...newAchievement, studentId: user!.uid });
+        const newAchievement: Omit<Achievement, 'id'> = { ...data, studentId: user!.id, id: uuidv4() };
+        await addAchievement(newAchievement as Achievement);
     }, "Nailiyyət əlavə edildi", achievementForm);
   };
   
   const onCertificateSubmit: SubmitHandler<z.infer<typeof certificateSchema>> = (data) => {
     handleGenericSubmit(async () => {
-        const newCertificate: Omit<Certificate, 'id' | 'studentId'> = { ...data };
-        return addDocumentNonBlocking(certificatesRef!, { ...newCertificate, studentId: user!.uid });
+        const newCertificate: Omit<Certificate, 'id'> = { ...data, studentId: user!.id, id: uuidv4() };
+        await addCertificate(newCertificate as Certificate);
     }, "Sertifikat əlavə edildi", certificateForm);
   };
   
   const handleDelete = async (docId: string, itemType: 'project' | 'achievement' | 'certificate') => {
-      if (!user || !firestore) return;
+      if (!user) return;
       setIsSaving(true);
-      let docRef;
-      let refetch: () => void;
-
-      switch (itemType) {
-          case 'project':
-              docRef = doc(firestore, 'users', user.uid, 'projects', docId);
-              refetch = refetchProjects;
-              break;
-          case 'achievement':
-              docRef = doc(firestore, 'users', user.uid, 'achievements', docId);
-              refetch = refetchAchievements;
-              break;
-          case 'certificate':
-              docRef = doc(firestore, 'users', user.uid, 'certificates', docId);
-              refetch = refetchCertificates;
-              break;
-      }
 
       try {
-          await deleteDoc(docRef);
+          switch (itemType) {
+              case 'project': await deleteProject(docId); break;
+              case 'achievement': await deleteAchievement(docId); break;
+              case 'certificate': await deleteCertificate(docId); break;
+          }
           toast({ title: "Element silindi", description: "Seçilmiş element uğurla silindi." });
-          refetch && refetch();
+          fetchData();
           await triggerTalentScoreUpdate();
       } catch (error) {
           console.error("Error deleting document:", error);
@@ -250,7 +233,7 @@ export default function EditProfilePage() {
   };
 
 
-  if (isUserLoading || !student) {
+  if (loading || !student) {
     return <div className="container mx-auto py-8 text-center">Yüklənir...</div>;
   }
 
@@ -341,7 +324,7 @@ export default function EditProfilePage() {
                             <FormItem><FormLabel>Təsvir</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
                         <FormField name="teamMembers" control={projectForm.control} render={({ field }) => (
-                            <FormItem><FormLabel>Komanda Üzvləri</FormLabel><FormControl><Input {...field} placeholder="Adları vergül ilə ayırın" /></FormControl><FormMessage /></FormItem>
+                            <FormItem><FormLabel>Komanda Üzvləri</FormLabel><FormControl><Input {...field} value={Array.isArray(field.value) ? field.value.join(', ') : ''} placeholder="Adları vergül ilə ayırın" /></FormControl><FormMessage /></FormItem>
                         )} />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <FormField name="role" control={projectForm.control} render={({ field }) => (
@@ -370,7 +353,7 @@ export default function EditProfilePage() {
                  <Separator className="my-6" />
                 <h4 className="text-md font-medium mb-4">Mövcud Layihələr</h4>
                 <div className="space-y-4">
-                    {projectsLoading ? <p>Yüklənir...</p> : projects?.map(p => (
+                    {isLoadingData ? <p>Yüklənir...</p> : projects?.map(p => (
                         <div key={p.id} className="flex justify-between items-center p-2 border rounded-md">
                             <span>{p.title}</span>
                              <AlertDialog>
@@ -441,7 +424,7 @@ export default function EditProfilePage() {
                  <Separator className="my-6" />
                 <h4 className="text-md font-medium mb-4">Mövcud Nailiyyətlər</h4>
                 <div className="space-y-4">
-                    {achievementsLoading ? <p>Yüklənir...</p> : achievements?.map(a => (
+                    {isLoadingData ? <p>Yüklənir...</p> : achievements?.map(a => (
                         <div key={a.id} className="flex justify-between items-center p-2 border rounded-md">
                             <span>{a.name} - {a.position}</span>
                              <AlertDialog>
@@ -499,7 +482,7 @@ export default function EditProfilePage() {
                  <Separator className="my-6" />
                 <h4 className="text-md font-medium mb-4">Mövcud Sertifikatlar</h4>
                 <div className="space-y-4">
-                    {certificatesLoading ? <p>Yüklənir...</p> : certificates?.map(c => (
+                    {isLoadingData ? <p>Yüklənir...</p> : certificates?.map(c => (
                         <div key={c.id} className="flex justify-between items-center p-2 border rounded-md">
                             <a href={c.certificateURL} target="_blank" rel="noopener noreferrer" className="hover:underline">{c.name}</a>
                             <AlertDialog>

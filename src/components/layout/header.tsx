@@ -5,11 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/logo';
 import { Menu } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { useUser } from '@/firebase';
+import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
-import { getAuth, signOut } from 'firebase/auth';
-import type { AppUser } from '@/types';
+import type { AppUser, Student } from '@/types';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
@@ -20,15 +19,21 @@ const navLinks = [
 ];
 
 export function Header() {
-  const { user, isUserLoading, profile } = useUser();
-  const appUser = profile as AppUser | null;
+  const { user, loading, logout } = useAuth();
+  const appUser = user as AppUser | null;
   const pathname = usePathname();
 
 
   const handleLogout = async () => {
-    const auth = getAuth();
-    await signOut(auth);
+    logout();
   };
+
+  const getDisplayName = (user: AppUser | null) => {
+    if(!user) return '';
+    if(user.role === 'student') return `${user.firstName} ${user.lastName}`;
+    if(user.role === 'organization') return user.name;
+    return user.email;
+  }
 
   const getInitials = (displayName: string | null | undefined): string => {
     if (!displayName) return '';
@@ -70,22 +75,22 @@ export function Header() {
           ))}
         </nav>
         <div className="flex flex-1 items-center justify-end space-x-2">
-          {isUserLoading ? (
+          {loading ? (
             <div className='h-10 w-10 bg-muted rounded-full animate-pulse' />
           ) : user && appUser ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                    <Avatar className="h-10 w-10">
-                    <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User'} />
-                    <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
+                    {appUser.role === 'student' && (appUser as Student).profilePictureUrl && <AvatarImage src={(appUser as Student).profilePictureUrl} alt={getDisplayName(appUser)} />}
+                    <AvatarFallback>{getInitials(getDisplayName(appUser))}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{user.displayName}</p>
+                    <p className="text-sm font-medium leading-none">{getDisplayName(appUser)}</p>
                     <p className="text-xs leading-none text-muted-foreground">
                       {user.email}
                     </p>
@@ -99,7 +104,7 @@ export function Header() {
                 </DropdownMenuItem>
                 {appUser.role === 'student' && (
                   <DropdownMenuItem asChild>
-                    <Link href={`/profile/${user.uid}`}>Profilimə bax</Link>
+                    <Link href={`/profile/${user.id}`}>Profilimə bax</Link>
                   </DropdownMenuItem>
                 )}
                 {appUser.role === 'student' && (
@@ -160,7 +165,7 @@ export function Header() {
                   ))}
                 </nav>
                 <div className="mt-auto p-4 border-t flex flex-col gap-2">
-                   {!user && !isUserLoading && (
+                   {!user && !loading && (
                      <>
                       <Button variant="outline" className="w-full" asChild>
                         <Link href="/login">Giriş</Link>

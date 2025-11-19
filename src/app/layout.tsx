@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
-import { FirebaseClientProvider } from '@/firebase';
+import { SessionProvider } from '@/hooks/use-auth';
 
 export const metadata: Metadata = {
   title: 'İstedad Mərkəzi - Naxçıvan Dövlət Universiteti',
@@ -22,10 +22,10 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body bg-background antialiased">
-        <FirebaseClientProvider>
+        <SessionProvider>
           {children}
           <Toaster />
-        </FirebaseClientProvider>
+        </SessionProvider>
       </body>
     </html>
   );

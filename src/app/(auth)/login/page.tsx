@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { useAuth, useUser } from '@/firebase';
+import { useAuth } from '@/hooks/use-auth';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -27,7 +26,6 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { FirebaseError } from 'firebase/app';
 import type { AppUser } from '@/types';
 
 const formSchema = z.object({
@@ -37,8 +35,7 @@ const formSchema = z.object({
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const auth = useAuth();
-  const { user, isUserLoading, profile } = useUser();
+  const { user, loading, login } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -52,8 +49,8 @@ export default function LoginPage() {
 
   // Redirect if user is already logged in
   useEffect(() => {
-    if (!isUserLoading && user && profile) {
-      const appUser = profile as AppUser;
+    if (!loading && user) {
+      const appUser = user as AppUser;
       if (appUser.role === 'student') {
         router.push('/student-dashboard');
       } else if (appUser.role === 'organization') {
@@ -62,50 +59,31 @@ export default function LoginPage() {
         router.push('/');
       }
     }
-  }, [user, isUserLoading, profile, router]);
+  }, [user, loading, router]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    if (!auth) {
-        toast({
-            variant: "destructive",
-            title: "Xəta",
-            description: "Firebase xidmətləri mövcud deyil. Zəhmət olmasa, daha sonra yenidən cəhd edin.",
-        });
-        setIsLoading(false);
-        return;
-    }
+    const success = login(values.email, values.password);
 
-    try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
-      // The useEffect above will handle the redirection after successful login and profile load
+    if (success) {
       toast({
         title: 'Uğurlu Giriş',
         description: 'İstedad Mərkəzinə xoş gəlmisiniz!',
       });
-      // We don't router.push here immediately to allow the useUser hook to get the profile
-    } catch (error) {
-      console.error('Login error:', error);
-      let errorMessage = 'Giriş zamanı xəta baş verdi. Zəhmət olmasa, yenidən cəhd edin.';
-      if (error instanceof FirebaseError) {
-        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-          errorMessage = 'E-poçt və ya şifrə yanlışdır.';
-        }
-      }
+      // The useEffect above will handle the redirection
+    } else {
       toast({
         variant: 'destructive',
         title: 'Giriş Uğursuz Oldu',
-        description: errorMessage,
+        description: 'E-poçt və ya şifrə yanlışdır.',
       });
-    } finally {
-      setIsLoading(false);
     }
+    setIsLoading(false);
   }
   
-  if (isUserLoading || user) {
+  if (loading || user) {
     return <div className="text-center">Yönləndirilir...</div>;
   }
-
 
   return (
     <Card className="w-full max-w-sm">

@@ -1,7 +1,5 @@
 'use client';
-import { useUser, useDoc, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
-import { doc, collection, query, where, arrayUnion, arrayRemove } from 'firebase/firestore';
-import { useFirestore } from '@/firebase/provider';
+import { useAuth } from '@/hooks/use-auth';
 import { useParams } from 'next/navigation';
 import { Student, Project, Achievement, Certificate, Organization } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -11,65 +9,63 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Star, Linkedin, Github, Dribbble, Instagram, Link as LinkIcon, Award, Briefcase, FileText, Bookmark } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { getStudentById, getProjectsByStudentId, getAchievementsByStudentId, getCertificatesByStudentId } from '@/lib/data';
 
 export default function ProfilePage() {
   const { id } = useParams();
-  const firestore = useFirestore();
-  const { profile: currentUserProfile } = useUser();
+  const { user: currentUser, updateUser } = useAuth();
   const { toast } = useToast();
 
   const studentId = typeof id === 'string' ? id : '';
-  const organization = currentUserProfile?.role === 'organization' ? currentUserProfile as Organization : null;
+  const organization = currentUser?.role === 'organization' ? currentUser as Organization : null;
 
-  const studentDocRef = useMemoFirebase(() => {
-      if (!firestore || !studentId) return null;
-      return doc(firestore, 'users', studentId);
-  }, [firestore, studentId]);
+  const [student, setStudent] = useState<Student | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [certificates, setCertificates] = useState<Certificate[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const projectsCollectionRef = useMemoFirebase(() => {
-      if (!firestore || !studentId) return null;
-      return collection(firestore, 'users', studentId, 'projects');
-  }, [firestore, studentId]);
+  useEffect(() => {
+    if (!studentId) return;
 
-  const achievementsCollectionRef = useMemoFirebase(() => {
-      if (!firestore || !studentId) return null;
-      return collection(firestore, 'users', studentId, 'achievements');
-  }, [firestore, studentId]);
-
-  const certificatesCollectionRef = useMemoFirebase(() => {
-      if (!firestore || !studentId) return null;
-      return collection(firestore, 'users', studentId, 'certificates');
-  }, [firestore, studentId]);
-
-  const { data: studentData, isLoading: isLoadingStudent } = useDoc<Student>(studentDocRef);
-  const { data: projects, isLoading: isLoadingProjects } = useCollection<Project>(projectsCollectionRef);
-  const { data: achievements, isLoading: isLoadingAchievements } = useCollection<Achievement>(achievementsCollectionRef);
-  const { data: certificates, isLoading: isLoadingCertificates } = useCollection<Certificate>(certificatesCollectionRef);
-
-
-  const student = useMemo(() => {
-    if (!studentData) return null;
-    const placeholder = PlaceHolderImages.find(p => p.id.includes(studentData.id.slice(-1))) || PlaceHolderImages[0];
-    return {
-      ...studentData,
-      profilePictureUrl: placeholder.imageUrl,
-      profilePictureHint: placeholder.imageHint,
+    const fetchData = async () => {
+      setIsLoading(true);
+      const studentData = await getStudentById(studentId);
+      if (studentData) {
+        const studentProjects = await getProjectsByStudentId(studentId);
+        const studentAchievements = await getAchievementsByStudentId(studentId);
+        const studentCertificates = await getCertificatesByStudentId(studentId);
+        
+        const placeholder = PlaceHolderImages.find(p => p.id.includes(studentData.id.slice(-1))) || PlaceHolderImages[0];
+        setStudent({
+          ...studentData,
+          profilePictureUrl: placeholder.imageUrl,
+          profilePictureHint: placeholder.imageHint,
+        });
+        setProjects(studentProjects);
+        setAchievements(studentAchievements);
+        setCertificates(studentCertificates);
+      }
+      setIsLoading(false);
     };
-  }, [studentData]);
+
+    fetchData();
+  }, [studentId]);
   
   const isSaved = organization?.savedStudentIds?.includes(studentId);
 
   const handleBookmark = () => {
-    if (!organization || !firestore || !student) return;
+    if (!organization || !student) return;
 
-    const orgDocRef = doc(firestore, 'organizations', organization.id);
-    const updateData = {
-      savedStudentIds: isSaved ? arrayRemove(student.id) : arrayUnion(student.id)
-    };
+    const currentSavedIds = organization.savedStudentIds || [];
+    const newSavedStudentIds = isSaved
+      ? currentSavedIds.filter(id => id !== student.id)
+      : [...currentSavedIds, student.id];
 
-    updateDocumentNonBlocking(orgDocRef, updateData);
+    const updatedOrg = { ...organization, savedStudentIds: newSavedStudentIds };
+    updateUser(updatedOrg);
 
     toast({
       title: isSaved ? "Siyahıdan çıxarıldı" : "Yadda saxlanıldı",
@@ -77,7 +73,7 @@ export default function ProfilePage() {
     });
   };
 
-  if (isLoadingStudent || isLoadingProjects || isLoadingAchievements || isLoadingCertificates) {
+  if (isLoading) {
     return <div className="container mx-auto py-8 text-center">Yüklənir...</div>;
   }
 

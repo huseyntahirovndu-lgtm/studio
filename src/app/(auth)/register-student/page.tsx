@@ -6,9 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { doc, serverTimestamp, collection } from 'firebase/firestore';
-import { useAuth, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
+import { useAuth } from '@/hooks/use-auth';
 import { calculateTalentScore } from '@/ai/flows/talent-scoring';
 import { Button } from '@/components/ui/button';
 import {
@@ -36,9 +34,7 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { FirebaseError } from 'firebase/app';
-import { seedDatabase } from '@/lib/seed'; // Import seeder
-import { Database } from 'lucide-react'; // Import an icon
+import { faculties, categories } from '@/lib/data';
 
 
 const formSchema = z.object({
@@ -68,23 +64,9 @@ const formSchema = z.object({
 
 export default function RegisterStudentPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [isSeeding, setIsSeeding] = useState(false);
-  const auth = useAuth();
-  const firestore = useFirestore();
+  const { register } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-
-  const facultiesQuery = useMemoFirebase(
-    () => firestore ? collection(firestore, 'faculties') : null,
-    [firestore]
-  );
-  const { data: faculties } = useCollection(facultiesQuery);
-
-  const categoriesQuery = useMemoFirebase(
-    () => firestore ? collection(firestore, 'categories') : null,
-    [firestore]
-  );
-  const { data: categories } = useCollection(categoriesQuery);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -100,108 +82,58 @@ export default function RegisterStudentPage() {
     },
   });
 
-  async function handleSeedDatabase() {
-    if (!firestore) {
-      toast({ variant: 'destructive', title: 'Xəta', description: 'Verilənlər bazası xidməti mövcud deyil.' });
-      return;
-    }
-    setIsSeeding(true);
-    const result = await seedDatabase(firestore);
-    if (result.success) {
-      toast({ title: 'Uğurlu', description: result.message });
-      // Optionally refresh or navigate
-      window.location.reload();
-    } else {
-      toast({ variant: 'destructive', title: 'Xəbərdarlıq', description: result.message });
-    }
-    setIsSeeding(false);
-  }
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
 
-    if (!auth || !firestore) {
-      toast({
-        variant: "destructive",
-        title: "Xəta",
-        description: "Firebase xidmətləri mövcud deyil. Zəhmət olmasa, daha sonra yenidən cəhd edin.",
-      });
-      setIsLoading(false);
-      return;
-    }
+    const newUserProfile: any = {
+      role: 'student' as const,
+      firstName: values.firstName,
+      lastName: values.lastName,
+      email: values.email,
+      faculty: values.faculty,
+      major: values.major,
+      courseYear: values.courseYear,
+      skills: ['Yeni Tələbə'],
+      category: values.category,
+      projectIds: [],
+      achievementIds: [],
+      certificateIds: [],
+      linkedInURL: '',
+      githubURL: '',
+      behanceURL: '',
+      instagramURL: '',
+      portfolioURL: '',
+      talentScore: 0,
+    };
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        values.email,
-        values.password
-      );
-      const user = userCredential.user;
-
-      await updateProfile(user, {
-        displayName: `${values.firstName} ${values.lastName}`,
+      const scoreResult = await calculateTalentScore({
+        profileData: JSON.stringify(newUserProfile)
       });
+      newUserProfile.talentScore = scoreResult.talentScore;
+    } catch (aiError) {
+      console.error("AI talent score calculation failed:", aiError);
+      newUserProfile.talentScore = Math.floor(Math.random() * 30) + 10;
+    }
 
-      const userDocRef = doc(firestore, 'users', user.uid);
-      const newUserProfile: any = {
-        id: user.uid,
-        role: 'student' as const,
-        firstName: values.firstName,
-        lastName: values.lastName,
-        email: values.email,
-        faculty: values.faculty,
-        major: values.major,
-        courseYear: values.courseYear,
-        skills: ['Yeni Tələbə'],
-        category: values.category,
-        createdAt: serverTimestamp(),
-        projectIds: [],
-        achievementIds: [],
-        certificateIds: [],
-        linkedInURL: '',
-        githubURL: '',
-        behanceURL: '',
-        instagramURL: '',
-        portfolioURL: '',
-        talentScore: 0,
-      };
+    const success = register(newUserProfile, values.password);
 
-      try {
-        const scoreResult = await calculateTalentScore({
-          profileData: JSON.stringify(newUserProfile)
-        });
-        newUserProfile.talentScore = scoreResult.talentScore;
-      } catch (aiError) {
-        console.error("AI talent score calculation failed:", aiError);
-        newUserProfile.talentScore = Math.floor(Math.random() * 30) + 10;
-      }
-
-      setDocumentNonBlocking(userDocRef, newUserProfile, { merge: false });
-
+    if (success) {
       toast({
         title: 'Qeydiyyat Uğurlu Oldu',
         description: 'Hesabınız yaradıldı. İstedad Mərkəzinə xoş gəlmisiniz!',
       });
-
-      router.push('/');
-    } catch (error) {
-      console.error('Registration error:', error);
-      let errorMessage = 'Qeydiyyat zamanı xəta baş verdi. Zəhmət olmasa, yenidən cəhd edin.';
-
-      if (error instanceof FirebaseError) {
-        if (error.code === 'auth/email-already-in-use') {
-          errorMessage = 'Bu e-poçt ünvanı artıq istifadə olunur.';
-        }
-      }
-
-      toast({
+      router.push('/login');
+    } else {
+       toast({
         variant: 'destructive',
         title: 'Qeydiyyat Uğursuz Oldu',
-        description: errorMessage,
+        description: 'Bu e-poçt ünvanı artıq istifadə olunur.',
       });
-    } finally {
-      setIsLoading(false);
     }
+
+    setIsLoading(false);
   }
 
   return (
@@ -287,7 +219,7 @@ export default function RegisterStudentPage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {faculties?.map(faculty => (
+                        {faculties.map(faculty => (
                           <SelectItem key={faculty.id} value={faculty.name}>
                             {faculty.name}
                           </SelectItem>
@@ -354,7 +286,7 @@ export default function RegisterStudentPage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {categories?.map(cat => (
+                        {categories.map(cat => (
                           <SelectItem key={cat.id} value={cat.name}>
                             {cat.name}
                           </SelectItem>
@@ -367,7 +299,7 @@ export default function RegisterStudentPage() {
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading || isSeeding}>
+            <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? 'Hesab yaradılır...' : 'Hesab yarat'}
             </Button>
           </form>
@@ -380,19 +312,6 @@ export default function RegisterStudentPage() {
             Daxil olun
           </Link>
         </p>
-         {process.env.NODE_ENV === 'development' && (
-          <div className="text-center w-full">
-            <p className="text-xs text-muted-foreground mb-2">Yalnız developerlər üçün:</p>
-            <Button
-              variant="outline"
-              onClick={handleSeedDatabase}
-              disabled={isSeeding || isLoading}
-            >
-              <Database className="mr-2 h-4 w-4" />
-              {isSeeding ? 'Məlumatlar yerləşdirilir...' : 'Nümunə Məlumatları Yerləşdir'}
-            </Button>
-          </div>
-        )}
       </CardFooter>
     </Card>
   );

@@ -1,6 +1,5 @@
 'use client';
-import { useUser, useFirestore, updateDocumentNonBlocking } from '@/firebase';
-import { doc, serverTimestamp } from 'firebase/firestore';
+import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
@@ -21,11 +20,10 @@ const formSchema = z.object({
 });
 
 export default function EditOrganizationProfilePage() {
-  const { user, isUserLoading, profile: userProfile } = useUser();
-  const firestore = useFirestore();
+  const { user, loading, updateUser } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const organization = userProfile as Organization;
+  const organization = user as Organization;
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -35,10 +33,10 @@ export default function EditOrganizationProfilePage() {
   });
 
   useEffect(() => {
-    if (!isUserLoading && (!user || organization?.role !== 'organization')) {
+    if (!loading && (!user || (user as Organization)?.role !== 'organization')) {
       router.push('/login');
     }
-  }, [user, isUserLoading, organization, router]);
+  }, [user, loading, router]);
 
   useEffect(() => {
     if (organization) {
@@ -51,21 +49,20 @@ export default function EditOrganizationProfilePage() {
   }, [organization, form]);
 
   const onSubmit: SubmitHandler<z.infer<typeof formSchema>> = async (data) => {
-    if (!user || !firestore) return;
+    if (!user) return;
     setIsSaving(true);
-    try {
-      const orgDocRef = doc(firestore, 'organizations', user.uid);
-      await updateDocumentNonBlocking(orgDocRef, { ...data, updatedAt: serverTimestamp() });
+    const updatedUser = { ...user, ...data };
+    const success = updateUser(updatedUser);
+    
+    if (success) {
       toast({ title: "Profil məlumatları uğurla yeniləndi!" });
-    } catch (error) {
-      console.error("Error updating organization profile:", error);
+    } else {
       toast({ variant: "destructive", title: "Xəta", description: "Profil yenilənərkən xəta baş verdi." });
-    } finally {
-      setIsSaving(false);
     }
+    setIsSaving(false);
   };
 
-  if (isUserLoading || !organization) {
+  if (loading || !organization) {
     return <div className="container mx-auto py-8 text-center">Yüklənir...</div>;
   }
 

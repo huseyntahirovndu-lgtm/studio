@@ -1,8 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
-import { useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
-import { useFirestore } from '@/firebase/provider';
+import { useState, useMemo, useEffect } from 'react';
 import { Student } from '@/types';
 import { StudentCard } from '@/components/student-card';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -17,36 +14,29 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
-
+import { students as allStudents, faculties, categories } from '@/lib/data';
 
 export default function SearchPage() {
-  const firestore = useFirestore();
   const [searchTerm, setSearchTerm] = useState('');
   const [facultyFilter, setFacultyFilter] = useState('all');
   const [courseFilter, setCourseFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [isLoading, setIsLoading] = useState(true);
+  const [enrichedStudents, setEnrichedStudents] = useState<Student[]>([]);
 
-  const studentsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'users'), where('role', '==', 'student'));
-  }, [firestore]);
-  
-  const facultiesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'faculties') : null, [firestore]);
-  const categoriesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'categories') : null, [firestore]);
-
-  const { data: students, isLoading: isLoadingStudents } = useCollection<Student>(studentsQuery);
-  const { data: faculties, isLoading: isLoadingFaculties } = useCollection(facultiesQuery);
-  const { data: categories, isLoading: isLoadingCategories } = useCollection(categoriesQuery);
-
-
-  const enrichedStudents = useMemo(() => students?.map((student) => {
-    const placeholder = PlaceHolderImages.find(p => p.id.slice(-1) === student.id.slice(-1)) || PlaceHolderImages[0];
-    return {
-      ...student,
-      profilePictureUrl: placeholder.imageUrl,
-      profilePictureHint: placeholder.imageHint,
-    };
-  }), [students]);
+  useEffect(() => {
+    // Simulate fetching data
+    const studentsWithPics = allStudents.map((student, index) => {
+      const placeholder = PlaceHolderImages.find(p => p.id.slice(-1) === student.id.slice(-1)) || PlaceHolderImages[index % PlaceHolderImages.length];
+      return {
+        ...student,
+        profilePictureUrl: placeholder.imageUrl,
+        profilePictureHint: placeholder.imageHint,
+      };
+    });
+    setEnrichedStudents(studentsWithPics);
+    setIsLoading(false);
+  }, []);
 
   const filteredStudents = useMemo(() => {
     return enrichedStudents?.filter(student => {
@@ -85,7 +75,7 @@ export default function SearchPage() {
           />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {isLoadingFaculties ? <Skeleton className="h-10 w-full" /> : (
+            {isLoading ? <Skeleton className="h-10 w-full" /> : (
               <Select value={facultyFilter} onValueChange={setFacultyFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="Fakültə seçin" />
@@ -108,7 +98,7 @@ export default function SearchPage() {
                 <SelectItem value="4">4-cü kurs</SelectItem>
               </SelectContent>
             </Select>
-            {isLoadingCategories ? <Skeleton className="h-10 w-full" /> : (
+            {isLoading ? <Skeleton className="h-10 w-full" /> : (
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="Kateqoriya seçin" />
@@ -122,7 +112,7 @@ export default function SearchPage() {
         </div>
       </div>
 
-      {isLoadingStudents ? (
+      {isLoading ? (
         <div className="grid gap-6 md:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 12 }).map((_, i) => (
                <Card key={i}>

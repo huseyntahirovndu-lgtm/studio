@@ -12,62 +12,42 @@ import { StatCard } from '@/components/stat-card';
 import { StudentCard } from '@/components/student-card';
 import { CategoryPieChart } from '@/components/charts/category-pie-chart';
 import { FacultyBarChart } from '@/components/charts/faculty-bar-chart';
-import { useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, limit, orderBy } from 'firebase/firestore';
-import { useFirestore } from '@/firebase/provider';
 import { Student } from '@/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Skeleton } from '@/components/ui/skeleton';
+import { students as allStudents, faculties } from '@/lib/data';
+import { useEffect, useState } from 'react';
 
 export default function HomePage() {
-  const firestore = useFirestore();
+  const [students, setStudents] = useState<Student[]>([]);
+  const [topTalents, setTopTalents] = useState<Student[]>([]);
+  const [newMembers, setNewMembers] = useState<Student[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const studentsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'users'), where('role', '==', 'student'));
-  }, [firestore]);
+  useEffect(() => {
+    // Simulate fetching data
+    const enrichedStudents = allStudents.map((student, index) => {
+      const placeholder = PlaceHolderImages[index % PlaceHolderImages.length];
+      return {
+        ...student,
+        profilePictureUrl: placeholder.imageUrl,
+        profilePictureHint: placeholder.imageHint,
+      };
+    });
 
-  const topTalentsQuery = useMemoFirebase(() => {
-      if (!firestore) return null;
-      return query(collection(firestore, 'users'), where('role', '==', 'student'), orderBy('talentScore', 'desc'), limit(5));
-  }, [firestore]);
+    setStudents(enrichedStudents);
 
-  const newMembersQuery = useMemoFirebase(() => {
-      if (!firestore) return null;
-      return query(collection(firestore, 'users'), where('role', '==', 'student'), orderBy('createdAt', 'desc'), limit(5));
-  }, [firestore]);
+    const sortedByTalent = [...enrichedStudents].sort((a, b) => (b.talentScore || 0) - (a.talentScore || 0));
+    setTopTalents(sortedByTalent.slice(0, 5));
 
+    const sortedByDate = [...enrichedStudents].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    setNewMembers(sortedByDate.slice(0, 5));
+    
+    setIsLoading(false);
+  }, []);
 
-  const { data: students, isLoading: isLoadingStudents } = useCollection<Student>(studentsQuery);
-  const { data: topTalentsData, isLoading: isLoadingTopTalents } = useCollection<Student>(topTalentsQuery);
-  const { data: newMembersData, isLoading: isLoadingNewMembers } = useCollection<Student>(newMembersQuery);
+  const totalAchievements = students.reduce((acc, s) => acc + (s.achievementIds?.length || 0), 0);
   
-  const facultiesQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return collection(firestore, 'faculties');
-  }, [firestore]);
-  
-  const { data: faculties, isLoading: isLoadingFaculties } = useCollection(facultiesQuery);
-
-  const enrichStudents = (studentsToEnrich: Student[] | null | undefined) => {
-    return studentsToEnrich?.map((student, index) => {
-        const placeholder = PlaceHolderImages[index % PlaceHolderImages.length];
-        return {
-          ...student,
-          profilePictureUrl: placeholder.imageUrl,
-          profilePictureHint: placeholder.imageHint,
-        };
-      }) || [];
-  }
-
-  const topTalents = enrichStudents(topTalentsData);
-  const newMembers = enrichStudents(newMembersData);
-
-
-  const totalAchievements = students?.reduce((acc, s) => acc + (s.achievementIds?.length || 0), 0) || 0;
-  
-  const isLoading = isLoadingStudents || isLoadingFaculties || isLoadingTopTalents || isLoadingNewMembers;
-
   return (
     <div className="flex flex-col">
       {/* Hero Section */}

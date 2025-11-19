@@ -5,9 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { doc, serverTimestamp } from 'firebase/firestore';
-import { useAuth, useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { useAuth } from '@/hooks/use-auth';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -28,7 +26,6 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { FirebaseError } from 'firebase/app';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: 'Təşkilat adı ən azı 2 hərfdən ibarət olmalıdır.' }),
@@ -40,8 +37,7 @@ const formSchema = z.object({
 
 export default function RegisterOrganizationPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const auth = useAuth();
-  const firestore = useFirestore();
+  const { register } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -58,59 +54,33 @@ export default function RegisterOrganizationPage() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    if (!auth || !firestore) {
-        toast({
-            variant: "destructive",
-            title: "Xəta",
-            description: "Firebase xidmətləri mövcud deyil. Zəhmət olmasa, daha sonra yenidən cəhd edin.",
-        });
-        setIsLoading(false);
-        return;
-    }
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-      const user = userCredential.user;
+    
+    const newUser = {
+      role: 'organization' as const,
+      name: values.name,
+      companyName: values.companyName,
+      sector: values.sector,
+      email: values.email,
+      savedStudentIds: [],
+    };
 
-      await updateProfile(user, {
-        displayName: values.name,
-      });
+    const success = register(newUser, values.password);
 
-      const orgDocRef = doc(firestore, 'organizations', user.uid);
-      const newOrgProfile = {
-        id: user.uid,
-        role: 'organization' as const,
-        name: values.name,
-        companyName: values.companyName,
-        sector: values.sector,
-        email: values.email,
-        createdAt: serverTimestamp(),
-        savedStudentIds: [],
-      };
-
-      setDocumentNonBlocking(orgDocRef, newOrgProfile, { merge: false });
-
+    if (success) {
       toast({
         title: 'Qeydiyyat Uğurlu Oldu',
         description: 'Təşkilat hesabınız yaradıldı.',
       });
-      router.push('/');
-
-    } catch (error) {
-      console.error('Organization registration error:', error);
-      let errorMessage = 'Qeydiyyat zamanı xəta baş verdi. Zəhmət olmasa, yenidən cəhd edin.';
-      if (error instanceof FirebaseError) {
-        if (error.code === 'auth/email-already-in-use') {
-          errorMessage = 'Bu e-poçt ünvanı artıq istifadə olunur.';
-        }
-      }
+      router.push('/login');
+    } else {
       toast({
         variant: 'destructive',
         title: 'Qeydiyyat Uğursuz Oldu',
-        description: errorMessage,
+        description: 'Bu e-poçt ünvanı artıq istifadə olunur.',
       });
-    } finally {
-      setIsLoading(false);
     }
+
+    setIsLoading(false);
   }
 
   return (
