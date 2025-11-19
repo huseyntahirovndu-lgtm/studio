@@ -1,22 +1,22 @@
 'use client';
 import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { doc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, collection, serverTimestamp, getDocs, getDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { useForm, useFieldArray, SubmitHandler } from 'react-hook-form';
+import { useEffect, useState, useCallback } from 'react';
+import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Student, Project, Achievement, Certificate, AchievementLevel, CertificateLevel } from '@/types';
+import { calculateTalentScore } from '@/ai/flows/talent-scoring';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Trash2, PlusCircle, Award, Briefcase, FileText, User as UserIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { v4 as uuidv4 } from 'uuid';
 
 // Schemas
 const profileSchema = z.object({
@@ -24,7 +24,7 @@ const profileSchema = z.object({
   lastName: z.string().min(2, "Soyad ən azı 2 hərf olmalıdır."),
   major: z.string().min(2, "İxtisas boş ola bilməz."),
   courseYear: z.coerce.number().min(1).max(4),
-  skills: z.array(z.string().min(1)),
+  skills: z.string().min(1, "Bacarıqlar boş ola bilməz.").transform(val => val.split(',').map(s => s.trim()).filter(Boolean)),
   linkedInURL: z.string().url().or(z.literal('')),
   githubURL: z.string().url().or(z.literal('')),
   behanceURL: z.string().url().or(z.literal('')),
@@ -60,13 +60,8 @@ export default function EditProfilePage() {
   const { toast } = useToast();
   const student = userProfile as Student;
 
-  // State for forms
-  const [isProfileSaving, setProfileSaving] = useState(false);
-  const [isProjectSaving, setProjectSaving] = useState(false);
-  const [isAchievementSaving, setAchievementSaving] = useState(false);
-  const [isCertificateSaving, setCertificateSaving] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   
-  // Data hooks
   const projectsRef = useMemoFirebase(() => user ? collection(firestore!, 'users', user.uid, 'projects') : null, [firestore, user]);
   const achievementsRef = useMemoFirebase(() => user ? collection(firestore!, 'users', user.uid, 'achievements') : null, [firestore, user]);
   const certificatesRef = useMemoFirebase(() => user ? collection(firestore!, 'users', user.uid, 'certificates') : null, [firestore, user]);
@@ -75,7 +70,6 @@ export default function EditProfilePage() {
   const { data: achievements, isLoading: achievementsLoading } = useCollection<Achievement>(achievementsRef);
   const { data: certificates, isLoading: certificatesLoading } = useCollection<Certificate>(certificatesRef);
 
-  // Forms
   const profileForm = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     mode: 'onChange',
@@ -96,14 +90,12 @@ export default function EditProfilePage() {
     defaultValues: { name: '', certificateURL: '', level: 'Universitet' }
   });
 
-  // Redirect if not a student
   useEffect(() => {
     if (!isUserLoading && (!user || student?.role !== 'student')) {
       router.push('/login');
     }
   }, [user, isUserLoading, student, router]);
 
-  // Set form default values once profile loads
   useEffect(() => {
     if (student) {
       profileForm.reset({
@@ -111,7 +103,7 @@ export default function EditProfilePage() {
         lastName: student.lastName || '',
         major: student.major || '',
         courseYear: student.courseYear || 1,
-        skills: student.skills || [],
+        skills: student.skills?.join(', ') || '',
         linkedInURL: student.linkedInURL || '',
         githubURL: student.githubURL || '',
         behanceURL: student.behanceURL || '',
@@ -119,74 +111,96 @@ export default function EditProfilePage() {
       });
     }
   }, [student, profileForm]);
-  
-  // Handlers
-  const onProfileSubmit: SubmitHandler<z.infer<typeof profileSchema>> = async (data) => {
-    setProfileSaving(true);
+
+  const triggerTalentScoreUpdate = useCallback(async () => {
     if (!user || !firestore) return;
+    setIsSaving(true);
+    toast({ title: "İstedad Balı Hesablanır...", description: "Profiliniz yenilənir, bu bir az vaxt ala bilər." });
+
+    try {
+        const userDocRef = doc(firestore, 'users', user.uid);
+        
+        // Fetch all data for the profile
+        const studentDoc = await getDoc(userDocRef);
+        const studentData = studentDoc.data() as Student;
+        
+        const projectsSnap = await getDocs(collection(firestore, 'users', user.uid, 'projects'));
+        const achievementsSnap = await getDocs(collection(firestore, 'users', user.uid, 'achievements'));
+        const certificatesSnap = await getDocs(collection(firestore, 'users', user.uid, 'certificates'));
+
+        const fullProfile = {
+            ...studentData,
+            projects: projectsSnap.docs.map(d => d.data()),
+            achievements: achievementsSnap.docs.map(d => d.data()),
+            certificates: certificatesSnap.docs.map(d => d.data()),
+        };
+        
+        // Calculate talent score
+        const scoreResult = await calculateTalentScore({ profileData: JSON.stringify(fullProfile) });
+
+        // Update score in Firestore
+        updateDocumentNonBlocking(userDocRef, { talentScore: scoreResult.talentScore });
+
+        toast({ title: "Profil Yeniləndi!", description: `Yeni istedad balınız: ${scoreResult.talentScore}. ${scoreResult.reasoning}` });
+    } catch (error) {
+        console.error("Error updating talent score:", error);
+        toast({ variant: "destructive", title: "Xəta", description: "İstedad balını yeniləyərkən xəta baş verdi." });
+    } finally {
+        setIsSaving(false);
+    }
+  }, [user, firestore, toast]);
+
+  const onProfileSubmit: SubmitHandler<z.infer<typeof profileSchema>> = async (data) => {
+    if (!user || !firestore) return;
+    setIsSaving(true);
 
     const userDocRef = doc(firestore, 'users', user.uid);
-    
-    // We only update the fields from this form
-    const updatedData = {
-        ...data,
-        updatedAt: serverTimestamp(),
-    };
+    const updatedData = { ...data, updatedAt: serverTimestamp() };
 
-    updateDocumentNonBlocking(userDocRef, updatedData);
+    await updateDoc(userDocRef, updatedData).catch(error => console.error(error));
     
-    toast({ title: "Profil yeniləndi", description: "Dəyişikliklər uğurla yadda saxlanıldı." });
-    setProfileSaving(false);
+    await triggerTalentScoreUpdate();
+    setIsSaving(false);
   };
   
-  const onProjectSubmit: SubmitHandler<z.infer<typeof projectSchema>> = (data) => {
-    setProjectSaving(true);
+  const onProjectSubmit: SubmitHandler<z.infer<typeof projectSchema>> = async (data) => {
     if (!projectsRef) return;
+    setIsSaving(true);
 
-    const newProject: Omit<Project, 'id'> = {
-        studentId: user!.uid,
-        ...data
-    };
+    const newProject: Omit<Project, 'id'> = { studentId: user!.uid, ...data };
+    await addDoc(projectsRef, newProject).catch(error => console.error(error));
     
-    addDocumentNonBlocking(projectsRef, newProject);
-    
-    toast({ title: "Layihə əlavə edildi", description: `"${data.title}" layihəsi profilinizə əlavə olundu.` });
+    toast({ title: "Layihə əlavə edildi" });
     projectForm.reset();
-    setProjectSaving(false);
+    await triggerTalentScoreUpdate();
+    setIsSaving(false);
   };
   
-  const onAchievementSubmit: SubmitHandler<z.infer<typeof achievementSchema>> = (data) => {
-    setAchievementSaving(true);
+  const onAchievementSubmit: SubmitHandler<z.infer<typeof achievementSchema>> = async (data) => {
     if (!achievementsRef) return;
+    setIsSaving(true);
     
-    const newAchievement: Omit<Achievement, 'id'> = {
-        studentId: user!.uid,
-        ...data,
-    };
-
-    addDocumentNonBlocking(achievementsRef, newAchievement);
+    const newAchievement: Omit<Achievement, 'id'> = { studentId: user!.uid, ...data };
+    await addDoc(achievementsRef, newAchievement).catch(error => console.error(error));
     
-    toast({ title: "Nailiyyət əlavə edildi", description: "Yeni nailiyyətiniz profilinizə əlavə olundu." });
+    toast({ title: "Nailiyyət əlavə edildi" });
     achievementForm.reset();
-    setAchievementSaving(false);
+    await triggerTalentScoreUpdate();
+    setIsSaving(false);
   };
   
-  const onCertificateSubmit: SubmitHandler<z.infer<typeof certificateSchema>> = (data) => {
-    setCertificateSaving(true);
+  const onCertificateSubmit: SubmitHandler<z.infer<typeof certificateSchema>> = async (data) => {
     if (!certificatesRef) return;
+    setIsSaving(true);
 
-    const newCertificate: Omit<Certificate, 'id'> = {
-        studentId: user!.uid,
-        ...data,
-    };
-
-    addDocumentNonBlocking(certificatesRef, newCertificate);
+    const newCertificate: Omit<Certificate, 'id'> = { studentId: user!.uid, ...data };
+    await addDoc(certificatesRef, newCertificate).catch(error => console.error(error));
     
-    toast({ title: "Sertifikat əlavə edildi", description: "Yeni sertifikatınız profilinizə əlavə olundu." });
+    toast({ title: "Sertifikat əlavə edildi" });
     certificateForm.reset();
-    setCertificateSaving(false);
+    await triggerTalentScoreUpdate();
+    setIsSaving(false);
   };
-
 
   if (isUserLoading || !student) {
     return <div className="container mx-auto py-8 text-center">Yüklənir...</div>;
@@ -200,71 +214,67 @@ export default function EditProfilePage() {
       </div>
 
       <div className="space-y-8">
-        {/* Profile Form */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><UserIcon /> Şəxsi Məlumatlar</CardTitle>
-            <CardDescription>Əsas profil məlumatlarınızı və sosial media hesablarınızı yeniləyin.</CardDescription>
+            <CardDescription>Əsas profil məlumatlarınızı, bacarıqlarınızı və sosial media hesablarınızı yeniləyin.</CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...profileForm}>
               <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField name="firstName" control={profileForm.control} render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Ad</FormLabel>
-                      <FormControl><Input {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
+                    <FormItem><FormLabel>Ad</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                   )} />
                   <FormField name="lastName" control={profileForm.control} render={({ field }) => (
+                    <FormItem><FormLabel>Soyad</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                  )} />
+                </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <FormField name="major" control={profileForm.control} render={({ field }) => (
+                        <FormItem><FormLabel>İxtisas</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                     <FormField name="courseYear" control={profileForm.control} render={({ field }) => (
+                        <FormItem><FormLabel>Təhsil ili</FormLabel>
+                        <Select onValueChange={(value) => field.onChange(parseInt(value))} value={String(field.value)}>
+                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                            <SelectContent>
+                                {[1,2,3,4].map(y => <SelectItem key={y} value={String(y)}>{y}-ci kurs</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage /></FormItem>
+                    )} />
+                 </div>
+                 <FormField name="skills" control={profileForm.control} render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Soyad</FormLabel>
-                      <FormControl><Input {...field} /></FormControl>
+                      <FormLabel>Bacarıqlar</FormLabel>
+                      <FormControl><Input placeholder="Məs: React, Python, UI/UX" {...field} /></FormControl>
+                      <FormDescription>Bacarıqları vergül ilə ayırın.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )} />
-                </div>
-                {/* Other fields... */}
                 <Separator />
                 <h3 className="text-lg font-medium">Sosial Linklər</h3>
                  <FormField name="linkedInURL" control={profileForm.control} render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>LinkedIn URL</FormLabel>
-                      <FormControl><Input placeholder="https://linkedin.com/in/..." {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
+                    <FormItem><FormLabel>LinkedIn URL</FormLabel><FormControl><Input placeholder="https://linkedin.com/in/..." {...field} /></FormControl><FormMessage /></FormItem>
                   )} />
                   <FormField name="githubURL" control={profileForm.control} render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>GitHub URL</FormLabel>
-                      <FormControl><Input placeholder="https://github.com/..." {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
+                    <FormItem><FormLabel>GitHub URL</FormLabel><FormControl><Input placeholder="https://github.com/..." {...field} /></FormControl><FormMessage /></FormItem>
                   )} />
                    <FormField name="behanceURL" control={profileForm.control} render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Behance URL</FormLabel>
-                      <FormControl><Input placeholder="https://behance.net/..." {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
+                    <FormItem><FormLabel>Behance URL</FormLabel><FormControl><Input placeholder="https://behance.net/..." {...field} /></FormControl><FormMessage /></FormItem>
                   )} />
                    <FormField name="portfolioURL" control={profileForm.control} render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Portfolio URL</FormLabel>
-                      <FormControl><Input placeholder="https://sizin-saytiniz.com" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
+                    <FormItem><FormLabel>Portfolio URL</FormLabel><FormControl><Input placeholder="https://sizin-saytiniz.com" {...field} /></FormControl><FormMessage /></FormItem>
                   )} />
-                <Button type="submit" disabled={isProfileSaving}>
-                  {isProfileSaving ? 'Yadda saxlanılır...' : 'Dəyişiklikləri Yadda Saxla'}
+                <Button type="submit" disabled={isSaving}>
+                  {isSaving ? 'Yadda saxlanılır...' : 'Dəyişiklikləri Yadda Saxla'}
                 </Button>
               </form>
             </Form>
           </CardContent>
         </Card>
         
-        {/* Projects Form */}
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Briefcase /> Layihələr</CardTitle>
@@ -298,8 +308,8 @@ export default function EditProfilePage() {
                         <FormField name="link" control={projectForm.control} render={({ field }) => (
                            <FormItem><FormLabel>Layihə Linki (GitHub, Vebsayt və s.)</FormLabel><FormControl><Input type="url" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
-                        <Button type="submit" disabled={isProjectSaving}>
-                            <PlusCircle className="mr-2 h-4 w-4" /> {isProjectSaving ? 'Əlavə edilir...' : 'Layihə Əlavə Et'}
+                        <Button type="submit" disabled={isSaving}>
+                            <PlusCircle className="mr-2 h-4 w-4" /> {isSaving ? 'Əlavə edilir...' : 'Layihə Əlavə Et'}
                         </Button>
                     </form>
                 </Form>
@@ -316,7 +326,6 @@ export default function EditProfilePage() {
             </CardContent>
         </Card>
         
-        {/* Achievements Form */}
          <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Award /> Nailiyyətlər</CardTitle>
@@ -346,8 +355,8 @@ export default function EditProfilePage() {
                                 <FormItem><FormLabel>Tarix</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>
                             )} />
                         </div>
-                        <Button type="submit" disabled={isAchievementSaving}>
-                            <PlusCircle className="mr-2 h-4 w-4" /> {isAchievementSaving ? 'Əlavə edilir...' : 'Nailiyyət Əlavə Et'}
+                        <Button type="submit" disabled={isSaving}>
+                            <PlusCircle className="mr-2 h-4 w-4" /> {isSaving ? 'Əlavə edilir...' : 'Nailiyyət Əlavə Et'}
                         </Button>
                     </form>
                 </Form>
@@ -364,7 +373,6 @@ export default function EditProfilePage() {
             </CardContent>
         </Card>
         
-        {/* Certificates Form */}
          <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><FileText /> Sertifikatlar</CardTitle>
@@ -389,8 +397,8 @@ export default function EditProfilePage() {
                             </Select>
                             <FormMessage /></FormItem>
                         )} />
-                        <Button type="submit" disabled={isCertificateSaving}>
-                            <PlusCircle className="mr-2 h-4 w-4" /> {isCertificateSaving ? 'Əlavə edilir...' : 'Sertifikat Əlavə Et'}
+                        <Button type="submit" disabled={isSaving}>
+                            <PlusCircle className="mr-2 h-4 w-4" /> {isSaving ? 'Əlavə edilir...' : 'Sertifikat Əlavə Et'}
                         </Button>
                     </form>
                 </Form>
@@ -411,3 +419,5 @@ export default function EditProfilePage() {
     </div>
   );
 }
+
+    
