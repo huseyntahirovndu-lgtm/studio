@@ -14,19 +14,15 @@ export default function RegisterPage() {
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-6 sm:grid-cols-2">
-        <Link href="/register-student" legacyBehavior passHref>
-          <a className="flex flex-col items-center justify-center p-6 border rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-center">
-            <User className="h-12 w-12 mb-4" />
-            <h3 className="font-semibold">Tələbə kimi</h3>
-            <p className="text-sm text-muted-foreground mt-1">Profil yaradın, bacarıqlarınızı və layihələrinizi nümayiş etdirin.</p>
-          </a>
+        <Link href="/register-student" className="flex flex-col items-center justify-center p-6 border rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-center">
+          <User className="h-12 w-12 mb-4" />
+          <h3 className="font-semibold">Tələbə kimi</h3>
+          <p className="text-sm text-muted-foreground mt-1">Profil yaradın, bacarıqlarınızı və layihələrinizi nümayiş etdirin.</p>
         </Link>
-         <Link href="/register-organization" legacyBehavior passHref>
-          <a className="flex flex-col items-center justify-center p-6 border rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-center">
+         <Link href="/register-organization" className="flex flex-col items-center justify-center p-6 border rounded-lg hover:bg-accent hover:text-accent-foreground transition-colors text-center">
             <Briefcase className="h-12 w-12 mb-4" />
             <h3 className="font-semibold">Təşkilat kimi</h3>
             <p className="text-sm text-muted-foreground mt-1">İstedadları kəşf edin, komanda formalaşdırın və layihələr həyata keçirin.</p>
-          </a>
         </Link>
       </CardContent>
       <CardFooter className="text-center text-sm justify-center">
