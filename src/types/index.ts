@@ -13,6 +13,12 @@ export type AchievementLevel =
   | 'Respublika'
   | 'Regional'
   | 'Universitet';
+  
+export type CertificateLevel =
+  | 'Beynəlxalq'
+  | 'Respublika'
+  | 'Regional'
+  | 'Universitet';
 
 export interface Project {
   id: string;
@@ -40,7 +46,9 @@ export interface Achievement {
 export interface Certificate {
   id: string;
   studentId: string;
+  name: string;
   certificateURL: string;
+  level: CertificateLevel;
 }
 
 export interface Student {
@@ -69,4 +77,12 @@ export interface Student {
   createdAt?: any; // Allow serverTimestamp
 }
 
-    
+export interface FacultyData {
+    id: string;
+    name: string;
+}
+
+export interface CategoryData {
+    id: string;
+    name: string;
+}

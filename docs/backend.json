@@ -237,16 +237,26 @@
           "type": "string",
           "description": "Reference to Student. (Relationship: Student 1:N Certificate)"
         },
+        "name": {
+          "type": "string",
+          "description": "The name of the certificate."
+        },
         "certificateURL": {
           "type": "string",
           "description": "A URL to the certificate (PDF or image).",
           "format": "uri"
+        },
+        "level": {
+          "type": "string",
+          "description": "The level of the certificate (e.g., International, Respublika)."
         }
       },
       "required": [
         "id",
         "studentId",
-        "certificateURL"
+        "name",
+        "certificateURL",
+        "level"
       ]
     },
     "Organization": {
@@ -433,5 +443,3 @@
     "reasoning": "The Firestore data structure is designed to support the İstedad Mərkəzi platform, focusing on students, projects, achievements, certificates, organizations, and talent categories. The design prioritizes authorization independence, clarity, and scalability. All paths are designed to enable QAPs.\n\nAuthorization Independence (CRITICAL): User-owned data such as projects, achievements, and certificates are stored as subcollections of the `/users/{userId}` collection. This design allows for direct access to user data without needing to query parent documents, simplifying security rules and making them more robust. Each subcollection includes the studentId, which is the same as the user ID.\n\nStructural Segregation: Each entity type is stored in its own collection or subcollection, ensuring a homogeneous security posture. For instance, student profiles are stored in `/users/{userId}`, projects are in `/users/{userId}/projects/{projectId}`, and so on. This segregation simplifies security rules by ensuring all documents in a collection share the same access requirements.\n\nAccess Modeling:  Path-based ownership is used for private user data. For instance, student profiles and their associated projects, achievements, and certificates are stored under `/users/{userId}`.\n\nData Clarity and Predictability: Explicit state modeling and predictable schema are enforced. Document IDs are used consistently. Wildcards like `{studentId}`, `{projectId}`, `{achievementId}`, and `{certificateId}` are used consistently to represent resource IDs. Consistent naming of the entities and fields makes it easy to debug."
   }
 }
-
-    
