@@ -41,19 +41,19 @@ export default function HomePage() {
         <div className="relative container mx-auto px-4 z-10">
           <div className="max-w-2xl text-left">
              <h1 className="text-4xl md:text-6xl font-bold font-headline mb-4">
-               Naxçıvan Dövlət Universiteti Tələbə Elmi Cəmiyyəti
+               Naxçıvan Dövlət Universiteti Tələbə İstedad Bankı
             </h1>
             <p className="text-lg md:text-xl mb-8">
-                56 ildir tələbələrlə...
+                İstedadını göstərəcək platforma.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button size="lg" asChild>
-                <Link href="#">
-                  Daha çox <ArrowRight className="ml-2 h-5 w-5" />
+                <Link href="/search">
+                  Kəşf et <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
               <Button size="lg" variant="outline" className="bg-transparent border-white text-white hover:bg-white hover:text-primary" asChild>
-                <Link href="#">Layihələrimiz</Link>
+                <Link href="/register">Qeydiyyat</Link>
               </Button>
             </div>
           </div>
