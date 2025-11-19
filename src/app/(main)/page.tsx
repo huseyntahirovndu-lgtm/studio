@@ -43,7 +43,7 @@ export default function HomePage() {
         <div className="absolute inset-0 flex items-center">
           <div className="container mx-auto px-4 md:px-8 lg:px-12">
             <div className="max-w-3xl text-left">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-white">
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-white">
                 Naxçıvan Dövlət Universiteti <br /> Tələbə İstedad Bankı
               </h1>
               <p className="text-lg md:text-xl mb-8 text-white">
