@@ -1,6 +1,6 @@
 'use client';
 import { useAuth } from '@/hooks/use-auth';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -27,7 +27,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { getProjectsByStudentId, getAchievementsByStudentId, getCertificatesByStudentId, addProject, addAchievement, addCertificate, deleteProject, deleteAchievement, deleteCertificate } from '@/lib/data';
+import { getStudentById, getProjectsByStudentId, getAchievementsByStudentId, getCertificatesByStudentId, addProject, addAchievement, addCertificate, deleteProject, deleteAchievement, deleteCertificate } from '@/lib/data';
 import { v4 as uuidv4 } from 'uuid';
 
 // Schemas
@@ -72,19 +72,33 @@ const certificateSchema = z.object({
 
 
 export default function EditProfilePage() {
-  const { user, loading, updateUser } = useAuth();
+  const { user: currentUser, loading, updateUser } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   
-  // This page is for students, but an admin can also edit.
-  const student = (user?.role === 'student' || user?.role === 'admin') ? user as Student : null;
-
+  const [targetUser, setTargetUser] = useState<Student | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   
   const [projects, setProjects] = useState<Project[]>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
+
+  useEffect(() => {
+    const userIdFromQuery = searchParams.get('userId');
+    if (currentUser?.role === 'admin' && userIdFromQuery) {
+      getStudentById(userIdFromQuery).then(student => {
+        if (student) setTargetUser(student);
+        else router.push('/admin/students');
+      });
+    } else if (currentUser?.role === 'student') {
+      setTargetUser(currentUser as Student);
+    } else if (!loading) {
+      router.push('/login');
+    }
+  }, [currentUser, searchParams, loading, router]);
+
 
   const profileForm = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
@@ -107,61 +121,61 @@ export default function EditProfilePage() {
   });
 
   const fetchData = useCallback(async () => {
-    if (!student) return;
+    if (!targetUser) return;
     setIsLoadingData(true);
     const [proj, ach, cert] = await Promise.all([
-      getProjectsByStudentId(student.id),
-      getAchievementsByStudentId(student.id),
-      getCertificatesByStudentId(student.id),
+      getProjectsByStudentId(targetUser.id),
+      getAchievementsByStudentId(targetUser.id),
+      getCertificatesByStudentId(targetUser.id),
     ]);
     setProjects(proj);
     setAchievements(ach);
     setCertificates(cert);
     setIsLoadingData(false);
-  }, [student]);
+  }, [targetUser]);
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !currentUser) {
       router.push('/login');
     }
-  }, [user, loading, router]);
+  }, [currentUser, loading, router]);
 
   useEffect(() => {
-    if (student) {
+    if (targetUser) {
       profileForm.reset({
-        firstName: student.firstName || '',
-        lastName: student.lastName || '',
-        major: student.major || '',
-        courseYear: student.courseYear || 1,
-        educationForm: student.educationForm || '',
-        gpa: student.gpa || undefined,
-        skills: student.skills?.join(', ') || '',
-        linkedInURL: student.linkedInURL || '',
-        githubURL: student.githubURL || '',
-        behanceURL: student.behanceURL || '',
-        instagramURL: student.instagramURL || '',
-        portfolioURL: student.portfolioURL || '',
+        firstName: targetUser.firstName || '',
+        lastName: targetUser.lastName || '',
+        major: targetUser.major || '',
+        courseYear: targetUser.courseYear || 1,
+        educationForm: targetUser.educationForm || '',
+        gpa: targetUser.gpa || undefined,
+        skills: targetUser.skills?.join(', ') || '',
+        linkedInURL: targetUser.linkedInURL || '',
+        githubURL: targetUser.githubURL || '',
+        behanceURL: targetUser.behanceURL || '',
+        instagramURL: targetUser.instagramURL || '',
+        portfolioURL: targetUser.portfolioURL || '',
       });
       fetchData();
     }
-  }, [student, profileForm, fetchData]);
+  }, [targetUser, profileForm, fetchData]);
 
   const triggerTalentScoreUpdate = useCallback(async () => {
-    if (!student) return;
+    if (!targetUser) return;
     setIsSaving(true);
-    toast({ title: "İstedad Balı Hesablanır...", description: "Profiliniz yenilənir, bu bir az vaxt ala bilər." });
+    toast({ title: "İstedad Balı Hesablanır...", description: "Profil yenilənir, bu bir az vaxt ala bilər." });
 
     try {
         const fullProfile = {
-            ...student,
-            projects: await getProjectsByStudentId(student.id),
-            achievements: await getAchievementsByStudentId(student.id),
-            certificates: await getCertificatesByStudentId(student.id),
+            ...targetUser,
+            projects: await getProjectsByStudentId(targetUser.id),
+            achievements: await getAchievementsByStudentId(targetUser.id),
+            certificates: await getCertificatesByStudentId(targetUser.id),
         };
         
         const scoreResult = await calculateTalentScore({ profileData: JSON.stringify(fullProfile) });
         
-        const updatedStudent = { ...student, talentScore: scoreResult.talentScore };
+        const updatedStudent = { ...targetUser, talentScore: scoreResult.talentScore };
         updateUser(updatedStudent as AppUser);
 
         toast({ title: "Profil Yeniləndi!", description: `Yeni istedad balınız: ${scoreResult.talentScore}. ${scoreResult.reasoning}` });
@@ -171,10 +185,10 @@ export default function EditProfilePage() {
     } finally {
         setIsSaving(false);
     }
-  }, [student, toast, updateUser]);
+  }, [targetUser, toast, updateUser]);
 
   const handleGenericSubmit = async (submitAction: () => Promise<any>, successMessage: string, formToReset: any) => {
-    if (!student) return;
+    if (!targetUser) return;
     setIsSaving(true);
     try {
       await submitAction();
@@ -192,34 +206,34 @@ export default function EditProfilePage() {
 
   const onProfileSubmit: SubmitHandler<z.infer<typeof profileSchema>> = (data) => {
     handleGenericSubmit(async () => {
-        const updatedUser = { ...student, ...data };
+        const updatedUser = { ...targetUser, ...data };
         updateUser(updatedUser as AppUser);
     }, "Profil məlumatları yeniləndi", profileForm);
   };
   
   const onProjectSubmit: SubmitHandler<z.infer<typeof projectSchema>> = (data) => {
     handleGenericSubmit(async () => {
-        const newProject: Omit<Project, 'id'> = { ...data, studentId: student!.id, id: uuidv4() };
+        const newProject: Omit<Project, 'id'> = { ...data, studentId: targetUser!.id, id: uuidv4() };
         await addProject(newProject as Project);
     }, "Layihə əlavə edildi", projectForm);
   };
   
   const onAchievementSubmit: SubmitHandler<z.infer<typeof achievementSchema>> = (data) => {
     handleGenericSubmit(async () => {
-        const newAchievement: Omit<Achievement, 'id'> = { ...data, studentId: student!.id, id: uuidv4() };
+        const newAchievement: Omit<Achievement, 'id'> = { ...data, studentId: targetUser!.id, id: uuidv4() };
         await addAchievement(newAchievement as Achievement);
     }, "Nailiyyət əlavə edildi", achievementForm);
   };
   
   const onCertificateSubmit: SubmitHandler<z.infer<typeof certificateSchema>> = (data) => {
     handleGenericSubmit(async () => {
-        const newCertificate: Omit<Certificate, 'id'> = { ...data, studentId: student!.id, id: uuidv4() };
+        const newCertificate: Omit<Certificate, 'id'> = { ...data, studentId: targetUser!.id, id: uuidv4() };
         await addCertificate(newCertificate as Certificate);
     }, "Sertifikat əlavə edildi", certificateForm);
   };
   
   const handleDelete = async (docId: string, itemType: 'project' | 'achievement' | 'certificate') => {
-      if (!student) return;
+      if (!targetUser) return;
       setIsSaving(true);
 
       try {
@@ -240,7 +254,7 @@ export default function EditProfilePage() {
   };
 
 
-  if (loading || !student) {
+  if (loading || !targetUser) {
     return <div className="container mx-auto py-8 text-center">Yüklənir...</div>;
   }
 

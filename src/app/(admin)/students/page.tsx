@@ -186,7 +186,7 @@ export default function AdminStudentsPage() {
                                       <Link href={`/profile/${student.id}`}>Profilə bax</Link>
                                     </DropdownMenuItem>
                                     <DropdownMenuItem asChild>
-                                        <Link href={`/profile/edit`}>Redaktə et</Link>
+                                        <Link href={`/profile/edit?userId=${student.id}`}>Redaktə et</Link>
                                     </DropdownMenuItem>
                                     <DropdownMenuSub>
                                         <DropdownMenuSubTrigger>Statusu dəyiş</DropdownMenuSubTrigger>
