@@ -40,13 +40,13 @@ export default function HomePage() {
           data-ai-hint="university building"
         />
         
-        <div className="absolute inset-0 flex items-center">
+        <div className="absolute inset-0 bg-black/50 flex items-center">
           <div className="container mx-auto px-4 md:px-8 lg:px-12">
             <div className="max-w-3xl text-left">
-              <h1 className="text-xl md:text-2xl lg:text-3xl font-bold mb-4 text-foreground">
+              <h1 className="text-xl md:text-2xl lg:text-3xl font-bold mb-4 text-white">
                 Naxçıvan Dövlət Universiteti <br /> Tələbə İstedad Bankı
               </h1>
-              <p className="text-lg md:text-xl mb-8 text-foreground">
+              <p className="text-lg md:text-xl mb-8 text-white">
                 İstedadını göstərəcək platforma.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
@@ -58,7 +58,7 @@ export default function HomePage() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="bg-transparent border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                  className="bg-transparent border-white text-white hover:bg-white hover:text-primary"
                   asChild
                 >
                   <Link href="/register">Qeydiyyat</Link>
