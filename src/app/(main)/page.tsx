@@ -33,7 +33,7 @@ export default function HomePage() {
           src="https://i.ibb.co/cXv2KzRR/q2.jpg"
           alt="Naxçıvan Dövlət Universiteti"
           fill
-          className="object-contain"
+          className="object-cover"
           priority
           data-ai-hint="university building"
         />
