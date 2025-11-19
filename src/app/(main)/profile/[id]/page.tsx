@@ -1,17 +1,29 @@
 'use client';
 import { useAuth } from '@/hooks/use-auth';
 import { useParams } from 'next/navigation';
-import { Student, Project, Achievement, Certificate, Organization } from '@/types';
+import { Student, Project, Achievement, Certificate, Organization, Invitation } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Star, Linkedin, Github, Dribbble, Instagram, Link as LinkIcon, Award, Briefcase, FileText, Bookmark } from 'lucide-react';
+import { Star, Linkedin, Github, Dribbble, Instagram, Link as LinkIcon, Award, Briefcase, FileText, Bookmark, MailPlus } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { getStudentById, getProjectsByStudentId, getAchievementsByStudentId, getCertificatesByStudentId } from '@/lib/data';
+import { getStudentById, getProjectsByStudentId, getAchievementsByStudentId, getCertificatesByStudentId, getProjectsByIds, addInvitation } from '@/lib/data';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose
+} from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { v4 as uuidv4 } from 'uuid';
 
 export default function ProfilePage() {
   const { id } = useParams();
@@ -25,6 +37,9 @@ export default function ProfilePage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [certificates, setCertificates] = useState<Certificate[]>([]);
+  const [organizationProjects, setOrganizationProjects] = useState<Project[]>([]);
+  const [selectedProject, setSelectedProject] = useState<string>('');
+  const [isInviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -53,6 +68,12 @@ export default function ProfilePage() {
 
     fetchData();
   }, [studentId]);
+
+  useEffect(() => {
+    if (organization?.projectIds) {
+      getProjectsByIds(organization.projectIds).then(setOrganizationProjects);
+    }
+  }, [organization]);
   
   const isSaved = organization?.savedStudentIds?.includes(studentId);
 
@@ -80,6 +101,38 @@ export default function ProfilePage() {
         })
     }
   };
+  
+  const handleInvite = () => {
+    if (!organization || !student || !selectedProject) {
+        toast({ variant: 'destructive', title: 'Xəta', description: 'Dəvət üçün layihə seçilməlidir.' });
+        return;
+    }
+    
+    const invitation: Invitation = {
+      id: uuidv4(),
+      organizationId: organization.id,
+      studentId: student.id,
+      projectId: selectedProject,
+      status: 'gözləyir',
+      createdAt: new Date(),
+    };
+
+    // Check if student is already invited or a member
+    const project = organizationProjects.find(p => p.id === selectedProject);
+    if(project?.invitedStudentIds?.includes(student.id) || project?.teamMemberIds?.includes(student.id)) {
+        toast({ variant: 'destructive', title: 'Xəta', description: 'Bu tələbə artıq bu layihəyə dəvət edilib və ya üzvdür.' });
+        return;
+    }
+
+    addInvitation(invitation, selectedProject);
+
+    toast({
+        title: 'Dəvət Göndərildi',
+        description: `${student.firstName} ${student.lastName} tələbəsi "${organizationProjects.find(p => p.id === selectedProject)?.title}" layihəsinə dəvət edildi.`,
+    });
+    setInviteDialogOpen(false);
+    setSelectedProject('');
+  }
 
   if (isLoading) {
     return <div className="container mx-auto py-8 text-center">Yüklənir...</div>;
@@ -116,10 +169,43 @@ export default function ProfilePage() {
                 <p className="text-sm text-muted-foreground">İstedad Balı</p>
               </div>
                {organization && (
-                <Button onClick={handleBookmark} variant={isSaved ? 'default' : 'outline'} className="mt-4 w-full">
-                  <Bookmark className={cn("mr-2 h-4 w-4", isSaved && "fill-current")} />
-                  {isSaved ? 'Yaddaşdan çıxar' : 'Yadda saxla'}
-                </Button>
+                 <div className='flex items-center gap-2 mt-4 w-full'>
+                    <Button onClick={handleBookmark} variant={isSaved ? 'default' : 'outline'} className="w-full">
+                        <Bookmark className={cn("mr-2 h-4 w-4", isSaved && "fill-current")} />
+                        {isSaved ? 'Yaddaşdan çıxar' : 'Yadda saxla'}
+                    </Button>
+                     <Dialog open={isInviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" size="icon">
+                                <MailPlus className="h-4 w-4" />
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Layihəyə Dəvət Et</DialogTitle>
+                                <DialogDescription>
+                                    {student.firstName} {student.lastName} tələbəsini hansı layihəyə dəvət etmək istəyirsiniz?
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="py-4">
+                                <Select onValueChange={setSelectedProject}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Layihə seçin" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {organizationProjects.map(proj => (
+                                            <SelectItem key={proj.id} value={proj.id}>{proj.title}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <DialogFooter>
+                                <DialogClose asChild><Button variant="outline">Ləğv et</Button></DialogClose>
+                                <Button onClick={handleInvite}>Dəvət Göndər</Button>
+                            </DialogFooter>
+                        </DialogContent>
+                     </Dialog>
+                 </div>
               )}
             </CardContent>
           </Card>

@@ -1,7 +1,7 @@
 'use client';
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { students as allStudents, faculties, categories } from '@/lib/data';
+import { getStudents, faculties, categories } from '@/lib/data';
 import { Student } from '@/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import {
@@ -25,6 +25,7 @@ export default function RankingsPage() {
 
   useEffect(() => {
     // Simulate fetching data
+    const allStudents = getStudents();
     const studentsWithPics = allStudents.map((student, index) => {
       const placeholder = PlaceHolderImages.find(p => p.id.slice(-1) === student.id.slice(-1)) || PlaceHolderImages[index % PlaceHolderImages.length];
       return {

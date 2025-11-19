@@ -1,4 +1,4 @@
-import { Student, Project, Achievement, Certificate, CategoryData, FacultyData, Organization, AppUser } from '@/types';
+import { Student, Project, Achievement, Certificate, CategoryData, FacultyData, Organization, AppUser, Invitation } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 
 // --- MOCK DATA ---
@@ -106,6 +106,7 @@ export let users: AppUser[] = [
     email: 'contact@techsolutions.com',
     sector: 'Texnologiya',
     savedStudentIds: ['student-1', 'student-3'],
+    projectIds: ['org-proj-1'],
     createdAt: new Date('2023-11-20T11:00:00Z'),
   },
     {
@@ -116,6 +117,7 @@ export let users: AppUser[] = [
     email: 'startup@ndu.edu.az',
     sector: 'İnnovasiya',
     savedStudentIds: ['student-2'],
+    projectIds: ['org-proj-2'],
     createdAt: new Date('2024-02-01T11:00:00Z'),
   },
   {
@@ -131,6 +133,8 @@ export let users: AppUser[] = [
 let projects: Project[] = [
   { id: 'proj-1', studentId: 'student-1', title: 'Onlayn Ticarət Platforması', description: 'React və Node.js istifadə edərək e-ticarət saytının hazırlanması.', role: 'Full-Stack Developer', status: 'tamamlanıb', teamMembers: ['Aysel Məmmədova', 'Tural Abbasov'], link: 'https://github.com' },
   { id: 'proj-2', studentId: 'student-3', title: 'Brendinq Layihəsi', description: 'Yeni bir qəhvə markası üçün tam vizual kimliyin yaradılması.', role: 'Baş Dizayner', status: 'tamamlanıb', teamMembers: ['Leyla Həsənova'], link: 'https://behance.net' },
+  { id: 'org-proj-1', studentId: 'org-1', title: 'Mobil Tətbiq 2.0', description: 'Mövcud mobil tətbiqin yenidən işlənməsi.', role: 'Təşkilat Layihəsi', status: 'davam edir', teamMemberIds: [], invitedStudentIds: [] },
+  { id: 'org-proj-2', studentId: 'org-2', title: 'İnnovasiya Həftəsi', description: 'Universitet daxili innovasiya yarışmasının təşkili.', role: 'Təşkilat Layihəsi', status: 'davam edir', teamMemberIds: [], invitedStudentIds: [] },
 ];
 
 let achievements: Achievement[] = [
@@ -140,6 +144,8 @@ let achievements: Achievement[] = [
 let certificates: Certificate[] = [
     { id: 'cert-1', studentId: 'student-1', name: 'Advanced React - Meta', certificateURL: 'https://coursera.org', level: 'Beynəlxalq' },
 ];
+
+let invitations: Invitation[] = [];
 
 
 // --- DATA ACCESS FUNCTIONS ---
@@ -157,34 +163,42 @@ export const getOrganizations = (): Organization[] => {
   return users.filter(u => u.role === 'organization') as Organization[];
 };
 
-export const students = users.filter(u => u.role === 'student') as Student[];
-export const organizations = users.filter(u => u.role === 'organization') as Organization[];
-
-
-export const getStudentById = (id: string): Student | undefined => {
+export const getStudentById = async (id: string): Promise<Student | undefined> => {
   return users.find(u => u.id === id && u.role === 'student') as Student | undefined;
 };
 
-export const getOrganizationById = (id: string): Organization | undefined => {
+export const getOrganizationById = async (id: string): Promise<Organization | undefined> => {
     return users.find(u => u.id === id && u.role === 'organization') as Organization | undefined;
 };
 
-export const getUserByEmail = (email: string): AppUser | undefined => {
+export const getUserByEmail = async (email: string): Promise<AppUser | undefined> => {
   return users.find(u => u.email === email);
 };
 
+export const getProjectById = async (id: string): Promise<Project | undefined> => {
+    return projects.find(p => p.id === id);
+}
 
-export const getProjectsByStudentId = (studentId: string): Project[] => {
+export const getProjectsByIds = async (ids: string[]): Promise<Project[]> => {
+    return projects.filter(p => ids.includes(p.id));
+}
+
+export const getProjectsByStudentId = async (studentId: string): Promise<Project[]> => {
     return projects.filter(p => p.studentId === studentId);
 };
 
-export const getAchievementsByStudentId = (studentId: string): Achievement[] => {
+export const getAchievementsByStudentId = async (studentId: string): Promise<Achievement[]> => {
     return achievements.filter(a => a.studentId === studentId);
 };
 
-export const getCertificatesByStudentId = (studentId: string): Certificate[] => {
+export const getCertificatesByStudentId = async (studentId: string): Promise<Certificate[]> => {
     return certificates.filter(c => c.studentId === studentId);
 };
+
+export const getInvitationsByStudentId = async (studentId: string): Promise<Invitation[]> => {
+    return invitations.filter(i => i.studentId === studentId);
+}
+
 
 // --- DATA MUTATION FUNCTIONS ---
 export const addUser = (user: AppUser) => {
@@ -235,4 +249,29 @@ export const addCategory = (category: CategoryData) => {
 
 export const deleteCategory = (categoryId: string) => {
     categories = categories.filter(c => c.id !== categoryId);
+}
+
+export const addInvitation = (invitation: Invitation, projectId: string) => {
+  invitations.push(invitation);
+  const projectIndex = projects.findIndex(p => p.id === projectId);
+  if (projectIndex !== -1) {
+    const project = projects[projectIndex];
+    project.invitedStudentIds = [...(project.invitedStudentIds || []), invitation.studentId];
+  }
+}
+
+export const updateInvitationStatus = (invitationId: string, status: 'qəbul edildi' | 'rədd edildi', studentId: string, projectId: string) => {
+    const invIndex = invitations.findIndex(i => i.id === invitationId);
+    if(invIndex !== -1) {
+        invitations[invIndex].status = status;
+    }
+
+    if (status === 'qəbul edildi') {
+        const projectIndex = projects.findIndex(p => p.id === projectId);
+        if(projectIndex !== -1) {
+            const project = projects[projectIndex];
+            project.teamMemberIds = [...(project.teamMemberIds || []), studentId];
+            project.invitedStudentIds = project.invitedStudentIds?.filter(id => id !== studentId);
+        }
+    }
 }

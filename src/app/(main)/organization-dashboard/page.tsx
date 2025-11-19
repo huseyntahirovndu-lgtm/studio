@@ -1,21 +1,22 @@
 'use client';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building, Users, FileSearch, Bookmark } from 'lucide-react';
+import { Building, Users, FileSearch, Bookmark, Briefcase } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Organization, Student } from '@/types';
+import { Organization, Student, Project } from '@/types';
 import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
 import { StudentCard } from '@/components/student-card';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { getStudentById } from '@/lib/data';
+import { getStudentById, getProjectsByIds } from '@/lib/data';
 
 export default function OrganizationDashboard() {
     const { user, loading } = useAuth();
     const router = useRouter();
     const [savedStudents, setSavedStudents] = useState<Student[]>([]);
-    const [isLoadingStudents, setIsLoadingStudents] = useState(true);
+    const [organizationProjects, setOrganizationProjects] = useState<Project[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     const orgProfile = user as Organization;
 
@@ -26,11 +27,13 @@ export default function OrganizationDashboard() {
     }, [user, loading, router]);
 
     useEffect(() => {
-      if (orgProfile?.savedStudentIds) {
-        setIsLoadingStudents(true);
-        const studentPromises = orgProfile.savedStudentIds.map(id => getStudentById(id));
-        Promise.all(studentPromises).then(results => {
-          const students = results.filter((s): s is Student => s !== undefined);
+      if (orgProfile) {
+        setIsLoading(true);
+        const studentPromises = (orgProfile.savedStudentIds || []).map(id => getStudentById(id));
+        const projectPromises = getProjectsByIds(orgProfile.projectIds || []);
+
+        Promise.all([Promise.all(studentPromises), projectPromises]).then(([studentResults, projectResults]) => {
+          const students = studentResults.filter((s): s is Student => s !== undefined);
           const enrichedStudents = students.map((student, index) => {
             const placeholder = PlaceHolderImages[index % PlaceHolderImages.length];
             return {
@@ -40,10 +43,11 @@ export default function OrganizationDashboard() {
             };
           });
           setSavedStudents(enrichedStudents);
-          setIsLoadingStudents(false);
+          setOrganizationProjects(projectResults);
+          setIsLoading(false);
         });
       } else {
-        setIsLoadingStudents(false);
+        setIsLoading(false);
       }
     }, [orgProfile]);
 
@@ -79,7 +83,36 @@ export default function OrganizationDashboard() {
                     href="/organization-profile/edit"
                 />
             </div>
-             <div className="mt-12">
+            
+            <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-8">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                           <Briefcase /> Layihələrim
+                        </CardTitle>
+                        <CardDescription>Təşkilatınızın aktiv və tamamlanmış layihələri.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                       {isLoading ? (
+                            <p>Yüklənir...</p>
+                        ) : organizationProjects && organizationProjects.length > 0 ? (
+                           <div className="space-y-4">
+                                {organizationProjects.map((project) => (
+                                    <div key={project.id} className="border p-4 rounded-lg">
+                                        <h4 className="font-semibold">{project.title}</h4>
+                                        <p className="text-sm text-muted-foreground">{project.description}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                             <div className="text-center text-muted-foreground py-8">
+                                <p>Hələ heç bir layihə yaradılmayıb.</p>
+                                <p className="text-sm mt-2">Profil redaktə səhifəsindən yeni layihələr əlavə edə bilərsiniz.</p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
@@ -88,10 +121,10 @@ export default function OrganizationDashboard() {
                         <CardDescription>Bəyəndiyiniz və gələcək layihələr üçün nəzərdə tutduğunuz tələbələrin siyahısı.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        {isLoadingStudents ? (
+                        {isLoading ? (
                             <p>Yüklənir...</p>
                         ) : savedStudents && savedStudents.length > 0 ? (
-                           <div className="grid gap-6 md:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                           <div className="grid gap-6 md:gap-8 grid-cols-1 sm:grid-cols-2">
                                 {savedStudents.map((student) => (
                                     <StudentCard key={student.id} student={student} />
                                 ))}

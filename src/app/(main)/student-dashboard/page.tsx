@@ -1,26 +1,64 @@
 'use client';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { User, ClipboardList, Edit } from 'lucide-react';
+import { User, ClipboardList, Edit, Mail, Check, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo } from 'react';
-import { Student } from '@/types';
+import { useEffect, useMemo, useState } from 'react';
+import { Student, Invitation, Project, Organization as OrgType } from '@/types';
 import { Progress } from '@/components/ui/progress';
 import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
+import { getInvitationsByStudentId, getProjectById, getOrganizationById, updateInvitationStatus } from '@/lib/data';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
+interface EnrichedInvitation extends Invitation {
+    project?: Project;
+    organization?: OrgType;
+}
 
 export default function StudentDashboard() {
     const { user, loading } = useAuth();
     const router = useRouter();
+    const { toast } = useToast();
     
+    const [invitations, setInvitations] = useState<EnrichedInvitation[]>([]);
+
     useEffect(() => {
         if (!loading && (!user || (user as Student)?.role !== 'student')) {
             router.push('/login');
         }
     }, [user, loading, router]);
-
+    
     const studentProfile = user as Student;
+
+    useEffect(() => {
+        if (studentProfile) {
+            const fetchInvitations = async () => {
+                const studentInvitations = await getInvitationsByStudentId(studentProfile.id);
+                const enrichedInvitations = await Promise.all(
+                    studentInvitations.map(async (inv) => {
+                        const [project, organization] = await Promise.all([
+                            getProjectById(inv.projectId),
+                            getOrganizationById(inv.organizationId)
+                        ]);
+                        return { ...inv, project, organization };
+                    })
+                );
+                setInvitations(enrichedInvitations);
+            };
+            fetchInvitations();
+        }
+    }, [studentProfile]);
+    
+    const handleInvitation = (invitation: EnrichedInvitation, status: 'qəbul edildi' | 'rədd edildi') => {
+        updateInvitationStatus(invitation.id, status, studentProfile.id, invitation.projectId);
+        setInvitations(prev => prev.filter(i => i.id !== invitation.id));
+        toast({
+            title: `Dəvət ${status === 'qəbul edildi' ? 'qəbul edildi' : 'rədd edildi'}`,
+            description: `"${invitation.project?.title}" layihəsinə olan dəvətinizə cavab verdiniz.`
+        });
+    }
 
     const profileCompletion = useMemo(() => {
         if (!studentProfile) return 0;
@@ -56,6 +94,8 @@ export default function StudentDashboard() {
     if (loading || !user || !studentProfile) {
         return <div className="container mx-auto py-8 text-center">Yüklənir...</div>;
     }
+    
+    const pendingInvitations = invitations.filter(inv => inv.status === 'gözləyir');
 
     return (
         <div className="container mx-auto py-8 md:py-12 px-4">
@@ -102,7 +142,40 @@ export default function StudentDashboard() {
                     href="/rankings"
                 />
             </div>
-             <div className="mt-12">
+             <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Mail /> Layihə Dəvətləri</CardTitle>
+                        <CardDescription>Təşkilatlardan gələn layihə təkliflərinə buradan baxa bilərsiniz.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {pendingInvitations.length > 0 ? (
+                            <div className="space-y-4">
+                                {pendingInvitations.map(inv => (
+                                    <div key={inv.id} className="border p-4 rounded-lg flex items-center justify-between">
+                                        <div>
+                                            <p className="font-semibold">{inv.project?.title}</p>
+                                            <p className="text-sm text-muted-foreground">{inv.organization?.name}</p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Button size="icon" variant="outline" className="h-8 w-8 text-green-600 hover:text-green-600" onClick={() => handleInvitation(inv, 'qəbul edildi')}>
+                                                <Check className="h-4 w-4" />
+                                            </Button>
+                                            <Button size="icon" variant="outline" className="h-8 w-8 text-red-600 hover:text-red-600" onClick={() => handleInvitation(inv, 'rədd edildi')}>
+                                                <X className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center text-muted-foreground py-8">
+                                <p>Hazırda yeni dəvətiniz yoxdur.</p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
                 <Card>
                     <CardHeader>
                         <CardTitle>Mənim Statistikam</CardTitle>

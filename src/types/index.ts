@@ -29,6 +29,8 @@ export interface Project {
   link?: string;
   mediaLink?: string;
   teamMembers?: string[];
+  teamMemberIds?: string[];
+  invitedStudentIds?: string[];
   status: 'davam edir' | 'tamamlanıb';
 }
 
@@ -93,6 +95,7 @@ export interface Organization extends BaseUser {
     companyName: string;
     sector: string;
     savedStudentIds: string[];
+    projectIds?: string[];
 }
 
 export interface Admin extends BaseUser {
@@ -109,6 +112,15 @@ export interface FacultyData {
 export interface CategoryData {
     id: string;
     name: string;
+}
+
+export interface Invitation {
+    id: string;
+    organizationId: string;
+    studentId: string;
+    projectId: string;
+    status: 'gözləyir' | 'qəbul edildi' | 'rədd edildi';
+    createdAt: Date;
 }
 
 export type AppUser = Student | Organization | Admin;

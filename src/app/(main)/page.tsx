@@ -15,7 +15,7 @@ import { FacultyBarChart } from '@/components/charts/faculty-bar-chart';
 import { Student } from '@/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Skeleton } from '@/components/ui/skeleton';
-import { students as allStudents, faculties } from '@/lib/data';
+import { getStudents, faculties } from '@/lib/data';
 import { useEffect, useState } from 'react';
 
 export default function HomePage() {
@@ -26,6 +26,7 @@ export default function HomePage() {
 
   useEffect(() => {
     // Simulate fetching data
+    const allStudents = getStudents();
     const enrichedStudents = allStudents.map((student, index) => {
       const placeholder = PlaceHolderImages[index % PlaceHolderImages.length];
       return {

@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { students as allStudents, faculties, categories } from '@/lib/data';
+import { getStudents, faculties, categories } from '@/lib/data';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
@@ -34,6 +34,7 @@ export default function SearchPage() {
 
   useEffect(() => {
     // This effect runs when the component mounts
+    const allStudents = getStudents();
     const studentsWithPics = allStudents.map((student, index) => {
       const placeholder = PlaceHolderImages.find(p => p.id.slice(-1) === student.id.slice(-1)) || PlaceHolderImages[index % PlaceHolderImages.length];
       return {
