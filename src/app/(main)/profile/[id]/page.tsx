@@ -53,7 +53,7 @@ export default function ProfilePage() {
         const studentAchievements = getAchievementsByStudentId(studentId);
         const studentCertificates = getCertificatesByStudentId(studentId);
         
-        const placeholder = PlaceHolderImages.find(p => p.id.includes(studentData.id.slice(-1))) || PlaceHolderImages[0];
+        const placeholder = PlaceHolderImages.find(p => p.id.slice(-1) === studentData.id.slice(-1)) || PlaceHolderImages[0];
         setStudent({
           ...studentData,
           profilePictureUrl: placeholder.imageUrl,
