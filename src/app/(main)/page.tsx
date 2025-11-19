@@ -41,7 +41,7 @@ export default function HomePage() {
         <div className="relative container mx-auto px-4 z-10">
           <div className="max-w-3xl text-left">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
-               <span>Naxçıvan Dövlət Universiteti</span> <br /> <span>Tələbə İstedad Bankı</span>
+               <span className="block">Naxçıvan Dövlət Universiteti</span> <span className="block">Tələbə İstedad Bankı</span>
             </h1>
             <p className="text-lg md:text-xl mb-8">
                 İstedadını göstərəcək platforma.
