@@ -1,3 +1,64 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "student-1",
+      "description": "A smiling female student in a library",
+      "imageUrl": "https://images.unsplash.com/photo-1525134479668-1bee5c7c6845?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxmZW1hbGUlMjBzdHVkZW50fGVufDB8fHx8MTc2MzQ0NjQxM3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "female student"
+    },
+    {
+      "id": "student-2",
+      "description": "A male student working on a laptop",
+      "imageUrl": "https://images.unsplash.com/photo-1631131428457-3c14bdcb81d4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxtYWxlJTIwc3R1ZGVudHxlbnwwfHx8fDE3NjM1MTA1NzJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "male student"
+    },
+    {
+      "id": "student-3",
+      "description": "A student presenting a project",
+      "imageUrl": "https://images.unsplash.com/photo-1758270704587-43339a801396?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxzdHVkZW50JTIwcHJlc2VudGF0aW9ufGVufDB8fHx8MTc2MzU2MjIyN3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "student presentation"
+    },
+    {
+      "id": "student-4",
+      "description": "A group of students collaborating",
+      "imageUrl": "https://images.unsplash.com/photo-1758525861742-fef623c2ad2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxzdHVkZW50cyUyMGNvbGxhYm9yYXRpbmd8ZW58MHx8fHwxNzYzNTI0NTQ1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "students collaborating"
+    },
+    {
+      "id": "student-5",
+      "description": "A student participating in a sports event",
+      "imageUrl": "https://images.unsplash.com/photo-1606589551604-86f49d5e8dbd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxzdHVkZW50JTIwc3BvcnR8ZW58MHx8fHwxNzYzNTYyMjI4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "student sport"
+    },
+    {
+      "id": "student-6",
+      "description": "A female student coding on her computer",
+      "imageUrl": "https://images.unsplash.com/photo-1549082984-1323b94df9a6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHx3b21hbiUyMGNvZGluZ3xlbnwwfHx8fDE3NjM1MjQ0MDN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "woman coding"
+    },
+    {
+      "id": "student-7",
+      "description": "A male student in a science lab",
+      "imageUrl": "https://images.unsplash.com/photo-1630959302862-82cec6653d60?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxtYW4lMjBzY2llbmNlfGVufDB8fHx8MTc2MzU2MjIyN3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "man science"
+    },
+    {
+      "id": "student-8",
+      "description": "A student focused on painting a canvas",
+      "imageUrl": "https://images.unsplash.com/photo-1448932133140-b4045783ed9e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxwZXJzb24lMjBwYWludGluZ3xlbnwwfHx8fDE3NjM1MzgwNTR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "person painting"
+    },
+    {
+      "id": "student-9",
+      "description": "A young entrepreneur pitching an idea",
+      "imageUrl": "https://images.unsplash.com/photo-1660794483744-d6c7ab2ac6fd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxlbnRyZXByZW5ldXIlMjBwaXRjaHxlbnwwfHx8fDE3NjM1NjIyMjd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "entrepreneur pitch"
+    },
+    {
+      "id": "student-10",
+      "description": "A female student reading a book outdoors",
+      "imageUrl": "https://images.unsplash.com/photo-1527963841590-34ea3172750d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx3b21hbiUyMHJlYWRpbmd8ZW58MHx8fHwxNzYzNTE0OTMzfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "woman reading"
+    }
+  ]
 }
