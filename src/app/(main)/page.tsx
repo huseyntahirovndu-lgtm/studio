@@ -1,3 +1,4 @@
+'use client';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -15,6 +16,7 @@ import { students, faculties } from '@/lib/data';
 import { CategoryPieChart } from '@/components/charts/category-pie-chart';
 import { FacultyBarChart } from '@/components/charts/faculty-bar-chart';
 import { Logo } from '@/components/logo';
+import { motion } from 'framer-motion';
 
 export default function HomePage() {
   const topTalents = [...students]
@@ -26,18 +28,32 @@ export default function HomePage() {
   const totalAchievements = students.reduce((acc, s) => acc + s.achievements.length, 0);
 
   return (
-    <>
+    <motion.div
+      className="flex flex-col"
+      initial="initial"
+      animate="animate"
+      variants={{
+        initial: { opacity: 0 },
+        animate: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.2 } },
+      }}
+    >
       {/* Hero Section */}
       <section className="relative h-[60vh] md:h-[70vh] flex items-center text-white bg-black">
-        <Image
-          src="https://i.ibb.co/cXv2KzRR/q2.jpg"
-          alt="Naxçıvan Dövlət Universiteti"
-          fill
-          className="object-cover"
-          priority
-          data-ai-hint="university building"
-        />
-        <div className="absolute inset-0 bg-black/30" />
+        <motion.div
+          initial={{ scale: 1.05, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 1, ease: "easeOut" }}
+          className="w-full h-full"
+        >
+          <Image
+            src="https://i.ibb.co/cXv2KzRR/q2.jpg"
+            alt="Naxçıvan Dövlət Universiteti"
+            fill
+            className="object-cover"
+            priority
+            data-ai-hint="university building"
+          />
+        </motion.div>
         <div className="relative container mx-auto px-4 z-10">
           <div className="max-w-3xl text-left">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
@@ -138,6 +154,6 @@ export default function HomePage() {
           </div>
         </section>
       </div>
-    </>
+    </motion.div>
   );
 }
