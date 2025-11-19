@@ -53,9 +53,9 @@ Instructions:
 3.  Provide a clear and concise explanation of the factors that influenced the talent score. Include specific examples from the profile data to justify your assessment.
 4.  Consider the following factors when assigning the talent score:
     *   Skills: The number and relevance of skills listed.
-    *   Projects: The quality and complexity of projects undertaken.
-    *   Achievements: The level and significance of awards and certifications received.
-    *   Social Links: The completeness and professional quality of social media profiles.
+    *   Projects: The quality, complexity, and completeness of projects undertaken. Consider the student's role and the team members involved.
+    *   Achievements: The level (International > Republic > Regional > University) and significance of awards and certifications received. A link to verify the achievement is a plus.
+    *   Social Links: The completeness and professional quality of social media profiles (LinkedIn, GitHub, etc.).
 
 Profile Data:
 {{{profileData}}}

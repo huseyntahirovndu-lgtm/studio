@@ -150,11 +150,14 @@ export default function ProfilePage() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Briefcase /> Layihələr</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="divide-y">
                         {projects.map((project) => (
-                            <div key={project.id}>
+                            <div key={project.id} className="py-4 first:pt-0 last:pb-0">
                                 <h3 className="font-semibold">{project.title} <span className="text-sm font-normal text-muted-foreground">- {project.role}</span></h3>
                                 <p className="text-sm text-muted-foreground mt-1">{project.description}</p>
+                                {project.teamMembers && project.teamMembers.length > 0 && (
+                                  <p className="text-xs text-muted-foreground mt-1"><strong>Komanda:</strong> {project.teamMembers.join(', ')}</p>
+                                )}
                                 {project.link && <Button variant="link" asChild className="p-0 h-auto mt-1"><a href={project.link} target="_blank" rel="noopener noreferrer">Layihəyə bax</a></Button>}
                             </div>
                         ))}
@@ -167,14 +170,18 @@ export default function ProfilePage() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Award /> Nailiyyətlər</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="divide-y">
                        {achievements.map((ach) => (
-                           <div key={ach.id} className="flex items-start justify-between">
-                               <div>
-                                   <h3 className="font-semibold">{ach.name}</h3>
-                                   <p className="text-sm text-muted-foreground">{ach.position} - {ach.level}</p>
+                           <div key={ach.id} className="py-4 first:pt-0 last:pb-0">
+                               <div className="flex items-start justify-between">
+                                  <div>
+                                      <h3 className="font-semibold">{ach.name}</h3>
+                                      <p className="text-sm text-muted-foreground">{ach.position} - {ach.level}</p>
+                                      {ach.description && <p className="text-sm text-muted-foreground mt-1">{ach.description}</p>}
+                                  </div>
+                                  <p className="text-sm text-muted-foreground whitespace-nowrap pl-4">{new Date(ach.date).toLocaleDateString()}</p>
                                </div>
-                               <p className="text-sm text-muted-foreground">{new Date(ach.date).toLocaleDateString()}</p>
+                                {ach.link && <Button variant="link" asChild className="p-0 h-auto mt-1"><a href={ach.link} target="_blank" rel="noopener noreferrer">Təsdiqə bax</a></Button>}
                            </div>
                        ))}
                     </CardContent>

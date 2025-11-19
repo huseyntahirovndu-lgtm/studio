@@ -46,15 +46,18 @@ const projectSchema = z.object({
   title: z.string().min(3, "Layihə adı boş ola bilməz."),
   description: z.string().min(10, "Təsvir ən azı 10 hərf olmalıdır."),
   role: z.string().min(2, "Rol boş ola bilməz."),
+  teamMembers: z.string().optional().transform(val => val ? val.split(',').map(s => s.trim()).filter(Boolean) : []),
   link: z.string().url().or(z.literal('')),
   status: z.enum(['davam edir', 'tamamlanıb']),
 });
 
 const achievementSchema = z.object({
   name: z.string().min(3, "Nailiyyət adı boş ola bilməz."),
+  description: z.string().optional(),
   position: z.string().min(1, "Dərəcə boş ola bilməz."),
   level: z.enum(['Beynəlxalq', 'Respublika', 'Regional', 'Universitet']),
   date: z.string().min(1, "Tarix boş ola bilməz."),
+  link: z.string().url().or(z.literal('')),
 });
 
 const certificateSchema = z.object({
@@ -88,12 +91,12 @@ export default function EditProfilePage() {
   
   const projectForm = useForm<z.infer<typeof projectSchema>>({
     resolver: zodResolver(projectSchema),
-    defaultValues: { title: '', description: '', role: '', link: '', status: 'davam edir' }
+    defaultValues: { title: '', description: '', role: '', teamMembers: '', link: '', status: 'davam edir' }
   });
 
   const achievementForm = useForm<z.infer<typeof achievementSchema>>({
     resolver: zodResolver(achievementSchema),
-    defaultValues: { name: '', position: '', level: 'Universitet', date: '' }
+    defaultValues: { name: '', description: '', position: '', level: 'Universitet', date: '', link: '' }
   });
   
   const certificateForm = useForm<z.infer<typeof certificateSchema>>({
@@ -168,6 +171,11 @@ export default function EditProfilePage() {
       await submitAction();
       toast({ title: successMessage });
       formToReset.reset();
+      // Refetch data after submission
+      if (formToReset === projectForm) refetchProjects();
+      if (formToReset === achievementForm) refetchAchievements();
+      if (formToReset === certificateForm) refetchCertificates();
+
       await triggerTalentScoreUpdate();
     } catch (error) {
       console.error(`Error: ${error}`);
@@ -209,24 +217,27 @@ export default function EditProfilePage() {
       if (!user || !firestore) return;
       setIsSaving(true);
       let docRef;
+      let refetch: () => void;
+
       switch (itemType) {
           case 'project':
               docRef = doc(firestore, 'users', user.uid, 'projects', docId);
+              refetch = refetchProjects;
               break;
           case 'achievement':
               docRef = doc(firestore, 'users', user.uid, 'achievements', docId);
+              refetch = refetchAchievements;
               break;
           case 'certificate':
               docRef = doc(firestore, 'users', user.uid, 'certificates', docId);
+              refetch = refetchCertificates;
               break;
       }
 
       try {
           await deleteDoc(docRef);
           toast({ title: "Element silindi", description: "Seçilmiş element uğurla silindi." });
-          refetchProjects && refetchProjects();
-          refetchAchievements && refetchAchievements();
-          refetchCertificates && refetchCertificates();
+          refetch && refetch();
           await triggerTalentScoreUpdate();
       } catch (error) {
           console.error("Error deleting document:", error);
@@ -324,6 +335,9 @@ export default function EditProfilePage() {
                         <FormField name="description" control={projectForm.control} render={({ field }) => (
                             <FormItem><FormLabel>Təsvir</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
+                        <FormField name="teamMembers" control={projectForm.control} render={({ field }) => (
+                            <FormItem><FormLabel>Komanda Üzvləri</FormLabel><FormControl><Input {...field} placeholder="Adları vergül ilə ayırın" /></FormControl><FormMessage /></FormItem>
+                        )} />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <FormField name="role" control={projectForm.control} render={({ field }) => (
                                 <FormItem><FormLabel>Rolunuz</FormLabel><FormControl><Input {...field} placeholder="Məs: Developer, Dizayner" /></FormControl><FormMessage /></FormItem>
@@ -388,7 +402,10 @@ export default function EditProfilePage() {
                          <FormField name="name" control={achievementForm.control} render={({ field }) => (
                             <FormItem><FormLabel>Nailiyyətin Adı (Müsabiqə, Olimpiada və s.)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <FormField name="description" control={achievementForm.control} render={({ field }) => (
+                            <FormItem><FormLabel>Təsvir (Könüllü)</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <FormField name="position" control={achievementForm.control} render={({ field }) => (
                                 <FormItem><FormLabel>Tutduğunuz Yer/Dərəcə</FormLabel><FormControl><Input {...field} placeholder="Məs: 1-ci yer, Qızıl medal" /></FormControl><FormMessage /></FormItem>
                             )} />
@@ -402,8 +419,13 @@ export default function EditProfilePage() {
                                 </Select>
                                 <FormMessage /></FormItem>
                             )} />
-                             <FormField name="date" control={achievementForm.control} render={({ field }) => (
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField name="date" control={achievementForm.control} render={({ field }) => (
                                 <FormItem><FormLabel>Tarix</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                            <FormField name="link" control={achievementForm.control} render={({ field }) => (
+                                <FormItem><FormLabel>Təsdiq Linki (Könüllü)</FormLabel><FormControl><Input type="url" {...field} /></FormControl><FormMessage /></FormItem>
                             )} />
                         </div>
                         <Button type="submit" disabled={isSaving}>
