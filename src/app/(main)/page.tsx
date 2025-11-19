@@ -17,6 +17,7 @@ import { collection, serverTimestamp, query, where, limit } from 'firebase/fires
 import { useFirestore } from '@/firebase/provider';
 import { Student } from '@/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function HomePage() {
   const firestore = useFirestore();
