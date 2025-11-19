@@ -29,7 +29,7 @@ export default function HomePage() {
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="relative w-full flex items-center text-white">
+      <section className="relative w-full flex items-center bg-black">
         <Image
           src="https://i.ibb.co/cXv2KzRR/q2.jpg"
           alt="Naxçıvan Dövlət Universiteti"
@@ -41,26 +41,31 @@ export default function HomePage() {
         />
         <div className="absolute inset-0 bg-black/30" />
         <div className="absolute inset-0 flex items-center">
-            <div className="container mx-auto px-4 md:px-8 lg:px-12">
-                <div className="max-w-3xl text-left">
-                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4">
-                    Naxçıvan Dövlət <br />Universiteti Tələbə İstedad Bankı
-                    </h1>
-                    <p className="text-lg md:text-xl mb-8">
-                    İstedadını göstərəcək platforma.
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-4">
-                    <Button size="lg" asChild>
-                        <Link href="/search">
-                        Kəşf et <ArrowRight className="ml-2 h-5 w-5" />
-                        </Link>
-                    </Button>
-                    <Button size="lg" variant="outline" className="bg-transparent border-white text-white hover:bg-white hover:text-primary" asChild>
-                        <Link href="/register">Qeydiyyat</Link>
-                    </Button>
-                    </div>
-                </div>
+          <div className="container mx-auto px-4 md:px-8 lg:px-12">
+            <div className="max-w-3xl text-left">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-white">
+                Naxçıvan Dövlət Universiteti <br /> Tələbə İstedad Bankı
+              </h1>
+              <p className="text-lg md:text-xl mb-8 text-white">
+                İstedadını göstərəcək platforma.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button size="lg" asChild>
+                  <Link href="/search">
+                    Kəşf et <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="bg-transparent border-white text-white hover:bg-white hover:text-primary"
+                  asChild
+                >
+                  <Link href="/register">Qeydiyyat</Link>
+                </Button>
+              </div>
             </div>
+          </div>
         </div>
       </section>
 
