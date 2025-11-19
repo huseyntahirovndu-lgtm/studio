@@ -82,6 +82,7 @@ export default function RegisterPage() {
       const userDocRef = doc(firestore, 'users', user.uid);
       const newUserProfile = {
         id: user.uid,
+        role: 'student', // Assign default role
         firstName: values.firstName,
         lastName: values.lastName,
         email: values.email,

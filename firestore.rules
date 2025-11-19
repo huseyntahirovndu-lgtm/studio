@@ -2,156 +2,149 @@
  * @fileoverview Firestore Security Rules for İstedad Mərkəzi Platform.
  *
  * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for student data (profiles, projects, achievements, certificates).
- * Organizations and talent categories are separate top-level collections with distinct access control.
+ * This ruleset enforces a strict, role-based access control (RBAC) model.
+ * - 'student' role: Can manage their own data. Can read public profiles.
+ * - 'organization' role: Can manage their own data. Can read public profiles.
+ * - 'admin' role: Has elevated privileges (to be defined).
  *
  * Data Structure:
- * - /users/{studentId}: Stores student profile data.  'studentId' MUST match the authenticated user's UID.
- * - /users/{studentId}/projects/{projectId}: Stores project data owned by the student. 'studentId' is denormalized for authorization.
- * - /users/{studentId}/achievements/{achievementId}: Stores achievement data owned by the student. 'studentId' is denormalized for authorization.
- * - /users/{studentId}/certificates/{certificateId}: Stores certificate data owned by the student. 'studentId' is denormalized for authorization.
- * - /organizations/{organizationId}: Stores organization profile data.
- * - /categories/{categoryId}: Stores talent category data.
- * - /faculties/{facultyId}: Stores faculty data.
+ * - /users/{userId}: Stores user profile data (students). Document ID MUST match UID. 'role' field determines permissions.
+ * - /users/{userId}/(projects|achievements|certificates)/{docId}: User-owned subcollections.
+ * - /organizations/{orgId}: Stores organization profile data. Document ID MUST match UID.
+ * - /categories/{categoryId}: Publicly readable data.
+ * - /faculties/{facultyId}: Publicly readable data.
  *
  * Key Security Decisions:
- * - Students can only create, update, and delete their own profile data and associated subcollections.
- * - All users (authenticated or not) can read and list student profiles to enable search and ranking features.
- * - Organizations can create, read, update, and delete their own profiles.
- * - Categories and Faculties are publicly readable. Writes are not defined in the schema, defaulting to deny all.
- *
- * Denormalization for Authorization:
- * The 'studentId' field is denormalized into the Project, Achievement, and Certificate documents. This allows security rules
- * on these documents to directly verify ownership without needing to perform additional `get()` operations.
+ * - All writes are gated by checking the user's role and ownership (request.auth.uid == {userId/orgId}).
+ * - Public read access is granted to collections like categories and faculties.
+ * - Student and Organization profiles are readable by any authenticated user, promoting discoverability.
+ * - Creating a user or organization profile requires the document ID to match the user's UID and the correct role to be set.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Defines if the current user is signed in
-     * @return {bool} True if the user is signed in
+     * @description Returns true if the user is authenticated.
      */
     function isSignedIn() {
       return request.auth != null;
     }
 
     /**
-     * @description Checks if the request is made by the owner of the resource.
-     * @param {string} userId - The user ID to check against the request's auth UID.
-     * @return {bool} True if the request is made by the owner.
+     * @description Checks if the UID in the request matches the given userId.
      */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
-
+    
     /**
-     * @description Checks if the request is made by the existing owner of the resource.
-     * @param {string} userId - The user ID to check against the resource's owner ID.
-     * @return {bool} True if the request is made by the existing owner.
+     * @description Checks if the user is an admin. Reads the user's role from their profile document.
      */
-    function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
+    function isAdmin() {
+        return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
     /**
-     * @description Security rules for student profiles.
-     * @path /users/{studentId}
-     * @allow (get, list) Any user can view and list profiles for search and ranking.
-     * @allow (create) User with UID 'user_abc' can create a profile at /users/user_abc.
-     * @allow (update, delete) User with UID 'user_abc' can update/delete their profile at /users/user_abc.
-     * @deny (create) User with UID 'user_def' cannot create a profile at /users/user_abc.
-     * @deny (update, delete) User with UID 'user_def' cannot update/delete the profile at /users/user_abc.
-     * @principle Enforces document ownership for write operations. Public read access for discoverability.
+     * @description Validates the data for a new student profile.
      */
-    match /users/{studentId} {
-      allow get, list: if true;
-      allow create: if isOwner(studentId) && request.resource.data.id == studentId;
-      allow update: if isExistingOwner(studentId) && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingOwner(studentId);
+    function isValidNewStudentData(userId) {
+      let data = request.resource.data;
+      return isOwner(userId)
+          && data.id == userId
+          && data.role == 'student';
     }
 
     /**
-     * @description Security rules for student projects.
-     * @path /users/{studentId}/projects/{projectId}
-     * @allow (list, get) Any user can view projects of a student profile.
-     * @allow (create, update, delete) Only the owner student can manage their own projects.
-     * @principle Public read access for profile completeness. Owner-only writes.
+     * @description Validates the data for a student profile update.
      */
-    match /users/{studentId}/projects/{projectId} {
-      allow get, list: if true;
-      allow create: if isOwner(studentId) && request.resource.data.studentId == studentId;
-      allow update: if isExistingOwner(studentId) && request.resource.data.studentId == resource.data.studentId;
-      allow delete: if isExistingOwner(studentId);
+    function isValidStudentUpdateData() {
+        let data = request.resource.data;
+        return data.id == resource.data.id
+            && data.role == resource.data.role; // Role should not change
     }
 
     /**
-     * @description Security rules for student achievements.
-     * @path /users/{studentId}/achievements/{achievementId}
-     * @allow (list, get) Any user can view achievements of a student profile.
-     * @allow (create, update, delete) Only the owner student can manage their own achievements.
-     * @principle Public read access for profile completeness. Owner-only writes.
+     * @description Security rules for user (student) profiles.
+     * @path /users/{userId}
+     * @allow (get, list) Any authenticated user can view profiles for search and ranking.
+     * @allow (create) A user can create their own profile with the 'student' role.
+     * @allow (update) A user can update their own profile.
+     * @allow (delete) A user can delete their own profile.
      */
-    match /users/{studentId}/achievements/{achievementId} {
-      allow get, list: if true;
-      allow create: if isOwner(studentId) && request.resource.data.studentId == studentId;
-      allow update: if isExistingOwner(studentId) && request.resource.data.studentId == resource.data.studentId;
-      allow delete: if isExistingOwner(studentId);
+    match /users/{userId} {
+      allow get, list: if isSignedIn();
+      allow create: if isValidNewStudentData(userId);
+      allow update: if isOwner(userId) && isValidStudentUpdateData();
+      allow delete: if isOwner(userId);
+
+      /**
+       * @description Security rules for user-owned subcollections.
+       * @path /users/{userId}/{subcollection}/{docId}
+       * @allow (get, list) Any signed-in user can view subcollection items.
+       * @allow (create, update, delete) Only the owner can manage their own items.
+       */
+      match /{subcollection=**} {
+        allow get, list: if isSignedIn();
+        allow write: if isOwner(userId);
+      }
+    }
+    
+    /**
+     * @description Validates the data for a new organization profile.
+     */
+    function isValidNewOrgData(orgId) {
+        let data = request.resource.data;
+        return isOwner(orgId)
+            && data.id == orgId
+            && data.role == 'organization';
     }
 
     /**
-     * @description Security rules for student certificates.
-     * @path /users/{studentId}/certificates/{certificateId}
-     * @allow (list, get) Any user can view certificates of a student profile.
-     * @allow (create, update, delete) Only the owner student can manage their own certificates.
-     * @principle Public read access for profile completeness. Owner-only writes.
+     * @description Validates the data for an organization profile update.
      */
-    match /users/{studentId}/certificates/{certificateId} {
-      allow get, list: if true;
-      allow create: if isOwner(studentId) && request.resource.data.studentId == studentId;
-      allow update: if isExistingOwner(studentId) && request.resource.data.studentId == resource.data.studentId;
-      allow delete: if isExistingOwner(studentId);
+    function isValidOrgUpdateData() {
+        let data = request.resource.data;
+        return data.id == resource.data.id
+            && data.role == resource.data.role; // Role should not change
     }
+
 
     /**
      * @description Security rules for organizations.
      * @path /organizations/{organizationId}
-     * @allow (get) Any signed-in user can view organization profiles.
-     * @allow (create, update, delete) Only the owner organization can manage their own profile.
-     * @principle Enforces document ownership for write operations. Signed-in read access.
+     * @allow (get) Any authenticated user can view organization profiles.
+     * @allow (list) Listing all organizations is disabled.
+     * @allow (create, update, delete) Only the owner can manage their own profile.
      */
     match /organizations/{organizationId} {
       allow get: if isSignedIn();
-      allow list: if false; // Listing all organizations is disabled for now.
-      allow create: if isSignedIn() && request.auth.uid == organizationId && request.resource.data.id == organizationId;
-      allow update: if isSignedIn() && request.auth.uid == organizationId && resource.data.id == organizationId;
-      allow delete: if isSignedIn() && request.auth.uid == organizationId && resource != null;
+      allow list: if false; // To be enabled if needed
+      allow create: if isValidNewOrgData(organizationId);
+      allow update: if isOwner(organizationId) && isValidOrgUpdateData();
+      allow delete: if isOwner(organizationId);
     }
 
     /**
      * @description Security rules for talent categories.
      * @path /categories/{categoryId}
-     * @allow (get, list) Any user can read and list talent categories.
-     * @deny (create, update, delete) No one can write to categories (managed by admin).
-     * @principle Public read access for categories.
+     * @allow (read) Publicly readable by anyone.
+     * @allow (write) Writes are disallowed (managed by admin).
      */
     match /categories/{categoryId} {
-      allow get, list: if true;
-      allow create, update, delete: if false;
+      allow read: if true;
+      allow write: if false; 
     }
 
     /**
      * @description Security rules for faculties.
      * @path /faculties/{facultyId}
-     * @allow (get, list) Any user can read and list faculties.
-     * @deny (create, update, delete) No one can write to faculties (managed by admin).
-     * @principle Public read access for faculties.
+     * @allow (read) Publicly readable by anyone.
+     * @allow (write) Writes are disallowed (managed by admin).
      */
     match /faculties/{facultyId} {
-      allow get, list: if true;
-      allow create, update, delete: if false;
+      allow read: if true;
+      allow write: if false;
     }
   }
 }
-
-    

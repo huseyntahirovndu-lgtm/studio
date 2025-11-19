@@ -53,6 +53,7 @@ export interface Certificate {
 
 export interface Student {
   id: string;
+  role: 'student' | 'organization' | 'admin';
   firstName: string;
   lastName: string;
   email: string;
@@ -75,6 +76,16 @@ export interface Student {
   profilePictureUrl?: string;
   profilePictureHint?: string;
   createdAt?: any; // Allow serverTimestamp
+}
+
+export interface Organization {
+    id: string;
+    role: 'student' | 'organization' | 'admin';
+    name: string;
+    email: string;
+    companyName: string;
+    sector: string;
+    savedStudentIds?: string[];
 }
 
 export interface FacultyData {

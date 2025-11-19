@@ -8,7 +8,12 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the student entity."
+          "description": "Unique identifier for the student entity, matches Firebase Auth UID."
+        },
+        "role": {
+            "type": "string",
+            "description": "The role of the user.",
+            "enum": ["student", "organization", "admin"]
         },
         "firstName": {
           "type": "string",
@@ -107,6 +112,7 @@
       },
       "required": [
         "id",
+        "role",
         "firstName",
         "lastName",
         "email",
@@ -267,7 +273,12 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the organization entity."
+          "description": "Unique identifier for the organization entity, matches Firebase Auth UID."
+        },
+        "role": {
+            "type": "string",
+            "description": "The role of the user.",
+            "enum": ["student", "organization", "admin"]
         },
         "name": {
           "type": "string",
@@ -296,6 +307,7 @@
       },
       "required": [
         "id",
+        "role",
         "name",
         "email",
         "companyName",
@@ -332,33 +344,33 @@
   "firestore": {
     "structure": [
       {
-        "path": "/users/{studentId}",
+        "path": "/users/{userId}",
         "definition": {
           "entityName": "Student",
           "schema": {
             "$ref": "#/backend/entities/Student"
           },
-          "description": "Stores student profile data. The document ID is the student's user ID. All student-related data is stored as subcollections under this document.",
+          "description": "Stores user profile data, primarily for students. The document ID is the user's Auth UID. The 'role' field differentiates user types.",
           "params": [
             {
-              "name": "studentId",
-              "description": "The unique identifier of the student. It matches the Firebase Auth UID."
+              "name": "userId",
+              "description": "The unique identifier of the user, matching their Firebase Auth UID."
             }
           ]
         }
       },
       {
-        "path": "/users/{studentId}/projects/{projectId}",
+        "path": "/users/{userId}/projects/{projectId}",
         "definition": {
           "entityName": "Project",
           "schema": {
             "$ref": "#/backend/entities/Project"
           },
-          "description": "Stores project information for a specific student. Includes denormalized 'studentId' for authorization independence.",
+          "description": "Stores project information for a specific user. 'studentId' is denormalized for ownership verification.",
           "params": [
             {
-              "name": "studentId",
-              "description": "The unique identifier of the student who owns the project."
+              "name": "userId",
+              "description": "The unique identifier of the user who owns the project."
             },
             {
               "name": "projectId",
@@ -368,17 +380,17 @@
         }
       },
       {
-        "path": "/users/{studentId}/achievements/{achievementId}",
+        "path": "/users/{userId}/achievements/{achievementId}",
         "definition": {
           "entityName": "Achievement",
           "schema": {
             "$ref": "#/backend/entities/Achievement"
           },
-          "description": "Stores achievement information for a specific student. Includes denormalized 'studentId' for authorization independence.",
+          "description": "Stores achievement information for a specific user. 'studentId' is denormalized for ownership verification.",
           "params": [
             {
-              "name": "studentId",
-              "description": "The unique identifier of the student who earned the achievement."
+              "name": "userId",
+              "description": "The unique identifier of the user who earned the achievement."
             },
             {
               "name": "achievementId",
@@ -388,17 +400,17 @@
         }
       },
       {
-        "path": "/users/{studentId}/certificates/{certificateId}",
+        "path": "/users/{userId}/certificates/{certificateId}",
         "definition": {
           "entityName": "Certificate",
           "schema": {
             "$ref": "#/backend/entities/Certificate"
           },
-          "description": "Stores certificate information for a specific student. Includes denormalized 'studentId' for authorization independence.",
+          "description": "Stores certificate information for a specific user. 'studentId' is denormalized for ownership verification.",
           "params": [
             {
-              "name": "studentId",
-              "description": "The unique identifier of the student who earned the certificate."
+              "name": "userId",
+              "description": "The unique identifier of the user who earned the certificate."
             },
             {
               "name": "certificateId",
@@ -414,11 +426,11 @@
           "schema": {
             "$ref": "#/backend/entities/Organization"
           },
-          "description": "Stores organization profile data.",
+          "description": "Stores organization profile data. The document ID is the organization's Auth UID.",
           "params": [
             {
               "name": "organizationId",
-              "description": "The unique identifier of the organization."
+              "description": "The unique identifier of the organization, matching their Firebase Auth UID."
             }
           ]
         }
@@ -440,6 +452,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore data structure is designed to support the İstedad Mərkəzi platform, focusing on students, projects, achievements, certificates, organizations, and talent categories. The design prioritizes authorization independence, clarity, and scalability. All paths are designed to enable QAPs.\n\nAuthorization Independence (CRITICAL): User-owned data such as projects, achievements, and certificates are stored as subcollections of the `/users/{userId}` collection. This design allows for direct access to user data without needing to query parent documents, simplifying security rules and making them more robust. Each subcollection includes the studentId, which is the same as the user ID.\n\nStructural Segregation: Each entity type is stored in its own collection or subcollection, ensuring a homogeneous security posture. For instance, student profiles are stored in `/users/{userId}`, projects are in `/users/{userId}/projects/{projectId}`, and so on. This segregation simplifies security rules by ensuring all documents in a collection share the same access requirements.\n\nAccess Modeling:  Path-based ownership is used for private user data. For instance, student profiles and their associated projects, achievements, and certificates are stored under `/users/{userId}`.\n\nData Clarity and Predictability: Explicit state modeling and predictable schema are enforced. Document IDs are used consistently. Wildcards like `{studentId}`, `{projectId}`, `{achievementId}`, and `{certificateId}` are used consistently to represent resource IDs. Consistent naming of the entities and fields makes it easy to debug."
+    "reasoning": "The Firestore data structure is designed to support a multi-role system (student, organization, admin). The primary user collection is `/users/{userId}`, where the `role` field within each document determines the user's permissions. This approach consolidates user management while allowing for distinct data models and security rules for each role. Organization data is stored separately in `/organizations/{organizationId}` to maintain a clear distinction. Subcollections under `/users/{userId}` store user-specific data like projects and achievements, ensuring data ownership is easily verifiable through path-based security rules. Publicly accessible data like categories and faculties are in top-level collections for easy, unrestricted read access."
   }
 }
