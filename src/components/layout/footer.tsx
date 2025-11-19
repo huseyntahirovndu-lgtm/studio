@@ -11,7 +11,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="flex flex-col items-start gap-4">
             <Link href="/" className="flex items-center gap-3">
-              <Logo className="h-12 w-auto" />
+              <Logo className="h-14 w-auto" />
               <div>
                 <p className="font-bold text-lg">İstedad Mərkəzi</p>
                 <p className="text-sm text-primary-foreground/80">Naxçıvan Dövlət Universiteti</p>
