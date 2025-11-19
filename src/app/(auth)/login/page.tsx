@@ -1,12 +1,12 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { useAuth } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -28,6 +28,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { FirebaseError } from 'firebase/app';
+import type { AppUser } from '@/types';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Etibarlı bir e-poçt ünvanı daxil edin.' }),
@@ -37,6 +38,7 @@ const formSchema = z.object({
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const auth = useAuth();
+  const { user, isUserLoading, profile } = useUser();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -47,6 +49,20 @@ export default function LoginPage() {
       password: '',
     },
   });
+
+  // Redirect if user is already logged in
+  useEffect(() => {
+    if (!isUserLoading && user && profile) {
+      const appUser = profile as AppUser;
+      if (appUser.role === 'student') {
+        router.push('/student-dashboard');
+      } else if (appUser.role === 'organization') {
+        router.push('/organization-dashboard');
+      } else {
+        router.push('/');
+      }
+    }
+  }, [user, isUserLoading, profile, router]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
@@ -62,11 +78,12 @@ export default function LoginPage() {
 
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
+      // The useEffect above will handle the redirection after successful login and profile load
       toast({
         title: 'Uğurlu Giriş',
         description: 'İstedad Mərkəzinə xoş gəlmisiniz!',
       });
-      router.push('/');
+      // We don't router.push here immediately to allow the useUser hook to get the profile
     } catch (error) {
       console.error('Login error:', error);
       let errorMessage = 'Giriş zamanı xəta baş verdi. Zəhmət olmasa, yenidən cəhd edin.';
@@ -84,6 +101,11 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   }
+  
+  if (isUserLoading || user) {
+    return <div className="text-center">Yönləndirilir...</div>;
+  }
+
 
   return (
     <Card className="w-full max-w-sm">

@@ -9,7 +9,7 @@ import { useUser } from '@/firebase';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { getAuth, signOut } from 'firebase/auth';
-import type { AppUser, Student, Organization } from '@/types';
+import type { AppUser } from '@/types';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
@@ -43,7 +43,7 @@ export function Header() {
     if (!appUser) return '/';
     if (appUser.role === 'organization') return '/organization-dashboard';
     if (appUser.role === 'student') return '/student-dashboard';
-    return `/profile/${user?.uid}`; // Fallback for student
+    return `/`; 
   }
   
   return (
@@ -94,12 +94,17 @@ export function Header() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link href={getDashboardLink()}>
-                    {appUser.role === 'organization' ? 'İdarə Paneli' : 'Panelim'}
+                    {appUser.role === 'organization' ? 'Təşkilat Paneli' : 'Tələbə Paneli'}
                   </Link>
                 </DropdownMenuItem>
                  <DropdownMenuItem asChild>
-                  <Link href={`/profile/${user.uid}`}>Profilimə bax</Link>
+                  <Link href={appUser.role === 'student' ? `/profile/${user.uid}` : '#'}>Profilimə bax</Link>
                 </DropdownMenuItem>
+                {appUser.role === 'student' && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile/edit">Profili redaktə et</Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
                   Çıxış
