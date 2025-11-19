@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { BarChart, Home, Package, Settings, ShieldCheck, ShoppingCart, Users2, ListTree } from "lucide-react"
+import { BarChart, Home, Package, Settings, ShieldCheck, ShoppingCart, Users2, ListTree, Building } from "lucide-react"
 
 import { useAuth } from "@/hooks/use-auth"
 import { cn } from "@/lib/utils"
@@ -18,6 +18,7 @@ import type { Admin } from "@/types";
 const NAV_LINKS = [
     { href: "/admin/dashboard", icon: Home, label: "Dashboard" },
     { href: "/admin/students", icon: Users2, label: "Tələbələr" },
+    { href: "/admin/organizations", icon: Building, label: "Təşkilatlar" },
     { href: "/admin/categories", icon: ListTree, label: "Kateqoriyalar" },
 ];
 
@@ -38,7 +39,7 @@ export default function AdminLayout({
   }, [user, loading, router]);
 
 
-  if (loading || !user || user.role !== 'admin') {
+  if (loading || !user || (user as Admin).role !== 'admin') {
       return <div className="flex h-screen items-center justify-center">Yüklənir...</div>;
   }
 

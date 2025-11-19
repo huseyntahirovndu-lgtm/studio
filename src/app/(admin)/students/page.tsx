@@ -1,12 +1,8 @@
 'use client';
-import {
-  File,
-  ListFilter,
-  MoreHorizontal,
-} from "lucide-react"
+import React, { useState, useMemo } from "react";
+import { File, ListFilter, MoreHorizontal } from "lucide-react"
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge"
-
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -23,7 +19,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuItem
+  DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
   Table,
@@ -39,18 +38,63 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
-import { students } from "@/lib/data";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { students as allStudents, faculties, deleteUser, updateUser } from "@/lib/data";
+import type { Student, StudentStatus } from "@/types";
+import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
 
 
 export default function AdminStudentsPage() {
+  const [students, setStudents] = useState<Student[]>(allStudents);
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const handleStatusChange = (student: Student, newStatus: StudentStatus) => {
+    const updatedStudent = { ...student, status: newStatus };
+    const success = updateUser(updatedStudent);
+    if(success) {
+        setStudents(prev => prev.map(s => s.id === student.id ? updatedStudent : s));
+        toast({ title: "Status uğurla dəyişdirildi."});
+    } else {
+        toast({ variant: 'destructive', title: "Xəta", description: "Status dəyişdirilərkən xəta baş verdi."});
+    }
+  };
+
+  const handleDeleteStudent = (studentId: string) => {
+    const success = deleteUser(studentId);
+     if(success) {
+        setStudents(prev => prev.filter(s => s.id !== studentId));
+        toast({ title: "Tələbə uğurla silindi."});
+    } else {
+        toast({ variant: 'destructive', title: "Xəta", description: "Tələbə silinərkən xəta baş verdi."});
+    }
+  }
+  
+    const statusMap: Record<StudentStatus, string> = {
+        'təsdiqlənmiş': 'Təsdiqlənmiş',
+        'gözləyir': 'Gözləyir',
+        'arxivlənmiş': 'Arxivlənmiş'
+    };
+
     return (
         <Tabs defaultValue="all">
             <div className="flex items-center">
               <TabsList>
                 <TabsTrigger value="all">Hamısı</TabsTrigger>
-                <TabsTrigger value="active">Təsdiqlənmiş</TabsTrigger>
-                <TabsTrigger value="draft">Gözləyən</TabsTrigger>
-                <TabsTrigger value="archived" className="hidden sm:flex">
+                <TabsTrigger value="təsdiqlənmiş">Təsdiqlənmiş</TabsTrigger>
+                <TabsTrigger value="gözləyir">Gözləyən</TabsTrigger>
+                <TabsTrigger value="arxivlənmiş" className="hidden sm:flex">
                   Arxivlənmiş
                 </TabsTrigger>
               </TabsList>
@@ -67,15 +111,11 @@ export default function AdminStudentsPage() {
                   <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Fakültəyə görə</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuCheckboxItem checked>
-                      Memarlıq və Mühəndislik
-                    </DropdownMenuCheckboxItem>
-                    <DropdownMenuCheckboxItem>
-                      İqtisadiyyat və İdarəetmə
-                    </DropdownMenuCheckboxItem>
-                     <DropdownMenuCheckboxItem>
-                      Tibb
-                    </DropdownMenuCheckboxItem>
+                    {faculties.map(faculty => (
+                       <DropdownMenuCheckboxItem key={faculty.id}>
+                        {faculty.name}
+                       </DropdownMenuCheckboxItem>
+                    ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
                 <Button size="sm" variant="outline" className="h-7 gap-1">
@@ -87,7 +127,7 @@ export default function AdminStudentsPage() {
               </div>
             </div>
             <TabsContent value="all">
-              <Card>
+               <Card>
                 <CardHeader>
                   <CardTitle>Tələbələr</CardTitle>
                   <CardDescription>
@@ -107,7 +147,7 @@ export default function AdminStudentsPage() {
                           Qeydiyyat Tarixi
                         </TableHead>
                         <TableHead>
-                          <span className="sr-only">Actions</span>
+                          <span className="sr-only">Əməliyyatlar</span>
                         </TableHead>
                       </TableRow>
                     </TableHeader>
@@ -118,7 +158,9 @@ export default function AdminStudentsPage() {
                                 {student.firstName} {student.lastName}
                             </TableCell>
                             <TableCell>
-                                <Badge variant="outline">Təsdiqlənib</Badge>
+                                <Badge variant={student.status === 'təsdiqlənmiş' ? 'default' : student.status === 'gözləyir' ? 'secondary' : 'outline'}>
+                                  {statusMap[student.status]}
+                                </Badge>
                             </TableCell>
                             <TableCell className="hidden md:table-cell">
                                 {student.talentScore}
@@ -135,7 +177,7 @@ export default function AdminStudentsPage() {
                                     variant="ghost"
                                     >
                                      <MoreHorizontal className="h-4 w-4" />
-                                     <span className="sr-only">Toggle menu</span>
+                                     <span className="sr-only">Menyunu aç</span>
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
@@ -143,7 +185,35 @@ export default function AdminStudentsPage() {
                                     <DropdownMenuItem asChild>
                                       <Link href={`/profile/${student.id}`}>Profilə bax</Link>
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem>Redaktə et</DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <Link href={`/profile/edit`}>Redaktə et</Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSub>
+                                        <DropdownMenuSubTrigger>Statusu dəyiş</DropdownMenuSubTrigger>
+                                        <DropdownMenuSubContent>
+                                            <DropdownMenuItem onClick={() => handleStatusChange(student, 'təsdiqlənmiş')}>Təsdiqlə</DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleStatusChange(student, 'gözləyir')}>Gözləməyə al</DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleStatusChange(student, 'arxivlənmiş')}>Arxivlə</DropdownMenuItem>
+                                        </DropdownMenuSubContent>
+                                    </DropdownMenuSub>
+                                    <DropdownMenuSeparator />
+                                     <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">Sil</DropdownMenuItem>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Təsdiq edirsiniz?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Bu əməliyyat geri qaytarılmazdır. Bu, tələbəni sistemdən həmişəlik siləcək.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Ləğv et</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleDeleteStudent(student.id)} className="bg-destructive hover:bg-destructive/90">Bəli, sil</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
                                 </DropdownMenuContent>
                                 </DropdownMenu>
                             </TableCell>
@@ -154,8 +224,8 @@ export default function AdminStudentsPage() {
                 </CardContent>
                 <CardFooter>
                   <div className="text-xs text-muted-foreground">
-                    Showing <strong>1-10</strong> of <strong>{students.length}</strong>{" "}
-                    products
+                    Göstərilir: <strong>1-10</strong> / <strong>{students.length}</strong>{" "}
+                    tələbə
                   </div>
                 </CardFooter>
               </Card>

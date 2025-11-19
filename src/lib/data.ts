@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 // --- MOCK DATA ---
 
-export const faculties: FacultyData[] = [
+export let faculties: FacultyData[] = [
     { id: 'f-1', name: 'İqtisadiyyat və idarəetmə' },
     { id: 'f-2', name: 'Memarlıq və mühəndislik' },
     { id: 'f-3', name: 'Tibb' },
@@ -13,7 +13,7 @@ export const faculties: FacultyData[] = [
     { id: 'f-7', name: 'İncəsənət' },
 ];
 
-export const categories: CategoryData[] = [
+export let categories: CategoryData[] = [
     { id: 'c-1', name: 'STEM' },
     { id: 'c-2', name: 'Humanitar' },
     { id: 'c-3', name: 'İncəsənət' },
@@ -41,6 +41,7 @@ export let users: AppUser[] = [
     achievementIds: ['ach-1'],
     certificateIds: ['cert-1'],
     createdAt: new Date('2023-09-10T10:00:00Z'),
+    status: 'təsdiqlənmiş'
   },
   {
     id: 'student-2',
@@ -60,6 +61,7 @@ export let users: AppUser[] = [
     achievementIds: [],
     certificateIds: [],
     createdAt: new Date('2023-10-05T14:30:00Z'),
+    status: 'təsdiqlənmiş'
   },
   {
     id: 'student-3',
@@ -79,6 +81,7 @@ export let users: AppUser[] = [
     achievementIds: [],
     certificateIds: [],
     createdAt: new Date('2024-01-15T09:00:00Z'),
+    status: 'gözləyir'
   },
    {
     id: 'org-1',
@@ -90,11 +93,21 @@ export let users: AppUser[] = [
     savedStudentIds: ['student-1', 'student-3'],
     createdAt: new Date('2023-11-20T11:00:00Z'),
   },
+    {
+    id: 'org-2',
+    role: 'organization',
+    name: 'NDU Startap Mərkəzi',
+    companyName: 'NDU Startap Mərkəzi MMC',
+    email: 'startup@ndu.edu.az',
+    sector: 'İnnovasiya',
+    savedStudentIds: ['student-2'],
+    createdAt: new Date('2024-02-01T11:00:00Z'),
+  },
   {
     id: 'admin-1',
     role: 'admin',
     firstName: 'Admin',
-    lastName: 'User',
+    lastName: 'İdarəçi',
     email: 'admin@ndu.edu.az',
     createdAt: new Date('2023-01-01T00:00:00Z'),
   }
@@ -121,9 +134,14 @@ export const getUsers = async (): Promise<AppUser[]> => {
   return Promise.resolve(users);
 };
 
-export const getStudents = async (): Promise<Student[]> => {
-  return Promise.resolve(users.filter(u => u.role === 'student') as Student[]);
+export const getStudents = (): Student[] => {
+  return users.filter(u => u.role === 'student') as Student[];
 };
+
+export const getOrganizations = (): Organization[] => {
+  return users.filter(u => u.role === 'organization') as Organization[];
+};
+
 export const students = users.filter(u => u.role === 'student') as Student[];
 export const organizations = users.filter(u => u.role === 'organization') as Organization[];
 
@@ -155,7 +173,7 @@ export const getCertificatesByStudentId = async (studentId: string): Promise<Cer
 
 // --- DATA MUTATION FUNCTIONS ---
 export const addUser = (user: AppUser) => {
-  users.push({ ...user, id: uuidv4(), createdAt: new Date() });
+  users.push(user);
 };
 
 export const updateUser = (user: AppUser): boolean => {
@@ -164,6 +182,12 @@ export const updateUser = (user: AppUser): boolean => {
   users[index] = user;
   return true;
 };
+
+export const deleteUser = (userId: string): boolean => {
+    const initialLength = users.length;
+    users = users.filter(u => u.id !== userId);
+    return users.length < initialLength;
+}
 
 export const addProject = async (project: Project): Promise<void> => {
   projects.push(project);
@@ -188,3 +212,12 @@ export const addCertificate = async (certificate: Certificate): Promise<void> =>
 export const deleteCertificate = async (certificateId: string): Promise<void> => {
   certificates = certificates.filter(c => c.id !== certificateId);
 };
+
+
+export const addCategory = (category: CategoryData) => {
+    categories.push(category);
+}
+
+export const deleteCategory = (categoryId: string) => {
+    categories = categories.filter(c => c.id !== categoryId);
+}

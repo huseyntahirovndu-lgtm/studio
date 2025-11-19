@@ -30,13 +30,14 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import Link from "next/link";
-import { students, organizations } from "@/lib/data";
+import { getStudents, getOrganizations } from "@/lib/data";
 
 export default function AdminDashboard() {
-
+  const students = getStudents();
+  const organizations = getOrganizations();
   const totalStudents = students.length;
   const totalOrganizations = organizations.length;
-  const recentStudents = students.slice(0, 5);
+  const recentStudents = students.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
 
 
   return (
@@ -127,9 +128,7 @@ export default function AdminDashboard() {
                           {student.faculty}
                         </TableCell>
                         <TableCell className="hidden xl:table-column">
-                          <Badge className="text-xs" variant="outline">
-                            Təsdiqlənib
-                          </Badge>
+                           <Badge variant={student.status === 'təsdiqlənmiş' ? 'default' : 'secondary'}>{student.status}</Badge>
                         </TableCell>
                         <TableCell className="text-right">{new Date(student.createdAt).toLocaleDateString()}</TableCell>
                    </TableRow>

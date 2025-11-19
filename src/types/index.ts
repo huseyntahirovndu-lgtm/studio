@@ -60,6 +60,7 @@ export interface BaseUser {
     createdAt?: any;
 }
 
+export type StudentStatus = 'təsdiqlənmiş' | 'gözləyir' | 'arxivlənmiş';
 
 export interface Student extends BaseUser {
   role: 'student';
@@ -83,6 +84,7 @@ export interface Student extends BaseUser {
   talentScore?: number;
   profilePictureUrl?: string;
   profilePictureHint?: string;
+  status: StudentStatus;
 }
 
 export interface Organization extends BaseUser {

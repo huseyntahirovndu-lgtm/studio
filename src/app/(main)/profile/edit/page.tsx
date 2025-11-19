@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Student, Project, Achievement, Certificate, AchievementLevel, CertificateLevel } from '@/types';
+import { Student, Project, Achievement, Certificate, AchievementLevel, CertificateLevel, AppUser } from '@/types';
 import { calculateTalentScore } from '@/ai/flows/talent-scoring';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -75,7 +75,9 @@ export default function EditProfilePage() {
   const { user, loading, updateUser } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const student = user as Student;
+  
+  // This page is for students, but an admin can also edit.
+  const student = (user?.role === 'student' || user?.role === 'admin') ? user as Student : null;
 
   const [isSaving, setIsSaving] = useState(false);
   
@@ -105,21 +107,21 @@ export default function EditProfilePage() {
   });
 
   const fetchData = useCallback(async () => {
-    if (!user) return;
+    if (!student) return;
     setIsLoadingData(true);
     const [proj, ach, cert] = await Promise.all([
-      getProjectsByStudentId(user.id),
-      getAchievementsByStudentId(user.id),
-      getCertificatesByStudentId(user.id),
+      getProjectsByStudentId(student.id),
+      getAchievementsByStudentId(student.id),
+      getCertificatesByStudentId(student.id),
     ]);
     setProjects(proj);
     setAchievements(ach);
     setCertificates(cert);
     setIsLoadingData(false);
-  }, [user]);
+  }, [student]);
 
   useEffect(() => {
-    if (!loading && (!user || (user as Student)?.role !== 'student')) {
+    if (!loading && !user) {
       router.push('/login');
     }
   }, [user, loading, router]);
@@ -145,21 +147,22 @@ export default function EditProfilePage() {
   }, [student, profileForm, fetchData]);
 
   const triggerTalentScoreUpdate = useCallback(async () => {
-    if (!user) return;
+    if (!student) return;
     setIsSaving(true);
     toast({ title: "İstedad Balı Hesablanır...", description: "Profiliniz yenilənir, bu bir az vaxt ala bilər." });
 
     try {
         const fullProfile = {
-            ...user,
-            projects: await getProjectsByStudentId(user.id),
-            achievements: await getAchievementsByStudentId(user.id),
-            certificates: await getCertificatesByStudentId(user.id),
+            ...student,
+            projects: await getProjectsByStudentId(student.id),
+            achievements: await getAchievementsByStudentId(student.id),
+            certificates: await getCertificatesByStudentId(student.id),
         };
         
         const scoreResult = await calculateTalentScore({ profileData: JSON.stringify(fullProfile) });
-
-        updateUser({ ...user, talentScore: scoreResult.talentScore });
+        
+        const updatedStudent = { ...student, talentScore: scoreResult.talentScore };
+        updateUser(updatedStudent as AppUser);
 
         toast({ title: "Profil Yeniləndi!", description: `Yeni istedad balınız: ${scoreResult.talentScore}. ${scoreResult.reasoning}` });
     } catch (error) {
@@ -168,10 +171,10 @@ export default function EditProfilePage() {
     } finally {
         setIsSaving(false);
     }
-  }, [user, toast, updateUser]);
+  }, [student, toast, updateUser]);
 
   const handleGenericSubmit = async (submitAction: () => Promise<any>, successMessage: string, formToReset: any) => {
-    if (!user) return;
+    if (!student) return;
     setIsSaving(true);
     try {
       await submitAction();
@@ -189,34 +192,34 @@ export default function EditProfilePage() {
 
   const onProfileSubmit: SubmitHandler<z.infer<typeof profileSchema>> = (data) => {
     handleGenericSubmit(async () => {
-        const updatedUser = { ...user, ...data };
-        updateUser(updatedUser);
+        const updatedUser = { ...student, ...data };
+        updateUser(updatedUser as AppUser);
     }, "Profil məlumatları yeniləndi", profileForm);
   };
   
   const onProjectSubmit: SubmitHandler<z.infer<typeof projectSchema>> = (data) => {
     handleGenericSubmit(async () => {
-        const newProject: Omit<Project, 'id'> = { ...data, studentId: user!.id, id: uuidv4() };
+        const newProject: Omit<Project, 'id'> = { ...data, studentId: student!.id, id: uuidv4() };
         await addProject(newProject as Project);
     }, "Layihə əlavə edildi", projectForm);
   };
   
   const onAchievementSubmit: SubmitHandler<z.infer<typeof achievementSchema>> = (data) => {
     handleGenericSubmit(async () => {
-        const newAchievement: Omit<Achievement, 'id'> = { ...data, studentId: user!.id, id: uuidv4() };
+        const newAchievement: Omit<Achievement, 'id'> = { ...data, studentId: student!.id, id: uuidv4() };
         await addAchievement(newAchievement as Achievement);
     }, "Nailiyyət əlavə edildi", achievementForm);
   };
   
   const onCertificateSubmit: SubmitHandler<z.infer<typeof certificateSchema>> = (data) => {
     handleGenericSubmit(async () => {
-        const newCertificate: Omit<Certificate, 'id'> = { ...data, studentId: user!.id, id: uuidv4() };
+        const newCertificate: Omit<Certificate, 'id'> = { ...data, studentId: student!.id, id: uuidv4() };
         await addCertificate(newCertificate as Certificate);
     }, "Sertifikat əlavə edildi", certificateForm);
   };
   
   const handleDelete = async (docId: string, itemType: 'project' | 'achievement' | 'certificate') => {
-      if (!user) return;
+      if (!student) return;
       setIsSaving(true);
 
       try {

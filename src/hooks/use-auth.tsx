@@ -11,7 +11,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, pass: string) => boolean;
   logout: () => void;
-  register: (user: Omit<Student, 'id' | 'createdAt'> | Omit<Organization, 'id' | 'createdAt'>, pass: string) => boolean;
+  register: (user: Omit<Student, 'id' | 'createdAt' | 'status'> | Omit<Organization, 'id' | 'createdAt'>, pass: string) => boolean;
   updateUser: (user: AppUser) => boolean;
 }
 
@@ -22,6 +22,7 @@ const FAKE_PASSWORDS: { [email: string]: string } = {
   'orxan@example.com': 'password123',
   'leyla@example.com': 'password123',
   'contact@techsolutions.com': 'password123',
+  'startup@ndu.edu.az': 'password123',
   'admin@ndu.edu.az': 'adminpassword'
 };
 
@@ -63,12 +64,28 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     router.push('/login');
   };
 
-  const register = (newUser: Omit<Student, 'id'|'createdAt'> | Omit<Organization, 'id'|'createdAt'>, pass: string): boolean => {
+  const register = (newUser: Omit<Student, 'id'|'createdAt'|'status'> | Omit<Organization, 'id'|'createdAt'>, pass: string): boolean => {
     const existing = initialUsers.find(u => u.email === newUser.email);
     if (existing) {
       return false; // User already exists
     }
-    const userWithId = { ...newUser, id: uuidv4(), createdAt: new Date() } as AppUser;
+    
+    let userWithId: AppUser;
+
+    if (newUser.role === 'student') {
+        userWithId = {
+            ...newUser,
+            id: uuidv4(),
+            createdAt: new Date(),
+            status: 'gözləyir' // Default status for new students
+        } as Student;
+    } else {
+        userWithId = {
+            ...newUser,
+            id: uuidv4(),
+            createdAt: new Date()
+        } as Organization;
+    }
     
     // In a real app, you would hash the password. Here we just store it for the fake login.
     FAKE_PASSWORDS[userWithId.email] = pass;

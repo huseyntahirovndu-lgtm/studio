@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { faculties, categories } from '@/lib/data';
+import type { Student } from '@/types';
 
 
 const formSchema = z.object({
@@ -86,7 +87,7 @@ export default function RegisterStudentPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
 
-    const newUserProfile: any = {
+    const newUserProfile: Omit<Student, 'id' | 'createdAt' | 'status'> = {
       role: 'student' as const,
       firstName: values.firstName,
       lastName: values.lastName,
@@ -106,23 +107,25 @@ export default function RegisterStudentPage() {
       portfolioURL: '',
       talentScore: 0,
     };
+    
+    let finalProfile = { ...newUserProfile, status: 'gözləyir' as const};
 
     try {
       const scoreResult = await calculateTalentScore({
-        profileData: JSON.stringify(newUserProfile)
+        profileData: JSON.stringify(finalProfile)
       });
-      newUserProfile.talentScore = scoreResult.talentScore;
+      finalProfile.talentScore = scoreResult.talentScore;
     } catch (aiError) {
       console.error("AI talent score calculation failed:", aiError);
-      newUserProfile.talentScore = Math.floor(Math.random() * 30) + 10;
+      finalProfile.talentScore = Math.floor(Math.random() * 30) + 10;
     }
 
-    const success = register(newUserProfile, values.password);
+    const success = register(finalProfile, values.password);
 
     if (success) {
       toast({
         title: 'Qeydiyyat Uğurlu Oldu',
-        description: 'Hesabınız yaradıldı. İstedad Mərkəzinə xoş gəlmisiniz!',
+        description: 'Hesabınız yaradıldı və təsdiq üçün göndərildi.',
       });
       router.push('/login');
     } else {
