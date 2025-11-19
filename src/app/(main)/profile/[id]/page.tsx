@@ -289,7 +289,7 @@ export default function ProfilePage() {
                                <div className="bg-muted h-24 flex items-center justify-center">
                                    <FileText className="w-8 h-8 text-muted-foreground" />
                                </div>
-                               <p className="p-2 text-xs text-center truncate">{cert.name}</p>
+                               <p className="p-2 text-xs text-center font-medium truncate" title={cert.name}>{cert.name}</p>
                             </a>
                         ))}
                     </CardContent>

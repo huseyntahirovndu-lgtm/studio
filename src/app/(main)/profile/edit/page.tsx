@@ -539,7 +539,9 @@ export default function EditProfilePage() {
          <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><FileText /> Sertifikatlar</CardTitle>
-                <CardDescription>Əldə etdiyiniz sertifikatları profilinizə əlavə edin.</CardDescription>
+                <CardDescription>
+                    Əldə etdiyiniz sertifikatları profilinizə əlavə edin. Sertifikatın linkini (məs. Google Drive, Dropbox) yerləşdirin.
+                </CardDescription>
             </CardHeader>
             <CardContent>
                  <Form {...certificateForm}>

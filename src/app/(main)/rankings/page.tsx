@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Trophy } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function RankingsPage() {
   const [facultyFilter, setFacultyFilter] = useState('all');
@@ -48,10 +49,10 @@ export default function RankingsPage() {
       .sort((a, b) => (b.talentScore || 0) - (a.talentScore || 0));
   }, [enrichedStudents, facultyFilter, categoryFilter]);
 
-  const getRankBadge = (rank: number) => {
-    if (rank === 1) return 'bg-amber-400 text-amber-900';
-    if (rank === 2) return 'bg-slate-300 text-slate-800';
-    if (rank === 3) return 'bg-amber-600/50 text-amber-900';
+  const getRankBadgeClass = (rank: number) => {
+    if (rank === 1) return 'bg-amber-400 text-amber-900 border-amber-500';
+    if (rank === 2) return 'bg-slate-300 text-slate-800 border-slate-400';
+    if (rank === 3) return 'bg-yellow-700/50 text-yellow-900 border-yellow-800/80';
     return 'bg-muted text-muted-foreground';
   }
   
@@ -113,9 +114,9 @@ export default function RankingsPage() {
                 <TableBody>
                 {rankedStudents && rankedStudents.length > 0 ? (
                     rankedStudents.map((student, index) => (
-                    <TableRow key={student.id} className="hover:bg-muted/50">
+                    <TableRow key={student.id} className={cn("hover:bg-muted/50", index < 3 && "bg-muted/30")}>
                         <TableCell className="text-center">
-                            <Badge className={`text-sm w-8 h-8 flex items-center justify-center rounded-full ${getRankBadge(index + 1)}`}>
+                            <Badge className={cn(`text-sm w-8 h-8 flex items-center justify-center rounded-full border-2`, getRankBadgeClass(index + 1))}>
                                 {index < 3 ? <Trophy className="w-4 h-4" /> : index + 1}
                             </Badge>
                         </TableCell>
