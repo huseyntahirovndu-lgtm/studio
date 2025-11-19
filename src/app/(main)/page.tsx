@@ -97,7 +97,7 @@ export default function HomePage() {
     setStrongestProjects(projectsFromTopStudents.slice(0, 3));
     
     // Popular skills
-    const allSkills = enrichedStudents.flatMap(s => s.skills);
+    const allSkills = enrichedStudents.flatMap(s => s.skills).map(s => s.name);
     const skillCounts = allSkills.reduce((acc, skill) => {
         acc[skill] = (acc[skill] || 0) + 1;
         return acc;
@@ -118,36 +118,36 @@ export default function HomePage() {
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="relative w-full bg-primary/5">
-         <div className="container mx-auto grid lg:grid-cols-2 gap-12 items-center py-20 md:py-32">
-            <div className="space-y-6 text-center lg:text-left">
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tighter">
+      <section className="relative w-full h-screen">
+          <Image
+            src="https://i.ibb.co/yFjxDz0/q1.jpg"
+            alt="Naxçıvan Dövlət Universiteti"
+            fill
+            className="object-cover"
+            priority
+            data-ai-hint="university campus students"
+          />
+          <div className="absolute inset-0 bg-black/50" />
+          <div className="relative h-full flex items-center">
+            <div className="container mx-auto">
+              <div className="max-w-3xl text-white">
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tighter drop-shadow-lg">
                    Naxçıvan Dövlət Universiteti <span className="text-primary">İstedad Mərkəzi</span>
                 </h1>
-                <p className="max-w-2xl mx-auto lg:mx-0 text-lg text-muted-foreground">
+                <p className="mt-6 max-w-2xl text-lg text-white/90 drop-shadow-md">
                     Tələbələrimizin bacarıqlarını, layihələrini və nailiyyətlərini kəşf edin. Potensialı reallığa çevirən platforma.
                 </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                <div className="mt-8 flex flex-col sm:flex-row gap-4">
                     <Button asChild size="lg">
                         <Link href="/search">İstedadları Kəşf Et <ArrowRight className="ml-2" /></Link>
                     </Button>
-                    <Button asChild size="lg" variant="outline">
+                    <Button asChild size="lg" variant="secondary">
                         <Link href="/register">Platformaya Qoşul</Link>
                     </Button>
                 </div>
+              </div>
             </div>
-             <div className="hidden lg:block relative">
-                 <Image
-                    src="https://i.ibb.co/cXv2KzRR/q2.jpg"
-                    alt="Naxçıvan Dövlət Universiteti"
-                    width={600}
-                    height={400}
-                    className="rounded-xl shadow-2xl"
-                    priority
-                    data-ai-hint="university campus students"
-                    />
-             </div>
-         </div>
+          </div>
       </section>
 
       <div className="container mx-auto px-4 py-8 md:py-12">
