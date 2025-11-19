@@ -1,21 +1,72 @@
 'use client';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { User, ClipboardList, Edit, Mail, Check, X } from 'lucide-react';
+import { User, ClipboardList, Edit, Mail, Check, X, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { Student, Invitation, Project, Organization as OrgType } from '@/types';
 import { Progress } from '@/components/ui/progress';
 import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
-import { getInvitationsByStudentId, getProjectById, getOrganizationById, updateInvitationStatus } from '@/lib/data';
+import { getInvitationsByStudentId, getProjectById, getOrganizationById, updateInvitationStatus, getProjectsByStudentId, getAchievementsByStudentId, getCertificatesByStudentId } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { getProfileRecommendations } from '@/ai/flows/profile-optimizer';
 
 interface EnrichedInvitation extends Invitation {
     project?: Project;
     organization?: OrgType;
 }
+
+function AIProfileOptimizer({ student }: { student: Student }) {
+    const [recommendations, setRecommendations] = useState<string[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const { toast } = useToast();
+
+    const handleGetRecommendations = async () => {
+        setIsLoading(true);
+        setRecommendations([]);
+        try {
+            const fullProfile = {
+                ...student,
+                projects: getProjectsByStudentId(student.id),
+                achievements: getAchievementsByStudentId(student.id),
+                certificates: getCertificatesByStudentId(student.id),
+            };
+            const result = await getProfileRecommendations({ profileData: JSON.stringify(fullProfile) });
+            setRecommendations(result.recommendations);
+             toast({ title: "Tövsiyələr Hazırdır!", description: "Profilinizi gücləndirmək üçün aşağıdakı addımları ata bilərsiniz." });
+        } catch (error) {
+            console.error("Failed to get AI recommendations:", error);
+            toast({ variant: "destructive", title: "Xəta", description: "AI məsləhətçisi ilə əlaqə qurularkən xəta baş verdi." });
+        }
+        setIsLoading(false);
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Sparkles className="text-amber-500" /> AI Profil Məsləhətçisi</CardTitle>
+                <CardDescription>Süni intellektdən profilinizi necə daha cəlbedici edə biləcəyinizlə bağlı fərdi məsləhətlər alın.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {recommendations.length > 0 && (
+                    <div className="space-y-3 mb-4">
+                        <ul className="list-disc list-inside space-y-2 text-sm">
+                            {recommendations.map((rec, index) => (
+                                <li key={index}>{rec}</li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+                <Button onClick={handleGetRecommendations} disabled={isLoading}>
+                    {isLoading ? 'Analiz edilir...' : (recommendations.length > 0 ? 'Yenidən Tövsiyə Al' : 'Tövsiyələr Al')}
+                </Button>
+            </CardContent>
+        </Card>
+    )
+}
+
 
 export default function StudentDashboard() {
     const { user, loading } = useAuth();
@@ -172,30 +223,33 @@ export default function StudentDashboard() {
                     </CardContent>
                 </Card>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Mənim Statistikam</CardTitle>
-                        <CardDescription>Platformadakı fəaliyyətinizə ümumi baxış.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                        <div className="p-4 rounded-lg bg-muted">
-                            <p className="text-3xl font-bold">{studentProfile.talentScore || 0}</p>
-                            <p className="text-sm text-muted-foreground">İstedad Balı</p>
-                        </div>
-                        <div className="p-4 rounded-lg bg-muted">
-                            <p className="text-3xl font-bold">{studentProfile.projectIds?.length || 0}</p>
-                            <p className="text-sm text-muted-foreground">Layihə Sayı</p>
-                        </div>
-                         <div className="p-4 rounded-lg bg-muted">
-                            <p className="text-3xl font-bold">{studentProfile.achievementIds?.length || 0}</p>
-                            <p className="text-sm text-muted-foreground">Nailiyyət Sayı</p>
-                        </div>
-                         <div className="p-4 rounded-lg bg-muted">
-                            <p className="text-3xl font-bold">{studentProfile.certificateIds?.length || 0}</p>
-                            <p className="text-sm text-muted-foreground">Sertifikat Sayı</p>
-                        </div>
-                    </CardContent>
-                </Card>
+                 <div className="space-y-8">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Mənim Statistikam</CardTitle>
+                            <CardDescription>Platformadakı fəaliyyətinizə ümumi baxış.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                            <div className="p-4 rounded-lg bg-muted">
+                                <p className="text-3xl font-bold">{studentProfile.talentScore || 0}</p>
+                                <p className="text-sm text-muted-foreground">İstedad Balı</p>
+                            </div>
+                            <div className="p-4 rounded-lg bg-muted">
+                                <p className="text-3xl font-bold">{studentProfile.projectIds?.length || 0}</p>
+                                <p className="text-sm text-muted-foreground">Layihə Sayı</p>
+                            </div>
+                            <div className="p-4 rounded-lg bg-muted">
+                                <p className="text-3xl font-bold">{studentProfile.achievementIds?.length || 0}</p>
+                                <p className="text-sm text-muted-foreground">Nailiyyət Sayı</p>
+                            </div>
+                            <div className="p-4 rounded-lg bg-muted">
+                                <p className="text-3xl font-bold">{studentProfile.certificateIds?.length || 0}</p>
+                                <p className="text-sm text-muted-foreground">Sertifikat Sayı</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                     <AIProfileOptimizer student={studentProfile} />
+                </div>
             </div>
         </div>
     );
