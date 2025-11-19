@@ -58,7 +58,7 @@ export interface Student {
   instagramURL?: string;
   portfolioURL?: string;
   talentScore?: number;
-  profilePictureUrl?: string; // Not in schema, but useful for UI
-  profilePictureHint?: string; // Not in schema, but useful for UI
-  createdAt?: string; // Not in schema, but useful for UI
+  profilePictureUrl?: string;
+  profilePictureHint?: string;
+  createdAt?: any; // Allow serverTimestamp
 }

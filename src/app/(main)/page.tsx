@@ -12,10 +12,11 @@ import { StatCard } from '@/components/stat-card';
 import { StudentCard } from '@/components/student-card';
 import { CategoryPieChart } from '@/components/charts/category-pie-chart';
 import { FacultyBarChart } from '@/components/charts/faculty-bar-chart';
-import { useCollection } from '@/firebase';
-import { collection } from 'firebase/firestore';
-import { useFirestore, useMemoFirebase } from '@/firebase/provider';
+import { useCollection, useMemoFirebase } from '@/firebase';
+import { collection, serverTimestamp } from 'firebase/firestore';
+import { useFirestore } from '@/firebase/provider';
 import { Student } from '@/types';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function HomePage() {
   const firestore = useFirestore();
@@ -34,22 +35,31 @@ export default function HomePage() {
   
   const { data: faculties, isLoading: isLoadingFaculties } = useCollection(facultiesQuery);
 
-  const topTalents = students
-    ? [...students]
+  const enrichedStudents = students?.map((student, index) => {
+    const placeholder = PlaceHolderImages[index % PlaceHolderImages.length];
+    return {
+      ...student,
+      profilePictureUrl: placeholder.imageUrl,
+      profilePictureHint: placeholder.imageHint,
+    };
+  });
+
+  const topTalents = enrichedStudents
+    ? [...enrichedStudents]
         .sort((a, b) => (b.talentScore || 0) - (a.talentScore || 0))
         .slice(0, 5)
     : [];
   
-  const newMembers = students
-    ? [...students]
-        .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+  const newMembers = enrichedStudents
+    ? [...enrichedStudents]
+        .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0))
         .slice(0, 5)
     : [];
 
   const totalAchievements = students?.reduce((acc, s) => acc + (s.achievementIds?.length || 0), 0) || 0;
   
   if (isLoadingStudents || isLoadingFaculties) {
-    return <div>Yüklənir...</div>
+    return <div className="container mx-auto py-8 text-center">Yüklənir...</div>
   }
 
   return (

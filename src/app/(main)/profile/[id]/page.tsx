@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Star, Linkedin, Github, Dribbble, Instagram, Link as LinkIcon, Award, Briefcase, FileText } from 'lucide-react';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function ProfilePage() {
   const { id } = useParams();
@@ -37,10 +38,21 @@ export default function ProfilePage() {
       return collection(firestore, 'users', studentId, 'certificates');
   }, [firestore, studentId]);
 
-  const { data: student, isLoading: isLoadingStudent } = useDoc<Student>(studentDocRef);
+  const { data: studentData, isLoading: isLoadingStudent } = useDoc<Student>(studentDocRef);
   const { data: projects, isLoading: isLoadingProjects } = useCollection<Project>(projectsCollectionRef);
   const { data: achievements, isLoading: isLoadingAchievements } = useCollection<Achievement>(achievementsCollectionRef);
   const { data: certificates, isLoading: isLoadingCertificates } = useCollection<Certificate>(certificatesCollectionRef);
+
+
+  const student = useMemoFirebase(() => {
+    if (!studentData) return null;
+    const placeholder = PlaceHolderImages.find(p => p.id.includes(studentData.id.slice(-1))) || PlaceHolderImages[0];
+    return {
+      ...studentData,
+      profilePictureUrl: placeholder.imageUrl,
+      profilePictureHint: placeholder.imageHint,
+    };
+  }, [studentData]);
 
 
   if (isLoadingStudent || isLoadingProjects || isLoadingAchievements || isLoadingCertificates) {
