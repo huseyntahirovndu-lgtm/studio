@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { useForm, useFieldArray, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Student, Project, Achievement, Certificate, AchievementLevel } from '@/types';
+import { Student, Project, Achievement, Certificate, AchievementLevel, CertificateLevel } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -242,6 +242,20 @@ export default function EditProfilePage() {
                       <FormMessage />
                     </FormItem>
                   )} />
+                   <FormField name="behanceURL" control={profileForm.control} render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Behance URL</FormLabel>
+                      <FormControl><Input placeholder="https://behance.net/..." {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                   <FormField name="portfolioURL" control={profileForm.control} render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Portfolio URL</FormLabel>
+                      <FormControl><Input placeholder="https://sizin-saytiniz.com" {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
                 <Button type="submit" disabled={isProfileSaving}>
                   {isProfileSaving ? 'Yadda saxlanılır...' : 'Dəyişiklikləri Yadda Saxla'}
                 </Button>
@@ -370,7 +384,7 @@ export default function EditProfilePage() {
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                                 <SelectContent>
-                                     {(['Universitet', 'Regional', 'Respublika', 'Beynəlxalq'] as AchievementLevel[]).map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                                     {(['Universitet', 'Regional', 'Respublika', 'Beynəlxalq'] as CertificateLevel[]).map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                             <FormMessage /></FormItem>
