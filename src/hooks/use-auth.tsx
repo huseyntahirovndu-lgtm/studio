@@ -67,13 +67,12 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     if (existing) {
       return false; // User already exists
     }
-    const userWithId = { ...newUser, id: uuidv4(), createdAt: new Date() };
+    const userWithId = { ...newUser, id: uuidv4(), createdAt: new Date() } as AppUser;
     
     // In a real app, you would hash the password. Here we just store it for the fake login.
     FAKE_PASSWORDS[userWithId.email] = pass;
     
-    // This part would normally be an API call to your backend to save the user
-    initialUsers.push(userWithId as AppUser);
+    addUser(userWithId);
 
     return true;
   };
@@ -83,11 +82,6 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     if(success) {
         setUser(updatedUser);
         localStorage.setItem('session-user', JSON.stringify(updatedUser));
-        // Update the user in the main data array as well
-        const userIndex = initialUsers.findIndex(u => u.id === updatedUser.id);
-        if(userIndex !== -1) {
-            initialUsers[userIndex] = updatedUser;
-        }
     }
     return success;
   };

@@ -22,7 +22,7 @@ export const categories: CategoryData[] = [
     { id: 'c-6', name: 'Texnologiya' },
 ];
 
-let users: AppUser[] = [
+export let users: AppUser[] = [
   {
     id: 'student-1',
     role: 'student',
@@ -139,14 +139,11 @@ export const getCertificatesByStudentId = async (studentId: string): Promise<Cer
 };
 
 // --- DATA MUTATION FUNCTIONS ---
-export const addUser = async (user: AppUser): Promise<boolean> => {
-  const existing = await getUserByEmail(user.email);
-  if (existing) return false;
+export const addUser = (user: AppUser) => {
   users.push({ ...user, id: uuidv4(), createdAt: new Date() });
-  return true;
 };
 
-export const updateUser = async (user: AppUser): Promise<boolean> => {
+export const updateUser = (user: AppUser): boolean => {
   const index = users.findIndex(u => u.id === user.id);
   if (index === -1) return false;
   users[index] = user;
