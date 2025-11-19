@@ -97,12 +97,19 @@ export function Header() {
                     {appUser.role === 'organization' ? 'Təşkilat Paneli' : 'Tələbə Paneli'}
                   </Link>
                 </DropdownMenuItem>
-                 <DropdownMenuItem asChild>
-                  <Link href={appUser.role === 'student' ? `/profile/${user.uid}` : '#'}>Profilimə bax</Link>
-                </DropdownMenuItem>
+                {appUser.role === 'student' && (
+                  <DropdownMenuItem asChild>
+                    <Link href={`/profile/${user.uid}`}>Profilimə bax</Link>
+                  </DropdownMenuItem>
+                )}
                 {appUser.role === 'student' && (
                   <DropdownMenuItem asChild>
                     <Link href="/profile/edit">Profili redaktə et</Link>
+                  </DropdownMenuItem>
+                )}
+                 {appUser.role === 'organization' && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/organization-profile/edit">Profili redaktə et</Link>
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />

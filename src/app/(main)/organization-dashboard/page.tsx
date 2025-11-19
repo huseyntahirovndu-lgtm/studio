@@ -70,7 +70,7 @@ export default function OrganizationDashboard() {
                     title="Profilim"
                     description="Təşkilat profilinizi nəzərdən keçirin və redaktə edin."
                     icon={Building}
-                    href="#"
+                    href="/organization-profile/edit"
                 />
             </div>
              <div className="mt-12">
