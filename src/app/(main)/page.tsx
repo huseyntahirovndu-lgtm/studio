@@ -30,12 +30,12 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="relative h-[60vh] md:h-[70vh] flex items-center text-white">
         <Image
-          src="https://picsum.photos/seed/nakhchivan/1200/800"
+          src="https://i.ibb.co/cXv2KzRR/q2.jpg"
           alt="Naxçıvan Dövlət Universiteti"
           fill
           className="object-cover"
           priority
-          data-ai-hint="university campus"
+          data-ai-hint="university building"
         />
         <div className="absolute inset-0 bg-black/50" />
         <div className="relative container mx-auto px-4 z-10">
