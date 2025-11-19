@@ -12,12 +12,13 @@
  * - /users/{studentId}/certificates/{certificateId}: Stores certificate data owned by the student. 'studentId' is denormalized for authorization.
  * - /organizations/{organizationId}: Stores organization profile data.
  * - /categories/{categoryId}: Stores talent category data.
+ * - /faculties/{facultyId}: Stores faculty data.
  *
  * Key Security Decisions:
  * - Students can only create, read, update, and delete their own profile data and associated subcollections.
  * - Listing of users is disallowed for privacy reasons.
  * - Organizations can create, read, update, and delete their own profiles.
- * - Categories are publicly readable. Writes to categories are not defined in the schema, defaulting to deny all.
+ * - Categories and Faculties are publicly readable. Writes are not defined in the schema, defaulting to deny all.
  *
  * Denormalization for Authorization:
  * The 'studentId' field is denormalized into the Project, Achievement, and Certificate documents. This allows security rules
@@ -146,6 +147,18 @@ service cloud.firestore {
      * @principle Public read access for talent categories.
      */
     match /categories/{categoryId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Security rules for faculties.
+     * @path /faculties/{facultyId}
+     * @allow (get, list) Any user can read and list faculties.
+     * @deny (create, update, delete) No one can create, update, or delete faculties.
+     * @principle Public read access for faculties.
+     */
+    match /faculties/{facultyId} {
       allow get, list: if true;
       allow create, update, delete: if false;
     }
