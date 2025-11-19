@@ -26,14 +26,14 @@ export default function HomePage() {
   const totalAchievements = students.reduce((acc, s) => acc + s.achievements.length, 0);
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <>
       {/* Hero Section */}
-      <section className="relative h-[60vh] md:h-[70vh] flex items-center text-white">
+      <section className="relative h-[60vh] md:h-[70vh] flex items-center text-white bg-black">
         <Image
           src="https://i.ibb.co/cXv2KzRR/q2.jpg"
           alt="Naxçıvan Dövlət Universiteti"
           fill
-          className="object-cover"
+          className="object-contain"
           priority
           data-ai-hint="university building"
         />
@@ -138,6 +138,6 @@ export default function HomePage() {
           </div>
         </section>
       </div>
-    </div>
+    </>
   );
 }
