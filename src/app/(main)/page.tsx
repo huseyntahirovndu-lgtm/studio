@@ -37,11 +37,11 @@ export default function HomePage() {
           priority
           data-ai-hint="university building"
         />
-        <div className="absolute inset-0 bg-black/50" />
+        <div className="absolute inset-0 bg-black/30" />
         <div className="relative container mx-auto px-4 z-10">
-          <div className="max-w-2xl text-left">
-             <h1 className="text-4xl md:text-6xl font-bold font-headline mb-4">
-               Naxçıvan Dövlət Universiteti Tələbə İstedad Bankı
+          <div className="max-w-3xl text-left">
+             <h1 className="text-4xl md:text-6xl font-bold mb-4">
+               Naxçıvan Dövlət Universiteti <br /> Tələbə İstedad Bankı
             </h1>
             <p className="text-lg md:text-xl mb-8">
                 İstedadını göstərəcək platforma.
@@ -103,7 +103,7 @@ export default function HomePage() {
         {/* Top 5 Talents Section */}
         <section className="py-12">
           <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl md:text-4xl font-bold font-headline">
+            <h2 className="text-3xl md:text-4xl font-bold">
               Top 5 İstedad
             </h2>
             <Button variant="ghost" asChild>
@@ -122,7 +122,7 @@ export default function HomePage() {
         {/* New Members Section */}
         <section className="py-12">
           <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl md:text-4xl font-bold font-headline">
+            <h2 className="text-3xl md:text-4xl font-bold">
               Yeni Qoşulanlar
             </h2>
              <Button variant="ghost" asChild>

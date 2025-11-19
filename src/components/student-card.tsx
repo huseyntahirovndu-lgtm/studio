@@ -53,7 +53,7 @@ export function StudentCard({ student, className }: StudentCardProps) {
             <AvatarFallback>{name.charAt(0)}{surname.charAt(0)}</AvatarFallback>
           </Avatar>
           <div>
-            <h3 className="text-xl font-bold font-headline">{`${name} ${surname}`}</h3>
+            <h3 className="text-xl font-bold">{`${name} ${surname}`}</h3>
             <p className="text-sm text-muted-foreground">{faculty}</p>
           </div>
         </div>

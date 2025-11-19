@@ -14,11 +14,11 @@ const navLinks = [
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-primary text-primary-foreground">
       <div className="container flex h-16 max-w-screen-2xl items-center">
         <Link href="/" className="mr-6 flex items-center space-x-3">
           <Logo className="h-10 w-auto" />
-          <span className="hidden font-bold sm:inline-block font-headline text-lg">
+          <span className="hidden font-bold sm:inline-block text-lg">
             İstedad Mərkəzi
           </span>
         </Link>
@@ -27,7 +27,7 @@ export function Header() {
             <Link
               key={link.href}
               href={link.href}
-              className="transition-colors hover:text-foreground/80 text-foreground/60"
+              className="transition-colors hover:text-primary-foreground/80 text-primary-foreground/80"
             >
               {link.label}
             </Link>
@@ -35,26 +35,26 @@ export function Header() {
         </nav>
         <div className="flex flex-1 items-center justify-end space-x-2">
           <div className="hidden md:flex items-center space-x-2">
-            <Button variant="ghost" asChild>
+            <Button variant="ghost" className="hover:bg-primary-foreground/10 hover:text-primary-foreground" asChild>
               <Link href="/login">Giriş</Link>
             </Button>
-            <Button asChild>
+            <Button variant="secondary" asChild>
               <Link href="/register">Qeydiyyat</Link>
             </Button>
           </div>
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="md:hidden">
+              <Button variant="outline" size="icon" className="md:hidden bg-transparent border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10">
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Menyu aç</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="p-0">
+            <SheetContent side="left" className="p-0 bg-primary text-primary-foreground">
               <div className="flex flex-col h-full">
-                <div className="flex items-center p-4 border-b">
+                <div className="flex items-center p-4 border-b border-primary-foreground/20">
                    <Link href="/" className="flex items-center space-x-3">
                     <Logo className="h-10 w-auto" />
-                    <span className="font-bold font-headline text-lg">
+                    <span className="font-bold text-lg">
                       İstedad Mərkəzi
                     </span>
                   </Link>
@@ -64,17 +64,17 @@ export function Header() {
                     <Link
                       key={link.href}
                       href={link.href}
-                      className="transition-colors hover:text-primary text-foreground"
+                      className="transition-colors hover:text-primary-foreground/80 text-primary-foreground"
                     >
                       {link.label}
                     </Link>
                   ))}
                 </nav>
-                <div className="mt-auto p-4 border-t flex flex-col gap-2">
-                   <Button variant="ghost" asChild>
+                <div className="mt-auto p-4 border-t border-primary-foreground/20 flex flex-col gap-2">
+                   <Button variant="ghost" className="hover:bg-primary-foreground/10 hover:text-primary-foreground" asChild>
                     <Link href="/login">Giriş</Link>
                   </Button>
-                  <Button asChild>
+                  <Button variant="secondary" asChild>
                     <Link href="/register">Qeydiyyat</Link>
                   </Button>
                 </div>
