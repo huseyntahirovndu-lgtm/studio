@@ -44,21 +44,6 @@ export default function HomePage() {
           <div className="container mx-auto px-4 md:px-8 lg:px-12">
             <div className="max-w-3xl text-left">
               
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" asChild>
-                  <Link href="/search">
-                    Kəşf et <ArrowRight className="ml-2 h-5 w-5" />
-                  </Link>
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="bg-transparent border-white text-white hover:bg-white hover:text-primary"
-                  asChild
-                >
-                  <Link href="/register">Qeydiyyat</Link>
-                </Button>
-              </div>
             </div>
           </div>
         </div>
