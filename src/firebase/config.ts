@@ -1,8 +1,9 @@
 export const firebaseConfig = {
-  "projectId": "studio-9440813352-3c037",
-  "appId": "1:480800403588:web:07d389980c828f27c7d2d1",
-  "apiKey": "AIzaSyDRZ2_RNfVfNxYJX65jC-vpv0mTHvZdmco",
-  "authDomain": "studio-9440813352-3c037.firebaseapp.com",
-  "measurementId": "",
-  "messagingSenderId": "480800403588"
+  apiKey: "AIzaSyBqWTr-YLweR5PyiuUpsh1WLQWb5Ah_su0",
+  authDomain: "istedadmerkezi.firebaseapp.com",
+  projectId: "istedadmerkezi",
+  storageBucket: "istedadmerkezi.appspot.com",
+  messagingSenderId: "891294665604",
+  appId: "1:891294665604:web:12c4e51589b796837d6bd1",
+  measurementId: "G-0ZMHL19N3T"
 };
