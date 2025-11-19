@@ -9,7 +9,7 @@ import { useUser } from '@/firebase';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { getAuth, signOut } from 'firebase/auth';
-import type { AppUser } from '@/types';
+import type { AppUser, Student, Organization } from '@/types';
 
 const navLinks = [
   { href: '/', label: 'Ana Səhifə' },
@@ -36,8 +36,13 @@ export function Header() {
     return names[0].charAt(0);
   };
 
-  const profileLink = appUser?.role === 'organization' ? '/organization-dashboard' : `/profile/${user?.uid}`;
-
+  const getDashboardLink = () => {
+    if (!appUser) return '/';
+    if (appUser.role === 'organization') return '/organization-dashboard';
+    if (appUser.role === 'student') return '/student-dashboard';
+    return `/profile/${user?.uid}`; // Fallback for student
+  }
+  
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-primary text-primary-foreground">
       <div className="container flex h-24 max-w-screen-2xl items-center">
@@ -82,10 +87,14 @@ export function Header() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href={profileLink}>
-                    {appUser.role === 'organization' ? 'Panel' : 'Profil'}
+                  <Link href={getDashboardLink()}>
+                    {appUser.role === 'organization' ? 'İdarə Paneli' : 'Panelim'}
                   </Link>
                 </DropdownMenuItem>
+                 <DropdownMenuItem asChild>
+                  <Link href={`/profile/${user.uid}`}>Profilimə bax</Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
                   Çıxış
                 </DropdownMenuItem>

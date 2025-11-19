@@ -4,6 +4,8 @@ import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore'
+import { useUser as useCombinedUser } from './auth/use-user';
+
 
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export function initializeFirebase() {
@@ -46,6 +48,7 @@ export * from './firestore/use-collection';
 export * from './firestore/use-doc';
 export * from './non-blocking-updates';
 export * from './non-blocking-login';
-export * from './auth/use-user';
+// This exports the combined user hook as the primary `useUser`
+export const useUser = useCombinedUser;
 export * from './errors';
 export * from './error-emitter';

@@ -4,14 +4,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Building, Users, FileSearch } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { Organization } from '@/types';
+import { Organization, Student } from '@/types';
+import Link from 'next/link';
+import type { LucideIcon } from 'lucide-react';
 
 export default function OrganizationDashboard() {
     const { user, isUserLoading, profile } = useUser();
     const router = useRouter();
     
     useEffect(() => {
-        if (!isUserLoading && (!user || (profile as AppUser)?.role !== 'organization')) {
+        if (!isUserLoading && (!user || (profile as Organization)?.role !== 'organization')) {
             router.push('/login');
         }
     }, [user, isUserLoading, profile, router]);
@@ -43,7 +45,7 @@ export default function OrganizationDashboard() {
                     href="/rankings"
                 />
                  <DashboardActionCard
-                    title="Profilə Bax"
+                    title="Profilim"
                     description="Təşkilat profilinizi nəzərdən keçirin və redaktə edin."
                     icon={Building}
                     href="#"
@@ -67,9 +69,6 @@ export default function OrganizationDashboard() {
     );
 }
 
-import Link from 'next/link';
-import type { LucideIcon } from 'lucide-react';
-
 interface DashboardActionCardProps {
     title: string;
     description: string;
@@ -81,13 +80,13 @@ function DashboardActionCard({ title, description, icon: Icon, href }: Dashboard
     return (
         <Link href={href}>
             <Card className="h-full hover:bg-accent/50 hover:shadow-lg transition-all duration-200">
-                <CardHeader className="flex flex-row items-start gap-4 space-y-0">
+                <CardHeader className="flex flex-row items-start gap-4 space-y-0 p-4">
                     <div className="p-3 bg-primary/10 rounded-full">
                         <Icon className="h-6 w-6 text-primary" />
                     </div>
                     <div>
-                        <CardTitle>{title}</CardTitle>
-                        <CardDescription className="mt-1">{description}</CardDescription>
+                        <CardTitle className="text-base">{title}</CardTitle>
+                        <CardDescription className="mt-1 text-xs">{description}</CardDescription>
                     </div>
                 </CardHeader>
             </Card>
