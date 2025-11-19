@@ -1,5 +1,5 @@
-
 'use client';
+
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -10,7 +10,6 @@ import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, serverTimestamp, collection } from 'firebase/firestore';
 import { useAuth, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
 import { calculateTalentScore } from '@/ai/flows/talent-scoring';
-
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -29,19 +28,39 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { FirebaseError } from 'firebase/app';
 
 const formSchema = z.object({
-  firstName: z.string().min(2, { message: 'Ad ən azı 2 hərfdən ibarət olmalıdır.' }),
-  lastName: z.string().min(2, { message: 'Soyad ən azı 2 hərfdən ibarət olmalıdır.' }),
-  email: z.string().email({ message: 'Etibarlı bir e-poçt ünvanı daxil edin.' }),
-  password: z.string().min(6, { message: 'Şifrə ən azı 6 simvoldan ibarət olmalıdır.' }),
-  faculty: z.string().min(1, { message: 'Fakültə seçmək mütləqdir.' }),
-  major: z.string().min(2, { message: 'İxtisas ən azı 2 hərfdən ibarət olmalıdır.' }),
+  firstName: z.string().min(2, {
+    message: 'Ad ən azı 2 hərfdən ibarət olmalıdır.'
+  }),
+  lastName: z.string().min(2, {
+    message: 'Soyad ən azı 2 hərfdən ibarət olmalıdır.'
+  }),
+  email: z.string().email({
+    message: 'Etibarlı bir e-poçt ünvanı daxil edin.'
+  }),
+  password: z.string().min(6, {
+    message: 'Şifrə ən azı 6 simvoldan ibarət olmalıdır.'
+  }),
+  faculty: z.string().min(1, {
+    message: 'Fakültə seçmək mütləqdir.'
+  }),
+  major: z.string().min(2, {
+    message: 'İxtisas ən azı 2 hərfdən ibarət olmalıdır.'
+  }),
   courseYear: z.coerce.number().min(1).max(4),
-  category: z.string().min(1, { message: 'Kateqoriya seçmək mütləqdir.' }),
+  category: z.string().min(1, {
+    message: 'Kateqoriya seçmək mütləqdir.'
+  }),
 });
 
 export default function RegisterStudentPage() {
@@ -51,10 +70,16 @@ export default function RegisterStudentPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const facultiesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'faculties') : null, [firestore]);
+  const facultiesQuery = useMemoFirebase(
+    () => firestore ? collection(firestore, 'faculties') : null,
+    [firestore]
+  );
   const { data: faculties } = useCollection(facultiesQuery);
 
-  const categoriesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'categories') : null, [firestore]);
+  const categoriesQuery = useMemoFirebase(
+    () => firestore ? collection(firestore, 'categories') : null,
+    [firestore]
+  );
   const { data: categories } = useCollection(categoriesQuery);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -73,18 +98,23 @@ export default function RegisterStudentPage() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
+
     if (!auth || !firestore) {
       toast({
-          variant: "destructive",
-          title: "Xəta",
-          description: "Firebase xidmətləri mövcud deyil. Zəhmət olmasa, daha sonra yenidən cəhd edin.",
+        variant: "destructive",
+        title: "Xəta",
+        description: "Firebase xidmətləri mövcud deyil. Zəhmət olmasa, daha sonra yenidən cəhd edin.",
       });
       setIsLoading(false);
       return;
     }
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        values.email,
+        values.password
+      );
       const user = userCredential.user;
 
       await updateProfile(user, {
@@ -92,7 +122,6 @@ export default function RegisterStudentPage() {
       });
 
       const userDocRef = doc(firestore, 'users', user.uid);
-      
       const newUserProfile: any = {
         id: user.uid,
         role: 'student' as const,
@@ -117,29 +146,33 @@ export default function RegisterStudentPage() {
       };
 
       try {
-        const scoreResult = await calculateTalentScore({ profileData: JSON.stringify(newUserProfile) });
+        const scoreResult = await calculateTalentScore({
+          profileData: JSON.stringify(newUserProfile)
+        });
         newUserProfile.talentScore = scoreResult.talentScore;
       } catch (aiError) {
         console.error("AI talent score calculation failed:", aiError);
         newUserProfile.talentScore = Math.floor(Math.random() * 30) + 10;
       }
-      
+
       setDocumentNonBlocking(userDocRef, newUserProfile, { merge: false });
 
       toast({
         title: 'Qeydiyyat Uğurlu Oldu',
         description: 'Hesabınız yaradıldı. İstedad Mərkəzinə xoş gəlmisiniz!',
       });
-      router.push('/');
 
+      router.push('/');
     } catch (error) {
       console.error('Registration error:', error);
       let errorMessage = 'Qeydiyyat zamanı xəta baş verdi. Zəhmət olmasa, yenidən cəhd edin.';
+
       if (error instanceof FirebaseError) {
         if (error.code === 'auth/email-already-in-use') {
           errorMessage = 'Bu e-poçt ünvanı artıq istifadə olunur.';
         }
       }
+
       toast({
         variant: 'destructive',
         title: 'Qeydiyyat Uğursuz Oldu',
@@ -161,42 +194,44 @@ export default function RegisterStudentPage() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-               <FormField
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
                 control={form.control}
                 name="firstName"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Ad</FormLabel>
                     <FormControl>
-                      <Input placeholder="Aylin" {...field} />
+                      <Input placeholder="Adınız" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-               <FormField
+              <FormField
                 control={form.control}
                 name="lastName"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Soyad</FormLabel>
                     <FormControl>
-                      <Input placeholder="Məmmədova" {...field} />
+                      <Input placeholder="Soyadınız" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
-             <FormField
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>E-poçt</FormLabel>
                     <FormControl>
-                      <Input placeholder="ad@nümunə.com" {...field} />
+                      <Input type="email" placeholder="example@example.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -209,28 +244,32 @@ export default function RegisterStudentPage() {
                   <FormItem>
                     <FormLabel>Şifrə</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
+                      <Input type="password" placeholder="••••••" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-               <FormField
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
                 control={form.control}
                 name="faculty"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Fakültə</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                       <FormControl>
+                      <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Fakültə seçin" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {faculties?.map(faculty => (
-                          <SelectItem key={faculty.id} value={faculty.name}>{faculty.name}</SelectItem>
+                          <SelectItem key={faculty.id} value={faculty.id}>
+                            {faculty.name}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -245,70 +284,81 @@ export default function RegisterStudentPage() {
                   <FormItem>
                     <FormLabel>İxtisas</FormLabel>
                     <FormControl>
-                      <Input placeholder="Kompüter mühəndisliyi" {...field} />
+                      <Input placeholder="İxtisasınız" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="courseYear"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Təhsil ili</FormLabel>
-                      <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={String(field.value)}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Kurs seçin" />
-                          </Trigger>
-                        </FormControl>
-                        <SelectContent>
-                          {[1, 2, 3, 4].map(year => (
-                            <SelectItem key={year} value={String(year)}>{year}-ci kurs</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="category"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>İstedad Kateqoriyası</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Əsas istedad sahənizi seçin" />
-                          </Trigger>
-                        </FormControl>
-                        <SelectContent>
-                           {categories?.map(cat => (
-                            <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="courseYear"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Təhsil ili</FormLabel>
+                    <Select
+                      onValueChange={(value) => field.onChange(parseInt(value))}
+                      defaultValue={String(field.value)}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Kursu seçin" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {[1, 2, 3, 4].map(year => (
+                          <SelectItem key={year} value={String(year)}>
+                            {year}-ci kurs
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>İstedad Kateqoriyası</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Kateqoriya seçin" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {categories?.map(cat => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
+
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? 'Hesab yaradılır...' : 'Hesab yarat'}
             </Button>
           </form>
         </Form>
       </CardContent>
-      <CardFooter className="text-center text-sm">
-        Artıq hesabınız var?{' '}
-        <Button variant="link" asChild>
-           <Link href="/login">Daxil olun</Link>
-        </Button>
+      <CardFooter className="flex justify-center">
+        <p className="text-sm text-muted-foreground">
+          Artıq hesabınız var?{' '}
+          <Link href="/login" className="text-primary hover:underline">
+            Daxil olun
+          </Link>
+        </p>
       </CardFooter>
     </Card>
   );

@@ -10,6 +10,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { getAuth, signOut } from 'firebase/auth';
 import type { AppUser, Student, Organization } from '@/types';
+import { usePathname } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 const navLinks = [
   { href: '/', label: 'Ana Səhifə' },
@@ -20,6 +22,7 @@ const navLinks = [
 export function Header() {
   const { user, isUserLoading, profile } = useUser();
   const appUser = profile as AppUser | null;
+  const pathname = usePathname();
 
 
   const handleLogout = async () => {
@@ -44,11 +47,11 @@ export function Header() {
   }
   
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-primary text-primary-foreground">
-      <div className="container flex h-24 max-w-screen-2xl items-center">
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-20 items-center">
         <Link href="/" className="mr-6 flex items-center space-x-3">
-          <Logo className="h-16 w-auto" />
-          <span className="hidden font-bold sm:inline-block text-lg">
+          <Logo className="h-14 w-auto" />
+          <span className="hidden font-bold sm:inline-block text-base">
             İstedad Mərkəzi
           </span>
         </Link>
@@ -57,7 +60,10 @@ export function Header() {
             <Link
               key={link.href}
               href={link.href}
-              className="transition-colors hover:text-primary-foreground/80 text-primary-foreground/80"
+              className={cn(
+                "transition-colors hover:text-foreground/80",
+                pathname === link.href ? "text-foreground" : "text-foreground/60"
+              )}
             >
               {link.label}
             </Link>
@@ -65,11 +71,11 @@ export function Header() {
         </nav>
         <div className="flex flex-1 items-center justify-end space-x-2">
           {isUserLoading ? (
-            <div className='h-10 w-10 bg-primary-foreground/10 rounded-full animate-pulse' />
+            <div className='h-10 w-10 bg-muted rounded-full animate-pulse' />
           ) : user && appUser ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:bg-primary-foreground/10">
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                    <Avatar className="h-10 w-10">
                     <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User'} />
                     <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
@@ -102,10 +108,10 @@ export function Header() {
             </DropdownMenu>
           ) : (
             <div className="hidden md:flex items-center space-x-2">
-              <Button variant="ghost" className="hover:bg-primary-foreground/10 hover:text-primary-foreground" asChild>
+              <Button variant="ghost" asChild>
                 <Link href="/login">Giriş</Link>
               </Button>
-              <Button variant="secondary" asChild>
+              <Button asChild>
                 <Link href="/register">Qeydiyyat</Link>
               </Button>
             </div>
@@ -113,17 +119,16 @@ export function Header() {
 
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="md:hidden bg-transparent border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10">
+              <Button variant="ghost" size="icon" className="md:hidden">
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Menyu aç</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="p-0 bg-primary text-primary-foreground">
-              <div className="flex flex-col h-full">
-                <div className="flex items-center p-4 border-b border-primary-foreground/20">
+            <SheetContent side="left">
+               <div className="flex items-center p-4 border-b">
                    <Link href="/" className="flex items-center space-x-3">
                     <Logo className="h-10 w-auto" />
-                    <span className="font-bold text-lg">
+                    <span className="font-bold text-base">
                       İstedad Mərkəzi
                     </span>
                   </Link>
@@ -133,25 +138,27 @@ export function Header() {
                     <Link
                       key={link.href}
                       href={link.href}
-                      className="transition-colors hover:text-primary-foreground/80 text-primary-foreground"
+                      className={cn(
+                        "transition-colors hover:text-foreground/80",
+                        pathname === link.href ? "text-foreground" : "text-foreground/60"
+                      )}
                     >
                       {link.label}
                     </Link>
                   ))}
                 </nav>
-                <div className="mt-auto p-4 border-t border-primary-foreground/20 flex flex-col gap-2">
+                <div className="mt-auto p-4 border-t flex flex-col gap-2">
                    {!user && !isUserLoading && (
                      <>
-                      <Button variant="ghost" className="hover:bg-primary-foreground/10 hover:text-primary-foreground" asChild>
+                      <Button variant="outline" className="w-full" asChild>
                         <Link href="/login">Giriş</Link>
                       </Button>
-                      <Button variant="secondary" asChild>
+                      <Button className="w-full" asChild>
                         <Link href="/register">Qeydiyyat</Link>
                       </Button>
                      </>
                    )}
                 </div>
-              </div>
             </SheetContent>
           </Sheet>
         </div>

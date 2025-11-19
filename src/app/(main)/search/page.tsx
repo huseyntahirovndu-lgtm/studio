@@ -16,6 +16,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
+
 
 export default function SearchPage() {
   const firestore = useFirestore();
@@ -48,10 +50,12 @@ export default function SearchPage() {
 
   const filteredStudents = useMemo(() => {
     return enrichedStudents?.filter(student => {
+      if (student.role !== 'student') return false;
+
       const searchTermMatch =
         `${student.firstName} ${student.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
         student.major.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()));
+        (student.skills && student.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase())));
 
       const facultyMatch = facultyFilter === 'all' || student.faculty === facultyFilter;
       const courseMatch = courseFilter === 'all' || student.courseYear === parseInt(courseFilter);
@@ -150,17 +154,22 @@ export default function SearchPage() {
             ))}
         </div>
       ) : (
-        <div className="grid gap-6 md:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredStudents && filteredStudents.length > 0 ? (
-            filteredStudents.map((student) => (
-              <StudentCard key={student.id} student={student} />
-            ))
-          ) : (
-            <p className="text-muted-foreground col-span-full text-center py-16">
-              Axtarışınıza uyğun tələbə tapılmadı.
-            </p>
-          )}
-        </div>
+        <>
+          <p className="text-sm text-muted-foreground mb-4">
+            {filteredStudents?.length} nəticə tapıldı.
+          </p>
+          <div className="grid gap-6 md:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filteredStudents && filteredStudents.length > 0 ? (
+              filteredStudents.map((student) => (
+                <StudentCard key={student.id} student={student} />
+              ))
+            ) : (
+              <p className="text-muted-foreground col-span-full text-center py-16">
+                Axtarışınıza uyğun tələbə tapılmadı.
+              </p>
+            )}
+          </div>
+        </>
       )}
     </div>
   );

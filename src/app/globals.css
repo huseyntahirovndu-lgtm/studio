@@ -8,24 +8,24 @@ body {
 
 @layer base {
   :root {
-    --background: 210 17% 98%;
-    --foreground: 215 28% 17%;
+    --background: 0 0% 100%;
+    --foreground: 224 71.4% 4.1%;
     --card: 0 0% 100%;
-    --card-foreground: 215 28% 17%;
+    --card-foreground: 224 71.4% 4.1%;
     --popover: 0 0% 100%;
-    --popover-foreground: 215 28% 17%;
+    --popover-foreground: 224 71.4% 4.1%;
     --primary: 191 89% 37%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 191 70% 50%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 210 40% 96.1%;
+    --primary-foreground: 300 0% 100%;
+    --secondary: 220 13% 91%;
+    --secondary-foreground: 220 14% 22%;
+    --muted: 210 20% 98%;
     --muted-foreground: 215 25% 45%;
-    --accent: 30 90% 55%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 210 20% 94%;
+    --accent-foreground: 221 14% 23%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 215 20% 90%;
-    --input: 215 20% 90%;
+    --border: 220 13% 89%;
+    --input: 220 13% 89%;
     --ring: 191 89% 37%;
     --radius: 0.8rem;
     --chart-1: 191 89% 37%;
@@ -48,25 +48,26 @@ body {
     --achievement-regional: 29 45% 50%;
     --achievement-university: 212 92% 67%;
   }
+
   .dark {
-    --background: 215 28% 17%;
-    --foreground: 210 40% 98%;
-    --card: 215 28% 17%;
-    --card-foreground: 210 40% 98%;
-    --popover: 215 28% 17%;
-    --popover-foreground: 210 40% 98%;
+    --background: 224 71.4% 4.1%;
+    --foreground: 210 20% 98%;
+    --card: 224 71.4% 4.1%;
+    --card-foreground: 210 20% 98%;
+    --popover: 224 71.4% 4.1%;
+    --popover-foreground: 210 20% 98%;
     --primary: 191 89% 37%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 191 70% 50%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 215 28% 25%;
-    --muted-foreground: 215 25% 65%;
-    --accent: 30 90% 55%;
-    --accent-foreground: 0 0% 98%;
+    --primary-foreground: 300 0% 100%;
+    --secondary: 215 28% 17%;
+    --secondary-foreground: 210 20% 98%;
+    --muted: 215 28% 17%;
+    --muted-foreground: 217 10% 65%;
+    --accent: 215 28% 17%;
+    --accent-foreground: 210 20% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 215 28% 25%;
-    --input: 215 28% 25%;
+    --border: 215 28% 17%;
+    --input: 215 28% 17%;
     --ring: 191 89% 37%;
 
     /* Category Colors */
