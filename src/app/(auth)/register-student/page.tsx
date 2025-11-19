@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
@@ -6,9 +7,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { doc, serverTimestamp } from 'firebase/firestore';
+import { doc, serverTimestamp, collection } from 'firebase/firestore';
 import { useAuth, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
-import { collection } from 'firebase/firestore';
 import { calculateTalentScore } from '@/ai/flows/talent-scoring';
 
 import { Button } from '@/components/ui/button';
@@ -64,8 +64,10 @@ export default function RegisterStudentPage() {
       lastName: '',
       email: '',
       password: '',
+      faculty: '',
       major: '',
       courseYear: 1,
+      category: '',
     },
   });
 
@@ -90,7 +92,8 @@ export default function RegisterStudentPage() {
       });
 
       const userDocRef = doc(firestore, 'users', user.uid);
-      const newUserProfile = {
+      
+      const newUserProfile: any = {
         id: user.uid,
         role: 'student' as const,
         firstName: values.firstName,
@@ -310,3 +313,5 @@ export default function RegisterStudentPage() {
     </Card>
   );
 }
+
+    
