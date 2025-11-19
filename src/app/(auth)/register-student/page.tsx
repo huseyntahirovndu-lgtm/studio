@@ -80,6 +80,7 @@ export default function RegisterStudentPage() {
       setIsLoading(false);
       return;
     }
+
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
@@ -121,8 +122,7 @@ export default function RegisterStudentPage() {
         // Proceed with a default score if AI fails
         newUserProfile.talentScore = Math.floor(Math.random() * 30) + 10;
       }
-
-
+      
       setDocumentNonBlocking(userDocRef, newUserProfile, { merge: false });
 
       toast({
@@ -262,7 +262,7 @@ export default function RegisterStudentPage() {
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Kurs seçin" />
-                          </SelectTrigger>
+                          </Trigger>
                         </FormControl>
                         <SelectContent>
                           {[1, 2, 3, 4].map(year => (
