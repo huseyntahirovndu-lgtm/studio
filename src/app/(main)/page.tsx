@@ -31,7 +31,7 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="relative w-full flex items-center">
         <Image
-          src="https://i.ibb.co/cXv2KzRR/q2.jpg"
+          src="https://i.ibb.co/yFjxDz0w/q1.jpg"
           alt="Naxçıvan Dövlət Universiteti"
           width={1920}
           height={1080}
@@ -43,12 +43,7 @@ export default function HomePage() {
         <div className="absolute inset-0 flex items-center">
           <div className="container mx-auto px-4 md:px-8 lg:px-12">
             <div className="max-w-3xl text-left">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4" style={{ color: '#0b98b2' }}>
-                Naxçıvan Dövlət Universiteti <br /> Tələbə İstedad Bankı
-              </h1>
-              <p className="text-2xl md:text-3xl mb-8" style={{ color: '#0b98b2' }}>
-                İstedadını göstərəcək platforma.
-              </p>
+              
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button size="lg" asChild>
                   <Link href="/search">
