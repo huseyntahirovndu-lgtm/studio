@@ -91,13 +91,13 @@ export default function HomePage() {
             </div>
              <div className="hidden lg:block relative">
                  <Image
-                    src="https://i.ibb.co/yFjxDz0w/q1.jpg"
+                    src="https://i.ibb.co/cXv2KzRR/q2.jpg"
                     alt="Naxçıvan Dövlət Universiteti"
                     width={600}
                     height={400}
                     className="rounded-xl shadow-2xl"
                     priority
-                    data-ai-hint="university building"
+                    data-ai-hint="university campus students"
                     />
              </div>
          </div>
