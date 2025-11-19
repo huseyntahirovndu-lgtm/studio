@@ -3,7 +3,7 @@ import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCollection, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { useFirestore } from '@/firebase/provider';
 import { Student } from '@/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -27,7 +27,7 @@ export default function RankingsPage() {
 
   const studentsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return collection(firestore, 'users');
+    return query(collection(firestore, 'users'), where('role', '==', 'student'));
   }, [firestore]);
   
   const facultiesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'faculties') : null, [firestore]);

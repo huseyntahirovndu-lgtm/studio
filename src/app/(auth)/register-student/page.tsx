@@ -37,6 +37,9 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { FirebaseError } from 'firebase/app';
+import { seedDatabase } from '@/lib/seed'; // Import seeder
+import { Database } from 'lucide-react'; // Import an icon
+
 
 const formSchema = z.object({
   firstName: z.string().min(2, {
@@ -65,6 +68,7 @@ const formSchema = z.object({
 
 export default function RegisterStudentPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false);
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
@@ -95,6 +99,23 @@ export default function RegisterStudentPage() {
       category: '',
     },
   });
+
+  async function handleSeedDatabase() {
+    if (!firestore) {
+      toast({ variant: 'destructive', title: 'Xəta', description: 'Verilənlər bazası xidməti mövcud deyil.' });
+      return;
+    }
+    setIsSeeding(true);
+    const result = await seedDatabase(firestore);
+    if (result.success) {
+      toast({ title: 'Uğurlu', description: result.message });
+      // Optionally refresh or navigate
+      window.location.reload();
+    } else {
+      toast({ variant: 'destructive', title: 'Xəbərdarlıq', description: result.message });
+    }
+    setIsSeeding(false);
+  }
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
@@ -267,7 +288,7 @@ export default function RegisterStudentPage() {
                       </FormControl>
                       <SelectContent>
                         {faculties?.map(faculty => (
-                          <SelectItem key={faculty.id} value={faculty.id}>
+                          <SelectItem key={faculty.id} value={faculty.name}>
                             {faculty.name}
                           </SelectItem>
                         ))}
@@ -334,7 +355,7 @@ export default function RegisterStudentPage() {
                       </FormControl>
                       <SelectContent>
                         {categories?.map(cat => (
-                          <SelectItem key={cat.id} value={cat.id}>
+                          <SelectItem key={cat.id} value={cat.name}>
                             {cat.name}
                           </SelectItem>
                         ))}
@@ -346,19 +367,32 @@ export default function RegisterStudentPage() {
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full" disabled={isLoading || isSeeding}>
               {isLoading ? 'Hesab yaradılır...' : 'Hesab yarat'}
             </Button>
           </form>
         </Form>
       </CardContent>
-      <CardFooter className="flex justify-center">
+      <CardFooter className="flex-col justify-center gap-4">
         <p className="text-sm text-muted-foreground">
           Artıq hesabınız var?{' '}
           <Link href="/login" className="text-primary hover:underline">
             Daxil olun
           </Link>
         </p>
+         {process.env.NODE_ENV === 'development' && (
+          <div className="text-center w-full">
+            <p className="text-xs text-muted-foreground mb-2">Yalnız developerlər üçün:</p>
+            <Button
+              variant="outline"
+              onClick={handleSeedDatabase}
+              disabled={isSeeding || isLoading}
+            >
+              <Database className="mr-2 h-4 w-4" />
+              {isSeeding ? 'Məlumatlar yerləşdirilir...' : 'Nümunə Məlumatları Yerləşdir'}
+            </Button>
+          </div>
+        )}
       </CardFooter>
     </Card>
   );
