@@ -6,7 +6,7 @@ export function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="border-t bg-primary-muted">
+    <footer className="border-t bg-primary text-primary-foreground">
       <div className="container py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="flex flex-col items-start gap-4">
@@ -14,10 +14,10 @@ export function Footer() {
               <Logo className="h-16 w-auto" />
               <div>
                 <p className="font-bold text-lg">İstedad Mərkəzi</p>
-                <p className="text-sm text-muted-foreground">Naxçıvan Dövlət Universiteti</p>
+                <p className="text-sm text-primary-foreground/80">Naxçıvan Dövlət Universiteti</p>
               </div>
             </Link>
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm text-primary-foreground/80">
               <p>&copy; {currentYear} Bütün hüquqlar qorunur.</p>
               <p>Designed by Hüseyn Tahirov</p>
             </div>
@@ -27,14 +27,14 @@ export function Footer() {
             <div>
               <h3 className="font-semibold mb-4">Platforma</h3>
               <ul className="space-y-2">
-                <li><Link href="/" className="text-muted-foreground hover:text-foreground">Ana Səhifə</Link></li>
-                <li><Link href="/search" className="text-muted-foreground hover:text-foreground">Axtarış</Link></li>
-                <li><Link href="/rankings" className="text-muted-foreground hover:text-foreground">Reytinq</Link></li>
+                <li><Link href="/" className="text-primary-foreground/80 hover:text-primary-foreground">Ana Səhifə</Link></li>
+                <li><Link href="/search" className="text-primary-foreground/80 hover:text-primary-foreground">Axtarış</Link></li>
+                <li><Link href="/rankings" className="text-primary-foreground/80 hover:text-primary-foreground">Reytinq</Link></li>
               </ul>
             </div>
             <div>
               <h3 className="font-semibold mb-4">Əlaqə</h3>
-              <ul className="space-y-2 text-muted-foreground">
+              <ul className="space-y-2 text-primary-foreground/80">
                 <li>Naxçıvan ş., Universitet şəhərciyi</li>
                 <li>Tel: (+994 36) 545-29-23</li>
                 <li>Email: info@ndu.edu.az</li>
@@ -43,13 +43,13 @@ export function Footer() {
             <div>
                <h3 className="font-semibold mb-4">Bizi İzləyin</h3>
               <div className="flex space-x-4">
-                <Link href="#" className="text-muted-foreground hover:text-foreground" aria-label="Facebook">
+                <Link href="#" className="text-primary-foreground/80 hover:text-primary-foreground" aria-label="Facebook">
                   <Facebook size={20} />
                 </Link>
-                 <Link href="#" className="text-muted-foreground hover:text-foreground" aria-label="Instagram">
+                 <Link href="#" className="text-primary-foreground/80 hover:text-primary-foreground" aria-label="Instagram">
                   <Instagram size={20} />
                 </Link>
-                <Link href="#" className="text-muted-foreground hover:text-foreground" aria-label="LinkedIn">
+                <Link href="#" className="text-primary-foreground/80 hover:text-primary-foreground" aria-label="LinkedIn">
                   <Linkedin size={20} />
                 </Link>
               </div>

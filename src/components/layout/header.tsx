@@ -54,7 +54,7 @@ export function Header() {
   }
   
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-primary-muted/95 backdrop-blur supports-[backdrop-filter]:bg-primary-muted/60">
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-primary text-primary-foreground">
       <div className="container flex h-20 items-center">
         <Link href="/" className="mr-6 flex items-center space-x-3">
           <Logo className="h-14 w-auto" />
@@ -68,8 +68,8 @@ export function Header() {
               key={link.href}
               href={link.href}
               className={cn(
-                "transition-colors hover:text-foreground/80",
-                pathname === link.href ? "text-foreground" : "text-foreground/60"
+                "transition-colors hover:text-primary-foreground/80",
+                pathname === link.href ? "text-primary-foreground" : "text-primary-foreground/60"
               )}
             >
               {link.label}
@@ -79,8 +79,8 @@ export function Header() {
              <Link
               href="/admin/dashboard"
               className={cn(
-                "transition-colors hover:text-foreground/80 flex items-center gap-2",
-                pathname.startsWith('/admin') ? "text-primary" : "text-foreground/60"
+                "transition-colors hover:text-primary-foreground/80 flex items-center gap-2",
+                pathname.startsWith('/admin') ? "text-primary-foreground" : "text-primary-foreground/60"
               )}
             >
               <ShieldCheck className="h-4 w-4"/> Admin Paneli
@@ -93,7 +93,7 @@ export function Header() {
           ) : user && appUser ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:bg-primary/80">
                    <Avatar className="h-10 w-10">
                     {appUser.role === 'student' && (appUser as Student).profilePictureUrl && <AvatarImage src={(appUser as Student).profilePictureUrl} alt={getDisplayName(appUser)} />}
                     <AvatarFallback>{getInitials(getDisplayName(appUser))}</AvatarFallback>
@@ -140,10 +140,10 @@ export function Header() {
             </DropdownMenu>
           ) : (
             <div className="hidden md:flex items-center space-x-2">
-              <Button variant="ghost" asChild>
+              <Button variant="ghost" className="hover:bg-primary/80" asChild>
                 <Link href="/login">Giriş</Link>
               </Button>
-              <Button asChild>
+              <Button variant="secondary" asChild>
                 <Link href="/register">Qeydiyyat</Link>
               </Button>
             </div>
@@ -151,7 +151,7 @@ export function Header() {
 
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
+              <Button variant="ghost" size="icon" className="md:hidden hover:bg-primary/80">
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Menyu aç</span>
               </Button>
