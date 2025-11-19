@@ -1,3 +1,4 @@
+'use client';
 import Link from 'next/link';
 import { ArrowUpRight, Star, Bookmark } from 'lucide-react';
 import type { Student, Organization } from '@/types';
@@ -60,12 +61,20 @@ export function StudentCard({ student, className }: StudentCardProps) {
       : [...currentSavedIds, student.id];
 
     const updatedOrg = { ...organization, savedStudentIds: newSavedStudentIds };
-    updateUser(updatedOrg);
+    const success = updateUser(updatedOrg);
 
-    toast({
-      title: isSaved ? "Siyahıdan çıxarıldı" : "Yadda saxlanıldı",
-      description: `${student.firstName} ${student.lastName} ${isSaved ? 'yaddaş siyahısından çıxarıldı.' : 'yaddaş siyahısına əlavə edildi.'}`,
-    });
+    if (success) {
+        toast({
+          title: isSaved ? "Siyahıdan çıxarıldı" : "Yadda saxlanıldı",
+          description: `${student.firstName} ${student.lastName} ${isSaved ? 'yaddaş siyahısından çıxarıldı.' : 'yaddaş siyahısına əlavə edildi.'}`,
+        });
+    } else {
+        toast({
+            variant: 'destructive',
+            title: 'Xəta',
+            description: 'Əməliyyat zamanı xəta baş verdi.'
+        })
+    }
   };
 
 
