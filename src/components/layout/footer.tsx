@@ -6,7 +6,7 @@ export function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="border-t bg-muted/50">
+    <footer className="border-t bg-primary-muted">
       <div className="container py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="flex flex-col items-start gap-4">
@@ -17,9 +17,10 @@ export function Footer() {
                 <p className="text-sm text-muted-foreground">Naxçıvan Dövlət Universiteti</p>
               </div>
             </Link>
-             <p className="text-sm text-muted-foreground">
-              &copy; {currentYear} Bütün hüquqlar qorunur.
-            </p>
+            <div className="text-sm text-muted-foreground">
+              <p>&copy; {currentYear} Bütün hüquqlar qorunur.</p>
+              <p>Designed by Hüseyn Tahirov</p>
+            </div>
           </div>
 
           <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-8">
