@@ -36,6 +36,8 @@ const profileSchema = z.object({
   lastName: z.string().min(2, "Soyad ən azı 2 hərf olmalıdır."),
   major: z.string().min(2, "İxtisas boş ola bilməz."),
   courseYear: z.coerce.number().min(1).max(4),
+  educationForm: z.string().optional(),
+  gpa: z.coerce.number().optional(),
   skills: z.string().min(1, "Bacarıqlar boş ola bilməz.").transform(val => val.split(',').map(s => s.trim()).filter(Boolean)),
   linkedInURL: z.string().url().or(z.literal('')),
   githubURL: z.string().url().or(z.literal('')),
@@ -129,6 +131,8 @@ export default function EditProfilePage() {
         lastName: student.lastName || '',
         major: student.major || '',
         courseYear: student.courseYear || 1,
+        educationForm: student.educationForm || '',
+        gpa: student.gpa || undefined,
         skills: student.skills?.join(', ') || '',
         linkedInURL: student.linkedInURL || '',
         githubURL: student.githubURL || '',
@@ -276,6 +280,14 @@ export default function EditProfilePage() {
                         <FormMessage /></FormItem>
                     )} />
                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField name="educationForm" control={profileForm.control} render={({ field }) => (
+                      <FormItem><FormLabel>Təhsil Forması</FormLabel><FormControl><Input {...field} placeholder="Əyani / Qiyabi" /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField name="gpa" control={profileForm.control} render={({ field }) => (
+                      <FormItem><FormLabel>ÜOMG (GPA)</FormLabel><FormControl><Input type="number" step="0.1" {...field} placeholder="Məs: 85.5" /></FormControl><FormMessage /></FormItem>
+                    )} />
+                  </div>
                  <FormField name="skills" control={profileForm.control} render={({ field }) => (
                     <FormItem>
                       <FormLabel>Bacarıqlar</FormLabel>
