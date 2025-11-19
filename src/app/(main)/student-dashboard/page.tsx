@@ -58,27 +58,32 @@ export default function StudentDashboard() {
                         <Progress value={profileCompletion} className="w-full" />
                         <span className="font-bold text-lg">{profileCompletion}%</span>
                     </div>
+                     {profileCompletion < 100 && (
+                        <div className="text-sm text-muted-foreground mt-2">
+                            Profilinizi daha da gücləndirmək üçün <Link href="/profile/edit" className="text-primary hover:underline">layihə, nailiyyət və sertifikatlarınızı</Link> əlavə edin.
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 <DashboardActionCard
-                    title="Profilə Bax və Redaktə Et"
-                    description="Şəxsi məlumatlarınızı, bacarıqlarınızı və linklərinizi yeniləyin."
+                    title="Profilimi İdarə Et"
+                    description="Şəxsi məlumatları, layihələri və nailiyyətləri yeniləyin."
                     icon={Edit}
-                    href={`/profile/${user.uid}`} // Link to the public profile for now
+                    href={`/profile/edit`} 
                 />
                 <DashboardActionCard
-                    title="Yeni Layihə Əlavə Et"
-                    description="Gördüyünüz işləri və layihələri profilinizə əlavə edin."
-                    icon={PlusCircle}
-                    href="#" // Future link to add project page
+                    title="İctimai Profilim"
+                    description="Profilinizin digər istifadəçilər tərəfindən necə göründüyünə baxın."
+                    icon={User}
+                    href={`/profile/${user.uid}`}
                 />
                  <DashboardActionCard
-                    title="Yeni Nailiyyət/Sertifikat"
-                    description="Qazandığınız uğurları və sertifikatları bölüşün."
+                    title="Reytinqlərə Bax"
+                    description="Platformadakı ümumi sıralamanızı və digər tələbələri izləyin."
                     icon={ClipboardList}
-                    href="#" // Future link to add achievements page
+                    href="/rankings"
                 />
             </div>
              <div className="mt-12">

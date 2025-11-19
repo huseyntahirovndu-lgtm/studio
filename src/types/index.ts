@@ -29,7 +29,7 @@ export interface Project {
   link?: string;
   mediaLink?: string;
   teamMembers?: string[];
-  status?: 'davam edir' | 'tamamlanıb';
+  status: 'davam edir' | 'tamamlanıb';
 }
 
 export interface Achievement {
