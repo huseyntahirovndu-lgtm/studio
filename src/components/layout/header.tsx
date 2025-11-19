@@ -17,7 +17,7 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 max-w-screen-2xl items-center">
         <Link href="/" className="mr-6 flex items-center space-x-3">
-          <Logo className="h-8 w-8" />
+          <Logo className="h-10 w-auto" />
           <span className="hidden font-bold sm:inline-block font-headline text-lg">
             İstedad Mərkəzi
           </span>
@@ -49,11 +49,11 @@ export function Header() {
                 <span className="sr-only">Menyu aç</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left">
+            <SheetContent side="left" className="p-0">
               <div className="flex flex-col h-full">
                 <div className="flex items-center p-4 border-b">
                    <Link href="/" className="flex items-center space-x-3">
-                    <Logo className="h-8 w-8" />
+                    <Logo className="h-10 w-auto" />
                     <span className="font-bold font-headline text-lg">
                       İstedad Mərkəzi
                     </span>

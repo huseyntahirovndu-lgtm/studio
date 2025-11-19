@@ -7,7 +7,7 @@ export function Logo(props: ImgHTMLAttributes<HTMLImageElement>) {
       src="https://www.ndu.edu.az/storage/news-blogs/June2024/95Zn8wUEkI1lEufH67Gi.png"
       alt="Naxçıvan Dövlət Universiteti Logo"
       {...props}
-      className={cn("h-10 w-10", props.className)}
+      className={cn("h-12 w-12", props.className)}
     />
   );
 }
