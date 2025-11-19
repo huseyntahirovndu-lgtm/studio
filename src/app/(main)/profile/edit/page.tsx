@@ -1,6 +1,6 @@
 'use client';
 import { useUser, useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { doc, collection, serverTimestamp, getDocs, getDoc } from 'firebase/firestore';
+import { doc, collection, serverTimestamp, getDocs, getDoc, deleteDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
@@ -17,6 +17,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Trash2, PlusCircle, Award, Briefcase, FileText, User as UserIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 // Schemas
 const profileSchema = z.object({
@@ -66,9 +77,9 @@ export default function EditProfilePage() {
   const achievementsRef = useMemoFirebase(() => user ? collection(firestore!, 'users', user.uid, 'achievements') : null, [firestore, user]);
   const certificatesRef = useMemoFirebase(() => user ? collection(firestore!, 'users', user.uid, 'certificates') : null, [firestore, user]);
   
-  const { data: projects, isLoading: projectsLoading } = useCollection<Project>(projectsRef);
-  const { data: achievements, isLoading: achievementsLoading } = useCollection<Achievement>(achievementsRef);
-  const { data: certificates, isLoading: certificatesLoading } = useCollection<Certificate>(certificatesRef);
+  const { data: projects, isLoading: projectsLoading, refetch: refetchProjects } = useCollection<Project>(projectsRef);
+  const { data: achievements, isLoading: achievementsLoading, refetch: refetchAchievements } = useCollection<Achievement>(achievementsRef);
+  const { data: certificates, isLoading: certificatesLoading, refetch: refetchCertificates } = useCollection<Certificate>(certificatesRef);
 
   const profileForm = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
@@ -150,57 +161,81 @@ export default function EditProfilePage() {
     }
   }, [user, firestore, toast]);
 
-  const onProfileSubmit: SubmitHandler<z.infer<typeof profileSchema>> = async (data) => {
-    if (!user || !firestore) return;
+  const handleGenericSubmit = async (submitAction: () => Promise<any>, successMessage: string, formToReset: any) => {
+    if (!user) return;
     setIsSaving(true);
+    try {
+      await submitAction();
+      toast({ title: successMessage });
+      formToReset.reset();
+      await triggerTalentScoreUpdate();
+    } catch (error) {
+      console.error(`Error: ${error}`);
+      toast({ variant: "destructive", title: "Xəta", description: "Əməliyyat zamanı xəta baş verdi." });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
-    const userDocRef = doc(firestore, 'users', user.uid);
-    const updatedData = { ...data, updatedAt: serverTimestamp() };
-
-    await updateDoc(userDocRef, updatedData).catch(error => console.error(error));
-    
-    await triggerTalentScoreUpdate();
-    setIsSaving(false);
+  const onProfileSubmit: SubmitHandler<z.infer<typeof profileSchema>> = (data) => {
+    handleGenericSubmit(async () => {
+        const userDocRef = doc(firestore!, 'users', user!.uid);
+        return updateDocumentNonBlocking(userDocRef, { ...data, updatedAt: serverTimestamp() });
+    }, "Profil məlumatları yeniləndi", profileForm);
   };
   
-  const onProjectSubmit: SubmitHandler<z.infer<typeof projectSchema>> = async (data) => {
-    if (!projectsRef) return;
-    setIsSaving(true);
-
-    const newProject: Omit<Project, 'id'> = { studentId: user!.uid, ...data };
-    await addDoc(projectsRef, newProject).catch(error => console.error(error));
-    
-    toast({ title: "Layihə əlavə edildi" });
-    projectForm.reset();
-    await triggerTalentScoreUpdate();
-    setIsSaving(false);
+  const onProjectSubmit: SubmitHandler<z.infer<typeof projectSchema>> = (data) => {
+    handleGenericSubmit(async () => {
+        const newProject: Omit<Project, 'id'> = { studentId: user!.uid, ...data };
+        return addDocumentNonBlocking(projectsRef!, newProject);
+    }, "Layihə əlavə edildi", projectForm);
   };
   
-  const onAchievementSubmit: SubmitHandler<z.infer<typeof achievementSchema>> = async (data) => {
-    if (!achievementsRef) return;
-    setIsSaving(true);
-    
-    const newAchievement: Omit<Achievement, 'id'> = { studentId: user!.uid, ...data };
-    await addDoc(achievementsRef, newAchievement).catch(error => console.error(error));
-    
-    toast({ title: "Nailiyyət əlavə edildi" });
-    achievementForm.reset();
-    await triggerTalentScoreUpdate();
-    setIsSaving(false);
+  const onAchievementSubmit: SubmitHandler<z.infer<typeof achievementSchema>> = (data) => {
+    handleGenericSubmit(async () => {
+        const newAchievement: Omit<Achievement, 'id'> = { studentId: user!.uid, ...data };
+        return addDocumentNonBlocking(achievementsRef!, newAchievement);
+    }, "Nailiyyət əlavə edildi", achievementForm);
   };
   
-  const onCertificateSubmit: SubmitHandler<z.infer<typeof certificateSchema>> = async (data) => {
-    if (!certificatesRef) return;
-    setIsSaving(true);
-
-    const newCertificate: Omit<Certificate, 'id'> = { studentId: user!.uid, ...data };
-    await addDoc(certificatesRef, newCertificate).catch(error => console.error(error));
-    
-    toast({ title: "Sertifikat əlavə edildi" });
-    certificateForm.reset();
-    await triggerTalentScoreUpdate();
-    setIsSaving(false);
+  const onCertificateSubmit: SubmitHandler<z.infer<typeof certificateSchema>> = (data) => {
+    handleGenericSubmit(async () => {
+        const newCertificate: Omit<Certificate, 'id'> = { studentId: user!.uid, ...data };
+        return addDocumentNonBlocking(certificatesRef!, newCertificate);
+    }, "Sertifikat əlavə edildi", certificateForm);
   };
+  
+  const handleDelete = async (docId: string, itemType: 'project' | 'achievement' | 'certificate') => {
+      if (!user || !firestore) return;
+      setIsSaving(true);
+      let docRef;
+      switch (itemType) {
+          case 'project':
+              docRef = doc(firestore, 'users', user.uid, 'projects', docId);
+              break;
+          case 'achievement':
+              docRef = doc(firestore, 'users', user.uid, 'achievements', docId);
+              break;
+          case 'certificate':
+              docRef = doc(firestore, 'users', user.uid, 'certificates', docId);
+              break;
+      }
+
+      try {
+          await deleteDoc(docRef);
+          toast({ title: "Element silindi", description: "Seçilmiş element uğurla silindi." });
+          refetchProjects && refetchProjects();
+          refetchAchievements && refetchAchievements();
+          refetchCertificates && refetchCertificates();
+          await triggerTalentScoreUpdate();
+      } catch (error) {
+          console.error("Error deleting document:", error);
+          toast({ variant: "destructive", title: "Xəta", description: "Elementi silərkən xəta baş verdi." });
+      } finally {
+          setIsSaving(false);
+      }
+  };
+
 
   if (isUserLoading || !student) {
     return <div className="container mx-auto py-8 text-center">Yüklənir...</div>;
@@ -319,7 +354,23 @@ export default function EditProfilePage() {
                     {projectsLoading ? <p>Yüklənir...</p> : projects?.map(p => (
                         <div key={p.id} className="flex justify-between items-center p-2 border rounded-md">
                             <span>{p.title}</span>
-                            <Button variant="ghost" size="icon" disabled><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                             <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" disabled={isSaving}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>Silməni təsdiq edirsiniz?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Bu əməliyyat geri qaytarıla bilməz. "{p.title}" adlı layihə profilinizdən həmişəlik silinəcək.
+                                    </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                    <AlertDialogCancel>Ləğv et</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDelete(p.id, 'project')}>Bəli, sil</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
                         </div>
                     ))}
                 </div>
@@ -366,7 +417,23 @@ export default function EditProfilePage() {
                     {achievementsLoading ? <p>Yüklənir...</p> : achievements?.map(a => (
                         <div key={a.id} className="flex justify-between items-center p-2 border rounded-md">
                             <span>{a.name} - {a.position}</span>
-                            <Button variant="ghost" size="icon" disabled><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                             <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" disabled={isSaving}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>Silməni təsdiq edirsiniz?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Bu əməliyyat geri qaytarıla bilməz. "{a.name}" adlı nailiyyət profilinizdən həmişəlik silinəcək.
+                                    </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                    <AlertDialogCancel>Ləğv et</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDelete(a.id, 'achievement')}>Bəli, sil</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
                         </div>
                     ))}
                 </div>
@@ -408,7 +475,23 @@ export default function EditProfilePage() {
                     {certificatesLoading ? <p>Yüklənir...</p> : certificates?.map(c => (
                         <div key={c.id} className="flex justify-between items-center p-2 border rounded-md">
                             <a href={c.certificateURL} target="_blank" rel="noopener noreferrer" className="hover:underline">{c.name}</a>
-                            <Button variant="ghost" size="icon" disabled><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" disabled={isSaving}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>Silməni təsdiq edirsiniz?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Bu əməliyyat geri qaytarıla bilməz. "{c.name}" adlı sertifikat profilinizdən həmişəlik silinəcək.
+                                    </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                    <AlertDialogCancel>Ləğv et</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDelete(c.id, 'certificate')}>Bəli, sil</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
                         </div>
                     ))}
                 </div>
@@ -419,5 +502,3 @@ export default function EditProfilePage() {
     </div>
   );
 }
-
-    
