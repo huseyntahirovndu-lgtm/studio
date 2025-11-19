@@ -72,7 +72,7 @@ export interface Student extends BaseUser {
   educationForm?: string;
   gpa?: number;
   skills: string[];
-  category: string;
+  category: string; // This will now hold multiple categories as a comma-separated string or be an array. Let's make it an array.
   projectIds?: string[];
   achievementIds?: string[];
   certificateIds?: string[];

@@ -72,8 +72,8 @@ export default function AdminOrganizationsPage() {
             </CardContent>
             <CardFooter>
                 <div className="text-xs text-muted-foreground">
-                Showing <strong>1-{organizations.length}</strong> of <strong>{organizations.length}</strong>{" "}
-                organizations
+                Göstərilir <strong>1-{organizations.length}</strong> / <strong>{organizations.length}</strong>{" "}
+                təşkilat
                 </div>
             </CardFooter>
         </Card>

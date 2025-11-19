@@ -36,6 +36,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { faculties, categories } from '@/lib/data';
 import type { Student } from '@/types';
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 const formSchema = z.object({
@@ -58,8 +59,8 @@ const formSchema = z.object({
     message: 'İxtisas ən azı 2 hərfdən ibarət olmalıdır.'
   }),
   courseYear: z.coerce.number().min(1).max(4),
-  category: z.string().min(1, {
-    message: 'Kateqoriya seçmək mütləqdir.'
+  category: z.array(z.string()).refine((value) => value.some((item) => item), {
+    message: "Ən azı bir kateqoriya seçməlisiniz.",
   }),
 });
 
@@ -79,7 +80,7 @@ export default function RegisterStudentPage() {
       faculty: '',
       major: '',
       courseYear: 1,
-      category: '',
+      category: [],
     },
   });
 
@@ -96,7 +97,7 @@ export default function RegisterStudentPage() {
       major: values.major,
       courseYear: values.courseYear,
       skills: ['Yeni Tələbə'],
-      category: values.category,
+      category: values.category.join(', '),
       projectIds: [],
       achievementIds: [],
       certificateIds: [],
@@ -248,59 +249,83 @@ export default function RegisterStudentPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="courseYear"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Təhsil ili</FormLabel>
-                    <Select
-                      onValueChange={(value) => field.onChange(parseInt(value))}
-                      defaultValue={String(field.value)}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Kursu seçin" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {[1, 2, 3, 4].map(year => (
-                          <SelectItem key={year} value={String(year)}>
-                            {year}-ci kurs
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>İstedad Kateqoriyası</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Kateqoriya seçin" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {categories.map(cat => (
-                          <SelectItem key={cat.id} value={cat.name}>
-                            {cat.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="courseYear"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Təhsil ili</FormLabel>
+                  <Select
+                    onValueChange={(value) => field.onChange(parseInt(value))}
+                    defaultValue={String(field.value)}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Kursu seçin" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {[1, 2, 3, 4].map(year => (
+                        <SelectItem key={year} value={String(year)}>
+                          {year}-ci kurs
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>İstedad Kateqoriyaları</FormLabel>
+                   <FormDescription>
+                    Aid olduğunuz bir və ya bir neçə kateqoriyanı seçin.
+                  </FormDescription>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 py-2">
+                  {categories.map((item) => (
+                    <FormField
+                      key={item.id}
+                      control={form.control}
+                      name="category"
+                      render={({ field }) => {
+                        return (
+                          <FormItem
+                            key={item.id}
+                            className="flex flex-row items-start space-x-3 space-y-0"
+                          >
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value?.includes(item.name)}
+                                onCheckedChange={(checked) => {
+                                  return checked
+                                    ? field.onChange([...field.value, item.name])
+                                    : field.onChange(
+                                        field.value?.filter(
+                                          (value) => value !== item.name
+                                        )
+                                      )
+                                }}
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal">
+                              {item.name}
+                            </FormLabel>
+                          </FormItem>
+                        )
+                      }}
+                    />
+                  ))}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
 
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? 'Hesab yaradılır...' : 'Hesab yarat'}

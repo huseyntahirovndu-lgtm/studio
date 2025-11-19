@@ -40,6 +40,11 @@ export let users: AppUser[] = [
     projectIds: ['proj-1'],
     achievementIds: ['ach-1'],
     certificateIds: ['cert-1'],
+    linkedInURL: 'https://linkedin.com',
+    githubURL: 'https://github.com',
+    behanceURL: '',
+    instagramURL: '',
+    portfolioURL: '',
     createdAt: new Date('2023-09-10T10:00:00Z'),
     status: 'təsdiqlənmiş'
   },
@@ -60,6 +65,11 @@ export let users: AppUser[] = [
     projectIds: [],
     achievementIds: [],
     certificateIds: [],
+    linkedInURL: 'https://linkedin.com',
+    githubURL: 'https://github.com',
+    behanceURL: '',
+    instagramURL: '',
+    portfolioURL: 'https://my-portfolio.com',
     createdAt: new Date('2023-10-05T14:30:00Z'),
     status: 'təsdiqlənmiş'
   },
@@ -80,6 +90,11 @@ export let users: AppUser[] = [
     projectIds: ['proj-2'],
     achievementIds: [],
     certificateIds: [],
+    linkedInURL: '',
+    githubURL: '',
+    behanceURL: 'https://behance.net',
+    instagramURL: 'https://instagram.com',
+    portfolioURL: '',
     createdAt: new Date('2024-01-15T09:00:00Z'),
     status: 'gözləyir'
   },
@@ -130,8 +145,8 @@ let certificates: Certificate[] = [
 // --- DATA ACCESS FUNCTIONS ---
 
 // Using functions to simulate async data fetching
-export const getUsers = async (): Promise<AppUser[]> => {
-  return Promise.resolve(users);
+export const getUsers = (): AppUser[] => {
+  return users;
 };
 
 export const getStudents = (): Student[] => {
@@ -146,29 +161,29 @@ export const students = users.filter(u => u.role === 'student') as Student[];
 export const organizations = users.filter(u => u.role === 'organization') as Organization[];
 
 
-export const getStudentById = async (id: string): Promise<Student | undefined> => {
-  return Promise.resolve(users.find(u => u.id === id && u.role === 'student') as Student | undefined);
+export const getStudentById = (id: string): Student | undefined => {
+  return users.find(u => u.id === id && u.role === 'student') as Student | undefined;
 };
 
-export const getOrganizationById = async (id: string): Promise<Organization | undefined> => {
-    return Promise.resolve(users.find(u => u.id === id && u.role === 'organization') as Organization | undefined);
+export const getOrganizationById = (id: string): Organization | undefined => {
+    return users.find(u => u.id === id && u.role === 'organization') as Organization | undefined;
 };
 
-export const getUserByEmail = async (email: string): Promise<AppUser | undefined> => {
-  return Promise.resolve(users.find(u => u.email === email));
+export const getUserByEmail = (email: string): AppUser | undefined => {
+  return users.find(u => u.email === email);
 };
 
 
-export const getProjectsByStudentId = async (studentId: string): Promise<Project[]> => {
-    return Promise.resolve(projects.filter(p => p.studentId === studentId));
+export const getProjectsByStudentId = (studentId: string): Project[] => {
+    return projects.filter(p => p.studentId === studentId);
 };
 
-export const getAchievementsByStudentId = async (studentId: string): Promise<Achievement[]> => {
-    return Promise.resolve(achievements.filter(a => a.studentId === studentId));
+export const getAchievementsByStudentId = (studentId: string): Achievement[] => {
+    return achievements.filter(a => a.studentId === studentId);
 };
 
-export const getCertificatesByStudentId = async (studentId: string): Promise<Certificate[]> => {
-    return Promise.resolve(certificates.filter(c => c.studentId === studentId));
+export const getCertificatesByStudentId = (studentId: string): Certificate[] => {
+    return certificates.filter(c => c.studentId === studentId);
 };
 
 // --- DATA MUTATION FUNCTIONS ---
@@ -189,27 +204,27 @@ export const deleteUser = (userId: string): boolean => {
     return users.length < initialLength;
 }
 
-export const addProject = async (project: Project): Promise<void> => {
+export const addProject = (project: Project): void => {
   projects.push(project);
 };
 
-export const deleteProject = async (projectId: string): Promise<void> => {
+export const deleteProject = (projectId: string): void => {
   projects = projects.filter(p => p.id !== projectId);
 };
 
-export const addAchievement = async (achievement: Achievement): Promise<void> => {
+export const addAchievement = (achievement: Achievement): void => {
   achievements.push(achievement);
 };
 
-export const deleteAchievement = async (achievementId: string): Promise<void> => {
+export const deleteAchievement = (achievementId: string): void => {
   achievements = achievements.filter(a => a.id !== achievementId);
 };
 
-export const addCertificate = async (certificate: Certificate): Promise<void> => {
+export const addCertificate = (certificate: Certificate): void => {
   certificates.push(certificate);
 };
 
-export const deleteCertificate = async (certificateId: string): Promise<void> => {
+export const deleteCertificate = (certificateId: string): void => {
   certificates = certificates.filter(c => c.id !== certificateId);
 };
 
