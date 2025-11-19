@@ -96,7 +96,7 @@ export default function RegisterStudentPage() {
       faculty: values.faculty,
       major: values.major,
       courseYear: values.courseYear,
-      skills: ['Yeni Tələbə'],
+      skills: [],
       category: values.category.join(', '),
       projectIds: [],
       achievementIds: [],
