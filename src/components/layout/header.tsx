@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/logo';
-import { Menu } from 'lucide-react';
+import { Menu, ShieldCheck } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
@@ -32,6 +32,7 @@ export function Header() {
     if(!user) return '';
     if(user.role === 'student') return `${user.firstName} ${user.lastName}`;
     if(user.role === 'organization') return user.name;
+    if(user.role === 'admin') return `${user.firstName} ${user.lastName}`;
     return user.email;
   }
 
@@ -48,6 +49,7 @@ export function Header() {
     if (!appUser) return '/';
     if (appUser.role === 'organization') return '/organization-dashboard';
     if (appUser.role === 'student') return '/student-dashboard';
+    if (appUser.role === 'admin') return '/admin/dashboard';
     return `/`; 
   }
   
@@ -73,6 +75,17 @@ export function Header() {
               {link.label}
             </Link>
           ))}
+           {appUser?.role === 'admin' && (
+             <Link
+              href="/admin/dashboard"
+              className={cn(
+                "transition-colors hover:text-foreground/80 flex items-center gap-2",
+                pathname.startsWith('/admin') ? "text-primary" : "text-foreground/60"
+              )}
+            >
+              <ShieldCheck className="h-4 w-4"/> Admin Paneli
+            </Link>
+           )}
         </nav>
         <div className="flex flex-1 items-center justify-end space-x-2">
           {loading ? (
@@ -99,7 +112,9 @@ export function Header() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link href={getDashboardLink()}>
-                    {appUser.role === 'organization' ? 'Təşkilat Paneli' : 'Tələbə Paneli'}
+                    {appUser.role === 'organization' && 'Təşkilat Paneli'}
+                    {appUser.role === 'student' && 'Tələbə Paneli'}
+                    {appUser.role === 'admin' && 'Admin Paneli'}
                   </Link>
                 </DropdownMenuItem>
                 {appUser.role === 'student' && (
@@ -163,6 +178,17 @@ export function Header() {
                       {link.label}
                     </Link>
                   ))}
+                   {appUser?.role === 'admin' && (
+                    <Link
+                      href="/admin/dashboard"
+                      className={cn(
+                        "transition-colors hover:text-foreground/80 flex items-center gap-2",
+                        pathname.startsWith('/admin') ? "text-primary" : "text-foreground/60"
+                      )}
+                    >
+                      <ShieldCheck className="h-5 w-5"/> Admin Paneli
+                    </Link>
+                  )}
                 </nav>
                 <div className="mt-auto p-4 border-t flex flex-col gap-2">
                    {!user && !loading && (

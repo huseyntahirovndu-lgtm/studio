@@ -93,6 +93,12 @@ export interface Organization extends BaseUser {
     savedStudentIds: string[];
 }
 
+export interface Admin extends BaseUser {
+    role: 'admin';
+    firstName: string;
+    lastName: string;
+}
+
 export interface FacultyData {
     id: string;
     name: string;
@@ -103,4 +109,4 @@ export interface CategoryData {
     name: string;
 }
 
-export type AppUser = Student | Organization;
+export type AppUser = Student | Organization | Admin;

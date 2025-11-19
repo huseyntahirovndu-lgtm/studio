@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { AppUser, Student, Organization } from '@/types';
+import { AppUser, Student, Organization, Admin } from '@/types';
 import { users as initialUsers, addUser, updateUser as updateUserData } from '@/lib/data';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -22,6 +22,7 @@ const FAKE_PASSWORDS: { [email: string]: string } = {
   'orxan@example.com': 'password123',
   'leyla@example.com': 'password123',
   'contact@techsolutions.com': 'password123',
+  'admin@ndu.edu.az': 'adminpassword'
 };
 
 

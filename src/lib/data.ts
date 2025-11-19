@@ -89,6 +89,14 @@ export let users: AppUser[] = [
     sector: 'Texnologiya',
     savedStudentIds: ['student-1', 'student-3'],
     createdAt: new Date('2023-11-20T11:00:00Z'),
+  },
+  {
+    id: 'admin-1',
+    role: 'admin',
+    firstName: 'Admin',
+    lastName: 'User',
+    email: 'admin@ndu.edu.az',
+    createdAt: new Date('2023-01-01T00:00:00Z'),
   }
 ];
 
@@ -117,6 +125,7 @@ export const getStudents = async (): Promise<Student[]> => {
   return Promise.resolve(users.filter(u => u.role === 'student') as Student[]);
 };
 export const students = users.filter(u => u.role === 'student') as Student[];
+export const organizations = users.filter(u => u.role === 'organization') as Organization[];
 
 
 export const getStudentById = async (id: string): Promise<Student | undefined> => {
