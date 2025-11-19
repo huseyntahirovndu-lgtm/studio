@@ -86,6 +86,7 @@ export interface Organization {
     companyName: string;
     sector: string;
     savedStudentIds?: string[];
+    createdAt?: any; // Allow serverTimestamp
 }
 
 export interface FacultyData {

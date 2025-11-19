@@ -11,9 +11,13 @@
           "description": "Unique identifier for the student entity, matches Firebase Auth UID."
         },
         "role": {
-            "type": "string",
-            "description": "The role of the user.",
-            "enum": ["student", "organization", "admin"]
+          "type": "string",
+          "description": "The role of the user.",
+          "enum": [
+            "student",
+            "organization",
+            "admin"
+          ]
         },
         "firstName": {
           "type": "string",
@@ -41,12 +45,12 @@
           "description": "The current year of study for the student (1-4)."
         },
         "educationForm": {
-            "type": "string",
-            "description": "The form of education (e.g., full-time, part-time)."
+          "type": "string",
+          "description": "The form of education (e.g., full-time, part-time)."
         },
         "gpa": {
-            "type": "number",
-            "description": "The student's Grade Point Average."
+          "type": "number",
+          "description": "The student's Grade Point Average."
         },
         "skills": {
           "type": "array",
@@ -276,9 +280,13 @@
           "description": "Unique identifier for the organization entity, matches Firebase Auth UID."
         },
         "role": {
-            "type": "string",
-            "description": "The role of the user.",
-            "enum": ["student", "organization", "admin"]
+          "type": "string",
+          "description": "The role of the user.",
+          "enum": [
+            "student",
+            "organization",
+            "admin"
+          ]
         },
         "name": {
           "type": "string",

@@ -118,11 +118,13 @@ export default function LoginPage() {
           </form>
         </Form>
       </CardContent>
-      <CardFooter className="text-center text-sm">
-        Hesabınız yoxdur?{' '}
-        <Button variant="link" asChild>
-           <Link href="/register">Qeydiyyat</Link>
-        </Button>
+      <CardFooter className="flex-col items-center justify-center text-sm">
+        <p>
+            Hesabınız yoxdur?{' '}
+            <Button variant="link" asChild className="p-0">
+               <Link href="/register">Qeydiyyat</Link>
+            </Button>
+        </p>
       </CardFooter>
     </Card>
   );
