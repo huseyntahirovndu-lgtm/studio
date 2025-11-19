@@ -31,7 +31,7 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="relative w-full flex items-center bg-black">
         <Image
-          src="https://www.ndu.edu.az/images/sliders/slider-1.jpg"
+          src="https://i.ibb.co/3s0Xm5C/banner2.png"
           alt="Naxçıvan Dövlət Universiteti"
           width={1920}
           height={1080}

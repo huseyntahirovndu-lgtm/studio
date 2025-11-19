@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 export function Logo(props: ImgHTMLAttributes<HTMLImageElement>) {
   return (
     <img
-      src="https://www.ndu.edu.az/img/logo-white.png"
+      src="https://i.ibb.co/3k5g75s/logo-white.png"
       alt="Naxçıvan Dövlət Universiteti Logo"
       {...props}
       className={cn("h-10 w-auto", props.className)}
