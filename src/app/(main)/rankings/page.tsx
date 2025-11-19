@@ -38,13 +38,13 @@ export default function RankingsPage() {
   }, []);
 
   const rankedStudents = useMemo(() => {
-    const filtered = enrichedStudents?.filter(student => {
-      const facultyMatch = facultyFilter === 'all' || student.faculty === facultyFilter;
-      const categoryMatch = categoryFilter === 'all' || student.category === categoryFilter;
-      return facultyMatch && categoryMatch;
-    });
-
-    return filtered?.sort((a, b) => (b.talentScore || 0) - (a.talentScore || 0));
+    return enrichedStudents
+      ?.filter(student => {
+        const facultyMatch = facultyFilter === 'all' || student.faculty === facultyFilter;
+        const categoryMatch = categoryFilter === 'all' || student.category === categoryFilter;
+        return facultyMatch && categoryMatch;
+      })
+      .sort((a, b) => (b.talentScore || 0) - (a.talentScore || 0));
   }, [enrichedStudents, facultyFilter, categoryFilter]);
 
   const getRankBadge = (rank: number) => {

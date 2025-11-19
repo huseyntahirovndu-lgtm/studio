@@ -25,7 +25,6 @@ export default function SearchPage() {
   const [enrichedStudents, setEnrichedStudents] = useState<Student[]>([]);
 
   useEffect(() => {
-    // Simulate fetching data
     const studentsWithPics = allStudents.map((student, index) => {
       const placeholder = PlaceHolderImages.find(p => p.id.slice(-1) === student.id.slice(-1)) || PlaceHolderImages[index % PlaceHolderImages.length];
       return {
@@ -39,7 +38,7 @@ export default function SearchPage() {
   }, []);
 
   const filteredStudents = useMemo(() => {
-    return enrichedStudents?.filter(student => {
+    return enrichedStudents.filter(student => {
       if (student.role !== 'student') return false;
 
       const searchTermMatch =
@@ -68,7 +67,7 @@ export default function SearchPage() {
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Ad, ixtisas və ya bacarıq üzrə axtar..."
+            placeholder="Ad, soyad, ixtisas və ya bacarıq üzrə axtar..."
             className="pl-10 w-full"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}

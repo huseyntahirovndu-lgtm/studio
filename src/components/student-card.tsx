@@ -117,12 +117,12 @@ export function StudentCard({ student, className }: StudentCardProps) {
         </div>
         <p className="text-sm text-muted-foreground mb-3">Əsas bacarıqlar:</p>
         <div className="flex flex-wrap gap-2">
-          {skills.slice(0, 4).map((skill, index) => (
+          {skills?.slice(0, 4).map((skill, index) => (
             <Badge key={index} variant="secondary" className="font-normal">
               {skill}
             </Badge>
           ))}
-          {skills.length > 4 && <Badge variant="outline">+{skills.length - 4}</Badge>}
+          {skills && skills.length > 4 && <Badge variant="outline">+{skills.length - 4}</Badge>}
         </div>
       </CardContent>
       <CardFooter>
