@@ -29,13 +29,13 @@ export default function HomePage() {
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="relative w-full h-[550px] md:h-[650px] lg:h-[750px] flex items-center text-white">
+      <section className="relative w-full flex items-center text-white">
         <Image
           src="https://i.ibb.co/cXv2KzRR/q2.jpg"
           alt="Naxçıvan Dövlət Universiteti"
           width={1920}
           height={1080}
-          className="w-full h-full object-cover"
+          className="w-full h-auto object-cover"
           priority
           data-ai-hint="university building"
         />
