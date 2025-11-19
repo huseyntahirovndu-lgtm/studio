@@ -49,7 +49,8 @@ export function StudentCard({ student, className }: StudentCardProps) {
     category
   } = student;
   
-  const categoryColor = categoryColors[category] || 'bg-muted';
+  const primaryCategory = Array.isArray(category) ? category[0] : category;
+  const categoryColor = categoryColors[primaryCategory] || 'bg-muted';
 
   const handleBookmark = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent link navigation

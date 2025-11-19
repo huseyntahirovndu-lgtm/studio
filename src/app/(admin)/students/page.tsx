@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { File, ListFilter, MoreHorizontal } from "lucide-react"
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge"
@@ -49,16 +49,20 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { students as allStudents, faculties, deleteUser, updateUser } from "@/lib/data";
+import { faculties, deleteUser, updateUser, getStudents } from "@/lib/data";
 import type { Student, StudentStatus } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 
 
 export default function AdminStudentsPage() {
-  const [students, setStudents] = useState<Student[]>(allStudents);
+  const [students, setStudents] = useState<Student[]>([]);
   const router = useRouter();
   const { toast } = useToast();
+
+  useEffect(() => {
+    setStudents(getStudents());
+  }, [])
 
   const handleStatusChange = (student: Student, newStatus: StudentStatus) => {
     const updatedStudent = { ...student, status: newStatus };

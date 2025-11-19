@@ -95,7 +95,7 @@ export default function HomePage() {
             />
             <StatCard
               title="Aktiv Profillər"
-              value={isLoading ? '...' : (students?.length.toString() ?? '0')}
+              value={isLoading ? '...' : (students?.filter(s => s.status === 'təsdiqlənmiş').length.toString() ?? '0')}
               icon={Users}
             />
             <StatCard

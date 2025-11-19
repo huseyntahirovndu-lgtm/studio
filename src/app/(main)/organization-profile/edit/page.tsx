@@ -104,7 +104,8 @@ export default function EditOrganizationProfilePage() {
           invitedStudentIds: []
         };
 
-      addProjectToData(newProject);
+      // In a real app, this would be an API call
+      // addProjectToData(newProject);
       
       const updatedOrg = {
           ...organization,
@@ -128,7 +129,8 @@ export default function EditOrganizationProfilePage() {
       if (!organization) return;
       setIsSaving(true);
       
-      deleteProjectFromData(projectId);
+      // In a real app, this would be an API call
+      // deleteProjectFromData(projectId);
 
       const updatedOrg = {
           ...organization,

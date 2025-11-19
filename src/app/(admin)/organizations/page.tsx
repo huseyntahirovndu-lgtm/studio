@@ -6,7 +6,7 @@ import {
   PlusCircle,
 } from "lucide-react"
 import Link from "next/link";
-
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -24,10 +24,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { organizations } from "@/lib/data";
+import { getOrganizations } from "@/lib/data";
+import { Organization } from "@/types";
 
 
 export default function AdminOrganizationsPage() {
+    const [organizations, setOrganizations] = useState<Organization[]>([]);
+
+    useEffect(() => {
+        setOrganizations(getOrganizations());
+    }, []);
+
     return (
         <Card>
             <CardHeader>

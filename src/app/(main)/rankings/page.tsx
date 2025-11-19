@@ -42,7 +42,7 @@ export default function RankingsPage() {
     return enrichedStudents
       ?.filter(student => {
         const facultyMatch = facultyFilter === 'all' || student.faculty === facultyFilter;
-        const categoryMatch = categoryFilter === 'all' || student.category === categoryFilter;
+        const categoryMatch = categoryFilter === 'all' || student.category.includes(categoryFilter);
         return facultyMatch && categoryMatch;
       })
       .sort((a, b) => (b.talentScore || 0) - (a.talentScore || 0));

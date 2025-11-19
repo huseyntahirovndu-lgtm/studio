@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/table"
 import Link from "next/link";
 import { getStudents, getOrganizations } from "@/lib/data";
+import { Student } from "@/types";
 
 export default function AdminDashboard() {
   const students = getStudents();
@@ -116,7 +117,7 @@ export default function AdminDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {recentStudents.map((student) => (
+                  {recentStudents.map((student: Student) => (
                      <TableRow key={student.id}>
                         <TableCell>
                           <div className="font-medium">{student.firstName} {student.lastName}</div>

@@ -17,15 +17,9 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 import { Student } from '@/types';
+import { categories as allCategories } from '@/lib/data';
 
-const categories = [
-  'STEM',
-  'Humanitar',
-  'İncəsənət',
-  'İdman',
-  'Sahibkarlıq',
-  'Texnologiya',
-];
+const categories = allCategories.map(c => c.name);
 
 
 const categoryColors: Record<string, string> = {
@@ -44,8 +38,8 @@ interface CategoryPieChartProps {
 export function CategoryPieChart({ students }: CategoryPieChartProps) {
   const chartData = categories.map((category) => ({
     name: category,
-    value: students.filter((student) => student.category === category).length,
-    fill: categoryColors[category],
+    value: students.filter((student) => student.category.includes(category)).length,
+    fill: categoryColors[category] || 'hsl(var(--muted))',
   }));
 
   const chartConfig = {

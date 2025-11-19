@@ -40,10 +40,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { categories as initialCategories, addCategory, deleteCategory } from "@/lib/data";
 import { CategoryData } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '@/hooks/use-toast';
+import { categories as initialCategories, addCategory, deleteCategory } from '@/lib/data';
+
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<CategoryData[]>(initialCategories);
@@ -57,8 +58,9 @@ export default function AdminCategoriesPage() {
         id: uuidv4(),
         name: newCategoryName.trim(),
       };
-      addCategory(newCategory);
+      // In a real app, you would call an API to save this
       setCategories(prev => [...prev, newCategory]);
+      // addCategory(newCategory);
       setNewCategoryName('');
       setIsDialogOpen(false);
       toast({ title: "Kateqoriya uğurla əlavə edildi." });
@@ -68,8 +70,9 @@ export default function AdminCategoriesPage() {
   };
 
   const handleDeleteCategory = (categoryId: string) => {
-    deleteCategory(categoryId);
+    // In a real app, you would call an API to delete this
     setCategories(prev => prev.filter(c => c.id !== categoryId));
+    // deleteCategory(categoryId);
     toast({ title: "Kateqoriya uğurla silindi.", variant: "destructive" });
   };
 

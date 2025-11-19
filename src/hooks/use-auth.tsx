@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppUser, Student, Organization, Admin } from '@/types';
-import { users as initialUsers, addUser, updateUser as updateUserData } from '@/lib/data';
+import { addUser, updateUser as updateUserData } from '@/lib/data';
 import { v4 as uuidv4 } from 'uuid';
 
 interface AuthContextType {
@@ -47,14 +47,8 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = (email: string, pass: string): boolean => {
-    const foundUser = initialUsers.find(u => u.email === email);
-    const storedPassword = FAKE_PASSWORDS[email];
-    
-    if (foundUser && storedPassword === pass) {
-      localStorage.setItem('session-user', JSON.stringify(foundUser));
-      setUser(foundUser);
-      return true;
-    }
+    // This logic is now handled by Firebase. This is a placeholder.
+    console.log("Login attempt for:", email);
     return false;
   };
 
@@ -65,34 +59,9 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const register = (newUser: Omit<Student, 'id'|'createdAt'|'status'> | Omit<Organization, 'id'|'createdAt'>, pass: string): boolean => {
-    const existing = initialUsers.find(u => u.email === newUser.email);
-    if (existing) {
-      return false; // User already exists
-    }
-    
-    let userWithId: AppUser;
-
-    if (newUser.role === 'student') {
-        userWithId = {
-            ...newUser,
-            id: uuidv4(),
-            createdAt: new Date(),
-            status: 'gözləyir' // Default status for new students
-        } as Student;
-    } else {
-        userWithId = {
-            ...newUser,
-            id: uuidv4(),
-            createdAt: new Date()
-        } as Organization;
-    }
-    
-    // In a real app, you would hash the password. Here we just store it for the fake login.
-    FAKE_PASSWORDS[userWithId.email] = pass;
-    
-    addUser(userWithId);
-
-    return true;
+     // This logic is now handled by Firebase. This is a placeholder.
+    console.log("Register attempt for:", newUser.email);
+    return false;
   };
   
   const updateUser = (updatedUser: AppUser): boolean => {

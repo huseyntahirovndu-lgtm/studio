@@ -51,7 +51,7 @@ export default function SearchPage() {
     if (sortParam === 'newest') {
       setSortBy('createdAt');
     }
-  }, []); // Empty dependency array means this runs once on mount
+  }, [searchParams]);
 
 
   const filteredStudents = useMemo(() => {
@@ -61,7 +61,7 @@ export default function SearchPage() {
     if (quickFilter === 'high-potential') {
         students = students.filter(s => (s.talentScore || 0) >= 90);
     } else if (quickFilter === 'startup') {
-        students = students.filter(s => s.category === 'Sahibkarlıq' || s.category === 'Texnologiya');
+        students = students.filter(s => s.category.includes('Sahibkarlıq') || s.category.includes('Texnologiya'));
     } else if (quickFilter === 'newcomer') {
         students = students.filter(s => s.courseYear === 1);
     }
@@ -78,7 +78,7 @@ export default function SearchPage() {
 
       const facultyMatch = facultyFilter === 'all' || student.faculty === facultyFilter;
       const courseMatch = courseFilter === 'all' || student.courseYear === parseInt(courseFilter);
-      const categoryMatch = categoryFilter === 'all' || student.category === categoryFilter;
+      const categoryMatch = categoryFilter === 'all' || student.category.includes(categoryFilter);
 
       return searchTermMatch && facultyMatch && courseMatch && categoryMatch;
     });
