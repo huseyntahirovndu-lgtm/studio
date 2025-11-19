@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Building, Users, FileSearch } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { Organization, Student } from '@/types';
+import { Organization } from '@/types';
 import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
 
