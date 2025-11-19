@@ -34,17 +34,13 @@ export default function StudentDashboard() {
 
     useEffect(() => {
         if (studentProfile) {
-            const fetchInvitations = async () => {
-                const studentInvitations = await getInvitationsByStudentId(studentProfile.id);
-                const enrichedInvitations = await Promise.all(
-                    studentInvitations.map(async (inv) => {
-                        const [project, organization] = await Promise.all([
-                            getProjectById(inv.projectId),
-                            getOrganizationById(inv.organizationId)
-                        ]);
-                        return { ...inv, project, organization };
-                    })
-                );
+            const fetchInvitations = () => {
+                const studentInvitations = getInvitationsByStudentId(studentProfile.id);
+                const enrichedInvitations = studentInvitations.map((inv) => {
+                    const project = getProjectById(inv.projectId);
+                    const organization = getOrganizationById(inv.organizationId);
+                    return { ...inv, project, organization };
+                });
                 setInvitations(enrichedInvitations);
             };
             fetchInvitations();

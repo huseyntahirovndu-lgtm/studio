@@ -47,11 +47,11 @@ export default function ProfilePage() {
 
     const fetchData = async () => {
       setIsLoading(true);
-      const studentData = await getStudentById(studentId);
+      const studentData = getStudentById(studentId);
       if (studentData) {
-        const studentProjects = await getProjectsByStudentId(studentId);
-        const studentAchievements = await getAchievementsByStudentId(studentId);
-        const studentCertificates = await getCertificatesByStudentId(studentId);
+        const studentProjects = getProjectsByStudentId(studentId);
+        const studentAchievements = getAchievementsByStudentId(studentId);
+        const studentCertificates = getCertificatesByStudentId(studentId);
         
         const placeholder = PlaceHolderImages.find(p => p.id.includes(studentData.id.slice(-1))) || PlaceHolderImages[0];
         setStudent({
@@ -71,7 +71,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (organization?.projectIds) {
-      getProjectsByIds(organization.projectIds).then(setOrganizationProjects);
+      setOrganizationProjects(getProjectsByIds(organization.projectIds));
     }
   }, [organization]);
   

@@ -29,23 +29,22 @@ export default function OrganizationDashboard() {
     useEffect(() => {
       if (orgProfile) {
         setIsLoading(true);
-        const studentPromises = (orgProfile.savedStudentIds || []).map(id => getStudentById(id));
-        const projectPromises = getProjectsByIds(orgProfile.projectIds || []);
+        const studentResults = (orgProfile.savedStudentIds || []).map(id => getStudentById(id)).filter((s): s is Student => s !== undefined);
+        const projectResults = getProjectsByIds(orgProfile.projectIds || []);
 
-        Promise.all([Promise.all(studentPromises), projectPromises]).then(([studentResults, projectResults]) => {
-          const students = studentResults.filter((s): s is Student => s !== undefined);
-          const enrichedStudents = students.map((student, index) => {
+        const enrichedStudents = studentResults.map((student, index) => {
             const placeholder = PlaceHolderImages[index % PlaceHolderImages.length];
             return {
               ...student,
               profilePictureUrl: placeholder.imageUrl,
               profilePictureHint: placeholder.imageHint,
             };
-          });
-          setSavedStudents(enrichedStudents);
-          setOrganizationProjects(projectResults);
-          setIsLoading(false);
         });
+
+        setSavedStudents(enrichedStudents);
+        setOrganizationProjects(projectResults);
+        setIsLoading(false);
+
       } else {
         setIsLoading(false);
       }

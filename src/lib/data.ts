@@ -1,127 +1,156 @@
 import { Student, Project, Achievement, Certificate, CategoryData, FacultyData, Organization, AppUser, Invitation } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
+import fullData from './istadad-merkezi.json';
 
-// This file now only contains static data that is not expected to change frequently.
-// All dynamic data like users, projects, etc., will be fetched from Firestore.
+// In-memory data store
+let users: AppUser[] = [...fullData.users];
+let projects: Project[] = [...fullData.projects];
+let achievements: Achievement[] = [...fullData.achievements];
+let certificates: Certificate[] = [...fullData.certificates];
+let categories: CategoryData[] = [...fullData.categories];
+let faculties: FacultyData[] = [...fullData.faculties];
+let invitations: Invitation[] = [...fullData.invitations];
 
-export const faculties: FacultyData[] = [
-    { id: 'f-1', name: 'İqtisadiyyat və idarəetmə' },
-    { id: 'f-2', name: 'Memarlıq və mühəndislik' },
-    { id: 'f-3', name: 'Tibb' },
-    { id: 'f-4', name: 'Aqrar elmlər' },
-    { id: 'f-5', name: 'Pedaqogika' },
-    { id: 'f-6', name: 'Beynəlxalq münasibətlər və hüquq' },
-    { id: 'f-7', name: 'İncəsənət' },
-];
+// --- DATA ACCESS FUNCTIONS ---
 
-export const categories: CategoryData[] = [
-    { id: 'c-1', name: 'STEM' },
-    { id: 'c-2', name: 'Humanitar' },
-    { id: 'c-3', name: 'İncəsənət' },
-    { id: 'c-4', name: 'İdman' },
-    { id: 'c-5', name: 'Sahibkarlıq' },
-    { id: 'c-6', name: 'Texnologiya' },
-];
-
-
-// --- MOCK DATA FUNCTIONS - TO BE REPLACED WITH FIRESTORE CALLS ---
-
-// These functions are now placeholders. The actual implementation will be in a new firebase-data.ts file
-// or directly within the components using hooks.
+export { users, projects, achievements, certificates, categories, faculties, invitations };
 
 export const getStudents = (): Student[] => {
-  return []; // This will be fetched from Firestore
+  return users.filter(u => u.role === 'student') as Student[];
 };
 
 export const getOrganizations = (): Organization[] => {
-  return []; // This will be fetched from Firestore
+  return users.filter(u => u.role === 'organization') as Organization[];
 };
 
-export const getStudentById = async (id: string): Promise<Student | undefined> => {
-  return undefined; // This will be fetched from Firestore
+export const getStudentById = (id: string): Student | undefined => {
+  return users.find(u => u.id === id && u.role === 'student') as Student | undefined;
 };
 
-export const getOrganizationById = async (id: string): Promise<Organization | undefined> => {
-    return undefined; // This will be fetched from Firestore
+export const getOrganizationById = (id: string): Organization | undefined => {
+  return users.find(u => u.id === id && u.role === 'organization') as Organization | undefined;
 };
 
-export const getProjectById = async (id: string): Promise<Project | undefined> => {
-    return undefined;
+export const getProjectById = (id: string): Project | undefined => {
+    return projects.find(p => p.id === id);
 }
 
-export const getProjectsByIds = async (ids: string[]): Promise<Project[]> => {
-    return [];
+export const getProjectsByIds = (ids: string[]): Project[] => {
+    if (!ids) return [];
+    return projects.filter(p => ids.includes(p.id));
 }
 
-export const getProjectsByStudentId = async (studentId: string): Promise<Project[]> => {
-    return [];
+export const getProjectsByStudentId = (studentId: string): Project[] => {
+  return projects.filter(p => p.studentId === studentId);
 };
 
-export const getAchievementsByStudentId = async (studentId: string): Promise<Achievement[]> => {
-    return [];
+export const getAchievementsByStudentId = (studentId: string): Achievement[] => {
+  return achievements.filter(a => a.studentId === studentId);
 };
 
-export const getCertificatesByStudentId = async (studentId: string): Promise<Certificate[]> => {
-    return [];
+export const getCertificatesByStudentId = (studentId: string): Certificate[] => {
+  return certificates.filter(c => c.studentId === studentId);
 };
 
-export const getInvitationsByStudentId = async (studentId: string): Promise<Invitation[]> => {
-    return [];
+export const getInvitationsByStudentId = (studentId: string): Invitation[] => {
+    return invitations.filter(i => i.studentId === studentId);
 }
 
-
-// --- DATA MUTATION FUNCTIONS - TO BE REPLACED ---
+// --- DATA MUTATION FUNCTIONS ---
 export const addUser = (user: AppUser) => {
-  // Placeholder
+  users.push(user);
 };
 
 export const updateUser = (user: AppUser): boolean => {
-    // Placeholder
-    return true;
+    const userIndex = users.findIndex(u => u.id === user.id);
+    if(userIndex > -1) {
+        users[userIndex] = user;
+        return true;
+    }
+    return false;
 };
 
 export const deleteUser = (userId: string): boolean => {
-    // Placeholder
-    return true;
+    const initialLength = users.length;
+    users = users.filter(u => u.id !== userId);
+    return users.length < initialLength;
 }
 
 export const addProject = (project: Project): void => {
-  // Placeholder
+  projects.push(project);
 };
 
-export const deleteProject = (projectId: string): void => {
-  // Placeholder
+export const deleteProject = (projectId: string, studentId: string): void => {
+  projects = projects.filter(p => p.id !== projectId);
+  const user = getStudentById(studentId);
+  if(user && user.projectIds){
+    user.projectIds = user.projectIds.filter(id => id !== projectId);
+    updateUser(user);
+  }
 };
 
 export const addAchievement = (achievement: Achievement): void => {
-  // Placeholder
+  achievements.push(achievement);
 };
 
-export const deleteAchievement = (achievementId: string): void => {
-  // Placeholder
+export const deleteAchievement = (achievementId: string, studentId: string): void => {
+  achievements = achievements.filter(a => a.id !== achievementId);
+   const user = getStudentById(studentId);
+  if(user && user.achievementIds){
+    user.achievementIds = user.achievementIds.filter(id => id !== achievementId);
+    updateUser(user);
+  }
 };
 
 export const addCertificate = (certificate: Certificate): void => {
-  // Placeholder
+  certificates.push(certificate);
 };
 
-export const deleteCertificate = (certificateId: string): void => {
-  // Placeholder
+export const deleteCertificate = (certificateId: string, studentId: string): void => {
+  certificates = certificates.filter(c => c.id !== certificateId);
+   const user = getStudentById(studentId);
+  if(user && user.certificateIds){
+    user.certificateIds = user.certificateIds.filter(id => id !== certificateId);
+    updateUser(user);
+  }
 };
 
 
 export const addCategory = (category: CategoryData) => {
-    // Placeholder
+    categories.push(category);
 }
 
 export const deleteCategory = (categoryId: string) => {
-    // Placeholder
+    categories = categories.filter(c => c.id !== categoryId);
 }
 
 export const addInvitation = (invitation: Invitation, projectId: string) => {
-    // Placeholder
+    invitations.push(invitation);
+    const project = getProjectById(projectId);
+    if (project) {
+        if (!project.invitedStudentIds) {
+            project.invitedStudentIds = [];
+        }
+        project.invitedStudentIds.push(invitation.studentId);
+    }
 }
 
 export const updateInvitationStatus = (invitationId: string, status: 'qəbul edildi' | 'rədd edildi', studentId: string, projectId: string) => {
-    // Placeholder
+    const invitation = invitations.find(i => i.id === invitationId);
+    if (invitation) {
+        invitation.status = status;
+        if (status === 'qəbul edildi') {
+            const project = getProjectById(projectId);
+            if (project) {
+                if (!project.teamMemberIds) {
+                    project.teamMemberIds = [];
+                }
+                project.teamMemberIds.push(studentId);
+                // remove from invited
+                if (project.invitedStudentIds) {
+                    project.invitedStudentIds = project.invitedStudentIds.filter(id => id !== studentId);
+                }
+            }
+        }
+    }
 }

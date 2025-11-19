@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppUser, Student, Organization, Admin } from '@/types';
-import { addUser, updateUser as updateUserData } from '@/lib/data';
+import { addUser, updateUser as updateUserData, users } from '@/lib/data';
 import { v4 as uuidv4 } from 'uuid';
 
 interface AuthContextType {
@@ -47,8 +47,14 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = (email: string, pass: string): boolean => {
-    // This logic is now handled by Firebase. This is a placeholder.
-    console.log("Login attempt for:", email);
+    const foundUser = users.find(u => u.email === email);
+    const storedPass = FAKE_PASSWORDS[email];
+
+    if (foundUser && storedPass === pass) {
+      setUser(foundUser);
+      localStorage.setItem('session-user', JSON.stringify(foundUser));
+      return true;
+    }
     return false;
   };
 
@@ -59,9 +65,21 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const register = (newUser: Omit<Student, 'id'|'createdAt'|'status'> | Omit<Organization, 'id'|'createdAt'>, pass: string): boolean => {
-     // This logic is now handled by Firebase. This is a placeholder.
-    console.log("Register attempt for:", newUser.email);
-    return false;
+    if (users.some(u => u.email === newUser.email)) {
+      return false; // User already exists
+    }
+
+    const userWithId: AppUser = {
+      ...newUser,
+      id: uuidv4(),
+      createdAt: new Date().toISOString(),
+      ...(newUser.role === 'student' && { status: 'gözləyir' }),
+    };
+
+    addUser(userWithId);
+    FAKE_PASSWORDS[userWithId.email] = pass;
+
+    return true;
   };
   
   const updateUser = (updatedUser: AppUser): boolean => {

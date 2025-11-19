@@ -72,7 +72,7 @@ export default function EditOrganizationProfilePage() {
         sector: organization.sector || '',
       });
       if(organization.projectIds) {
-        getProjectsByIds(organization.projectIds).then(setProjects);
+        setProjects(getProjectsByIds(organization.projectIds));
       }
     }
   }, [organization, orgForm]);
@@ -104,8 +104,7 @@ export default function EditOrganizationProfilePage() {
           invitedStudentIds: []
         };
 
-      // In a real app, this would be an API call
-      // addProjectToData(newProject);
+      addProjectToData(newProject);
       
       const updatedOrg = {
           ...organization,
@@ -120,6 +119,7 @@ export default function EditOrganizationProfilePage() {
       } else {
           toast({ variant: "destructive", title: "Xəta", description: "Layihə əlavə edilərkən xəta baş verdi." });
           // In a real app, you would rollback the addProjectToData operation
+          deleteProjectFromData(newProject.id, organization.id);
       }
       
       setIsSaving(false);
@@ -129,8 +129,7 @@ export default function EditOrganizationProfilePage() {
       if (!organization) return;
       setIsSaving(true);
       
-      // In a real app, this would be an API call
-      // deleteProjectFromData(projectId);
+      deleteProjectFromData(projectId, organization.id);
 
       const updatedOrg = {
           ...organization,

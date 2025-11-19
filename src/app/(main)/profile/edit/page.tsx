@@ -95,14 +95,13 @@ export default function EditProfilePage() {
     const userIdFromQuery = searchParams.get('userId');
     // Admin editing a specific user
     if (currentUser?.role === 'admin' && userIdFromQuery) {
-      getStudentById(userIdFromQuery).then(student => {
-        if (student) {
+      const student = getStudentById(userIdFromQuery);
+      if (student) {
           setTargetUser(student);
-        } else {
+      } else {
           toast({ variant: 'destructive', title: 'Xəta', description: 'Tələbə tapılmadı.' });
           router.push('/admin/students');
-        }
-      });
+      }
     // Student editing their own profile
     } else if (currentUser?.role === 'student') {
       setTargetUser(currentUser as Student);
@@ -136,17 +135,12 @@ export default function EditProfilePage() {
     defaultValues: { name: '', certificateURL: '', level: 'Universitet' }
   });
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(() => {
     if (!targetUser) return;
     setIsLoadingData(true);
-    const [proj, ach, cert] = await Promise.all([
-      getProjectsByStudentId(targetUser.id),
-      getAchievementsByStudentId(targetUser.id),
-      getCertificatesByStudentId(targetUser.id),
-    ]);
-    setProjects(proj);
-    setAchievements(ach);
-    setCertificates(cert);
+    setProjects(getProjectsByStudentId(targetUser.id));
+    setAchievements(getAchievementsByStudentId(targetUser.id));
+    setCertificates(getCertificatesByStudentId(targetUser.id));
     setIsLoadingData(false);
   }, [targetUser]);
 
@@ -184,9 +178,9 @@ export default function EditProfilePage() {
     try {
         const fullProfile = {
             ...updatedStudentProfile,
-            projects: await getProjectsByStudentId(updatedStudentProfile.id),
-            achievements: await getAchievementsByStudentId(updatedStudentProfile.id),
-            certificates: await getCertificatesByStudentId(updatedStudentProfile.id),
+            projects: getProjectsByStudentId(updatedStudentProfile.id),
+            achievements: getAchievementsByStudentId(updatedStudentProfile.id),
+            certificates: getCertificatesByStudentId(updatedStudentProfile.id),
         };
         
         const scoreResult = await calculateTalentScore({ profileData: JSON.stringify(fullProfile) });
@@ -208,15 +202,15 @@ export default function EditProfilePage() {
     }
   }, [toast, updateUser, currentUser]);
 
-  const handleGenericSubmit = async (submitAction: () => Promise<any>, successMessage: string, formToReset?: any) => {
+  const handleGenericSubmit = (submitAction: () => void, successMessage: string, formToReset?: any) => {
     if (!targetUser) return;
     setIsSaving(true);
     try {
-      await submitAction();
+      submitAction();
       toast({ title: successMessage });
       if (formToReset) formToReset.reset();
-      await fetchData();
-      const updatedStudent = await getStudentById(targetUser.id);
+      fetchData();
+      const updatedStudent = getStudentById(targetUser.id);
       if (updatedStudent) {
           triggerTalentScoreUpdate(updatedStudent);
       }
@@ -230,46 +224,46 @@ export default function EditProfilePage() {
   
     const onProfileSubmit: SubmitHandler<z.infer<typeof profileSchema>> = (data) => {
       if (!targetUser) return;
-      handleGenericSubmit(async () => {
+      handleGenericSubmit(() => {
           const updatedUser = { ...targetUser, ...data };
           updateUser(updatedUser as AppUser);
       }, "Profil məlumatları yeniləndi");
     };
   
   const onProjectSubmit: SubmitHandler<z.infer<typeof projectSchema>> = (data) => {
-    handleGenericSubmit(async () => {
-        const newProject: Project = { ...data, id: uuidv4(), studentId: targetUser!.id };
-        await addProject(newProject);
+    handleGenericSubmit(() => {
+        const newProject: Project = { ...data, id: uuidv4(), studentId: targetUser!.id, teamMemberIds: [], invitedStudentIds: [] };
+        addProject(newProject);
     }, "Layihə əlavə edildi", projectForm);
   };
   
   const onAchievementSubmit: SubmitHandler<z.infer<typeof achievementSchema>> = (data) => {
-    handleGenericSubmit(async () => {
+    handleGenericSubmit(() => {
         const newAchievement: Achievement = { ...data, id: uuidv4(), studentId: targetUser!.id };
-        await addAchievement(newAchievement);
+        addAchievement(newAchievement);
     }, "Nailiyyət əlavə edildi", achievementForm);
   };
   
   const onCertificateSubmit: SubmitHandler<z.infer<typeof certificateSchema>> = (data) => {
-    handleGenericSubmit(async () => {
+    handleGenericSubmit(() => {
         const newCertificate: Certificate = { ...data, id: uuidv4(), studentId: targetUser!.id };
-        await addCertificate(newCertificate);
+        addCertificate(newCertificate);
     }, "Sertifikat əlavə edildi", certificateForm);
   };
   
-  const handleDelete = async (docId: string, itemType: 'project' | 'achievement' | 'certificate') => {
+  const handleDelete = (docId: string, itemType: 'project' | 'achievement' | 'certificate') => {
       if (!targetUser) return;
       setIsSaving(true);
 
       try {
           switch (itemType) {
-              case 'project': await deleteProject(docId, targetUser.id); break;
-              case 'achievement': await deleteAchievement(docId, targetUser.id); break;
-              case 'certificate': await deleteCertificate(docId, targetUser.id); break;
+              case 'project': deleteProject(docId, targetUser.id); break;
+              case 'achievement': deleteAchievement(docId, targetUser.id); break;
+              case 'certificate': deleteCertificate(docId, targetUser.id); break;
           }
           toast({ title: "Element silindi", description: "Seçilmiş element uğurla silindi." });
-          await fetchData();
-          const updatedStudent = await getStudentById(targetUser.id);
+          fetchData();
+          const updatedStudent = getStudentById(targetUser.id);
           if (updatedStudent) {
               triggerTalentScoreUpdate(updatedStudent);
           }
@@ -461,7 +455,7 @@ export default function EditProfilePage() {
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                     <AlertDialogCancel>Ləğv et</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDelete(p.id, 'project')}>Bəli, sil</AlertDialogAction>
+                                    <AlertDialogAction onClick={() => handleDelete(p.id, 'project')} className="bg-destructive hover:bg-destructive/90">Bəli, sil</AlertDialogAction>
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>
@@ -532,7 +526,7 @@ export default function EditProfilePage() {
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                     <AlertDialogCancel>Ləğv et</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDelete(a.id, 'achievement')}>Bəli, sil</AlertDialogAction>
+                                    <AlertDialogAction onClick={() => handleDelete(a.id, 'achievement')} className="bg-destructive hover:bg-destructive/90">Bəli, sil</AlertDialogAction>
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>
@@ -590,7 +584,7 @@ export default function EditProfilePage() {
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                     <AlertDialogCancel>Ləğv et</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDelete(c.id, 'certificate')}>Bəli, sil</AlertDialogAction>
+                                    <AlertDialogAction onClick={() => handleDelete(c.id, 'certificate')} className="bg-destructive hover:bg-destructive/90">Bəli, sil</AlertDialogAction>
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>
