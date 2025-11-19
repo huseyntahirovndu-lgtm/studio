@@ -108,6 +108,24 @@ export default function ProfilePage() {
         return;
     }
     
+    const project = organizationProjects.find(p => p.id === selectedProject);
+    if (!project) {
+        toast({ variant: 'destructive', title: 'Xəta', description: 'Seçilmiş layihə tapılmadı.' });
+        return;
+    }
+
+    const isAlreadyMember = project.teamMemberIds?.includes(student.id);
+    const isAlreadyInvited = project.invitedStudentIds?.includes(student.id);
+
+    if (isAlreadyMember) {
+        toast({ variant: 'destructive', title: 'Xəta', description: 'Bu tələbə artıq bu layihənin üzvüdür.' });
+        return;
+    }
+    if (isAlreadyInvited) {
+        toast({ variant: 'destructive', title: 'Xəta', description: 'Bu tələbə bu layihəyə artıq dəvət edilib.' });
+        return;
+    }
+
     const invitation: Invitation = {
       id: uuidv4(),
       organizationId: organization.id,
@@ -117,18 +135,11 @@ export default function ProfilePage() {
       createdAt: new Date(),
     };
 
-    // Check if student is already invited or a member
-    const project = organizationProjects.find(p => p.id === selectedProject);
-    if(project?.invitedStudentIds?.includes(student.id) || project?.teamMemberIds?.includes(student.id)) {
-        toast({ variant: 'destructive', title: 'Xəta', description: 'Bu tələbə artıq bu layihəyə dəvət edilib və ya üzvdür.' });
-        return;
-    }
-
     addInvitation(invitation, selectedProject);
 
     toast({
         title: 'Dəvət Göndərildi',
-        description: `${student.firstName} ${student.lastName} tələbəsi "${organizationProjects.find(p => p.id === selectedProject)?.title}" layihəsinə dəvət edildi.`,
+        description: `${student.firstName} ${student.lastName} tələbəsi "${project.title}" layihəsinə dəvət edildi.`,
     });
     setInviteDialogOpen(false);
     setSelectedProject('');
