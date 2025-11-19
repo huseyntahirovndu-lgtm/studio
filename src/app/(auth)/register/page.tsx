@@ -275,7 +275,7 @@ export default function RegisterPage() {
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Əsas istedad sahənizi seçin" />
-                          </SelectTrigger>
+                          </Trigger>
                         </FormControl>
                         <SelectContent>
                            {categories?.map(cat => (
