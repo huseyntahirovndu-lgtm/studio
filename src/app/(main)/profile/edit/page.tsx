@@ -289,18 +289,18 @@ export default function EditProfilePage() {
   const handleSkillAdd = async () => {
     const trimmedInput = skillInput.trim();
     if (trimmedInput) {
-      const newSkill: Skill = { name: trimmedInput, level: skillLevel };
-      const currentSkills = profileForm.getValues('skills');
-      if (!currentSkills.some(s => s.name.toLowerCase() === newSkill.name.toLowerCase())) {
-        setProfileValue('skills', [...currentSkills, newSkill], { shouldValidate: true });
-        setSkillInput('');
-        setSkillLevel('Başlanğıc');
-        skillInputRef.current?.focus();
-      } else {
-        toast({ variant: 'destructive', title: 'Bu bacarıq artıq mövcuddur.' });
-      }
+        const newSkill: Skill = { name: trimmedInput, level: skillLevel };
+        const currentSkills = profileForm.getValues('skills') || [];
+        if (!currentSkills.some(s => s && s.name && s.name.toLowerCase() === newSkill.name.toLowerCase())) {
+            setProfileValue('skills', [...currentSkills, newSkill], { shouldValidate: true });
+            setSkillInput('');
+            setSkillLevel('Başlanğıc');
+            skillInputRef.current?.focus();
+        } else {
+            toast({ variant: 'destructive', title: 'Bu bacarıq artıq mövcuddur.' });
+        }
     }
-  };
+};
 
   const handleSkillRemove = (skillToRemove: string) => {
     setProfileValue('skills', skills.filter(skill => skill.name !== skillToRemove));
