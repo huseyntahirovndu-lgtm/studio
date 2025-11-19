@@ -31,7 +31,7 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="relative w-full flex items-center bg-black">
         <Image
-          src="https://i.ibb.co/cXv2KzRR/q2.jpg"
+          src="https://www.ndu.edu.az/images/sliders/slider-1.jpg"
           alt="Naxçıvan Dövlət Universiteti"
           width={1920}
           height={1080}
@@ -39,11 +39,11 @@ export default function HomePage() {
           priority
           data-ai-hint="university building"
         />
-        <div className="absolute inset-0 bg-black/30" />
+        
         <div className="absolute inset-0 flex items-center">
           <div className="container mx-auto px-4 md:px-8 lg:px-12">
             <div className="max-w-3xl text-left">
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-white">
+              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4 text-white">
                 Naxçıvan Dövlət Universiteti <br /> Tələbə İstedad Bankı
               </h1>
               <p className="text-lg md:text-xl mb-8 text-white">

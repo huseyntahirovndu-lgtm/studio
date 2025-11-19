@@ -15,9 +15,9 @@ const navLinks = [
 export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-primary text-primary-foreground">
-      <div className="container flex h-20 max-w-screen-2xl items-center">
+      <div className="container flex h-24 max-w-screen-2xl items-center">
         <Link href="/" className="mr-6 flex items-center space-x-3">
-          <Logo className="h-12 w-auto" />
+          <Logo className="h-16 w-auto" />
           <span className="hidden font-bold sm:inline-block text-lg">
             İstedad Mərkəzi
           </span>
