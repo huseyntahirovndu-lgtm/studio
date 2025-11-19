@@ -39,6 +39,7 @@ const profileSchema = z.object({
   linkedInURL: z.string().url().or(z.literal('')),
   githubURL: z.string().url().or(z.literal('')),
   behanceURL: z.string().url().or(z.literal('')),
+  instagramURL: z.string().url().or(z.literal('')),
   portfolioURL: z.string().url().or(z.literal('')),
 });
 
@@ -91,7 +92,7 @@ export default function EditProfilePage() {
   
   const projectForm = useForm<z.infer<typeof projectSchema>>({
     resolver: zodResolver(projectSchema),
-    defaultValues: { title: '', description: '', role: '', teamMembers: '', link: '', status: 'davam edir' }
+    defaultValues: { title: '', description: '', role: '', teamMembers: [], link: '', status: 'davam edir' }
   });
 
   const achievementForm = useForm<z.infer<typeof achievementSchema>>({
@@ -121,6 +122,7 @@ export default function EditProfilePage() {
         linkedInURL: student.linkedInURL || '',
         githubURL: student.githubURL || '',
         behanceURL: student.behanceURL || '',
+        instagramURL: student.instagramURL || '',
         portfolioURL: student.portfolioURL || '',
       });
     }
@@ -194,22 +196,22 @@ export default function EditProfilePage() {
   
   const onProjectSubmit: SubmitHandler<z.infer<typeof projectSchema>> = (data) => {
     handleGenericSubmit(async () => {
-        const newProject: Omit<Project, 'id'> = { studentId: user!.uid, ...data };
-        return addDocumentNonBlocking(projectsRef!, newProject);
+        const newProject: Omit<Project, 'id' | 'studentId'> = { ...data };
+        return addDocumentNonBlocking(projectsRef!, { ...newProject, studentId: user!.uid });
     }, "Layihə əlavə edildi", projectForm);
   };
   
   const onAchievementSubmit: SubmitHandler<z.infer<typeof achievementSchema>> = (data) => {
     handleGenericSubmit(async () => {
-        const newAchievement: Omit<Achievement, 'id'> = { studentId: user!.uid, ...data };
-        return addDocumentNonBlocking(achievementsRef!, newAchievement);
+        const newAchievement: Omit<Achievement, 'id' | 'studentId'> = { ...data };
+        return addDocumentNonBlocking(achievementsRef!, { ...newAchievement, studentId: user!.uid });
     }, "Nailiyyət əlavə edildi", achievementForm);
   };
   
   const onCertificateSubmit: SubmitHandler<z.infer<typeof certificateSchema>> = (data) => {
     handleGenericSubmit(async () => {
-        const newCertificate: Omit<Certificate, 'id'> = { studentId: user!.uid, ...data };
-        return addDocumentNonBlocking(certificatesRef!, newCertificate);
+        const newCertificate: Omit<Certificate, 'id' | 'studentId'> = { ...data };
+        return addDocumentNonBlocking(certificatesRef!, { ...newCertificate, studentId: user!.uid });
     }, "Sertifikat əlavə edildi", certificateForm);
   };
   
@@ -309,6 +311,9 @@ export default function EditProfilePage() {
                   )} />
                    <FormField name="behanceURL" control={profileForm.control} render={({ field }) => (
                     <FormItem><FormLabel>Behance URL</FormLabel><FormControl><Input placeholder="https://behance.net/..." {...field} /></FormControl><FormMessage /></FormItem>
+                  )} />
+                   <FormField name="instagramURL" control={profileForm.control} render={({ field }) => (
+                    <FormItem><FormLabel>Instagram URL</FormLabel><FormControl><Input placeholder="https://instagram.com/..." {...field} /></FormControl><FormMessage /></FormItem>
                   )} />
                    <FormField name="portfolioURL" control={profileForm.control} render={({ field }) => (
                     <FormItem><FormLabel>Portfolio URL</FormLabel><FormControl><Input placeholder="https://sizin-saytiniz.com" {...field} /></FormControl><FormMessage /></FormItem>
