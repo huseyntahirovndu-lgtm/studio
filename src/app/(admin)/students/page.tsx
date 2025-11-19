@@ -2,8 +2,9 @@
 import {
   File,
   ListFilter,
+  MoreHorizontal,
 } from "lucide-react"
-
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge"
 
 import { Button } from "@/components/ui/button"
@@ -133,11 +134,15 @@ export default function AdminStudentsPage() {
                                     size="icon"
                                     variant="ghost"
                                     >
-                                    <span className="sr-only">Toggle menu</span>
+                                     <MoreHorizontal className="h-4 w-4" />
+                                     <span className="sr-only">Toggle menu</span>
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuLabel>Əməliyyatlar</DropdownMenuLabel>
+                                    <DropdownMenuItem asChild>
+                                      <Link href={`/profile/${student.id}`}>Profilə bax</Link>
+                                    </DropdownMenuItem>
                                     <DropdownMenuItem>Redaktə et</DropdownMenuItem>
                                 </DropdownMenuContent>
                                 </DropdownMenu>

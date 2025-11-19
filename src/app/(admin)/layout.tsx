@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { BarChart, Home, Package, Settings, ShieldCheck, ShoppingCart, Users2 } from "lucide-react"
+import { BarChart, Home, Package, Settings, ShieldCheck, ShoppingCart, Users2, ListTree } from "lucide-react"
 
 import { useAuth } from "@/hooks/use-auth"
 import { cn } from "@/lib/utils"
@@ -18,6 +18,7 @@ import type { Admin } from "@/types";
 const NAV_LINKS = [
     { href: "/admin/dashboard", icon: Home, label: "Dashboard" },
     { href: "/admin/students", icon: Users2, label: "Tələbələr" },
+    { href: "/admin/categories", icon: ListTree, label: "Kateqoriyalar" },
 ];
 
 
