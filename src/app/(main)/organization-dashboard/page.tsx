@@ -8,7 +8,6 @@ import { Organization, Student, Project, Invitation } from '@/types';
 import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
 import { StudentCard } from '@/components/student-card';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { getStudentById, getProjectsByIds, getInvitationsByOrganizationId, getProjectById, updateInvitationStatus } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -42,14 +41,7 @@ export default function OrganizationDashboard() {
             const studentResults = (orgProfile.savedStudentIds || []).map(id => getStudentById(id)).filter((s): s is Student => s !== undefined);
             const projectResults = getProjectsByIds(orgProfile.projectIds || []);
 
-            const enrichedStudents = studentResults.map((student, index) => {
-                const placeholder = PlaceHolderImages[index % PlaceHolderImages.length];
-                return {
-                  ...student,
-                  profilePictureUrl: placeholder.imageUrl,
-                  profilePictureHint: placeholder.imageHint,
-                };
-            });
+            setSavedStudents(studentResults);
             
             const orgApplications = getInvitationsByOrganizationId(orgProfile.id)
                 .filter(inv => inv.status === 'müraciət')
@@ -61,7 +53,6 @@ export default function OrganizationDashboard() {
                 .filter(inv => inv.student && inv.project);
 
             setApplications(orgApplications as EnrichedInvitation[]);
-            setSavedStudents(enrichedStudents);
             setOrganizationProjects(projectResults);
             setIsLoading(false);
         } else {

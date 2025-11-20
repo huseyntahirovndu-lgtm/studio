@@ -84,7 +84,7 @@ export function Header() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:bg-primary/80">
                    <Avatar className="h-10 w-10">
-                    {appUser.role === 'student' && (appUser as Student).profilePictureUrl && <AvatarImage src={(appUser as Student).profilePictureUrl} alt={getDisplayName(appUser)} />}
+                    <AvatarImage src={(appUser as Student).profilePictureUrl} alt={getDisplayName(appUser)} />
                     <AvatarFallback>{getInitials(getDisplayName(appUser))}</AvatarFallback>
                   </Avatar>
                 </Button>

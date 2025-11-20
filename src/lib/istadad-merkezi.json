@@ -108,7 +108,7 @@
       "status": "təsdiqlənmiş",
       "createdAt": "2024-04-18T09:20:00Z"
     },
-     {
+    {
       "id": "student-5",
       "role": "student",
       "firstName": "Polad",
@@ -130,7 +130,8 @@
       "certificateIds": [],
       "talentScore": 94,
       "status": "təsdiqlənmiş",
-      "createdAt": "2024-05-15T12:00:00Z"
+      "createdAt": "2024-05-15T12:00:00Z",
+      "profilePictureUrl": "https://tec.ndu.edu.az/api/files/sekiller/1760210826936-3b46017b.jpg"
     },
     {
       "id": "student-6",
@@ -405,5 +406,3 @@
     }
   ]
 }
-
-    

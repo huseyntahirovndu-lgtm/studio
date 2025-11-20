@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Star, Linkedin, Github, Dribbble, Instagram, Link as LinkIcon, Award, Briefcase, FileText, Bookmark, MailPlus, Book, Youtube } from 'lucide-react';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { getStudentById, getProjectsByStudentId, getAchievementsByStudentId, getCertificatesByStudentId, getProjectsByIds, addInvitation, getOrganizationById } from '@/lib/data';
@@ -60,12 +59,7 @@ export default function ProfilePage() {
         const studentAchievements = getAchievementsByStudentId(studentId);
         const studentCertificates = getCertificatesByStudentId(studentId);
         
-        const placeholder = PlaceHolderImages.find(p => p.id.slice(-1) === studentData.id.slice(-1)) || PlaceHolderImages[0];
-        setStudent({
-          ...studentData,
-          profilePictureUrl: placeholder.imageUrl,
-          profilePictureHint: placeholder.imageHint,
-        });
+        setStudent(studentData);
         setProjects(studentProjects);
         setAchievements(studentAchievements);
         setCertificates(studentCertificates);
@@ -185,13 +179,13 @@ export default function ProfilePage() {
     }
   };
 
-  const getProjectOwner = (project: Project): { name: string; logoUrl?: string } => {
+  const getProjectOwner = (project: Project): { name: string; logoUrl?: string; profilePictureUrl?: string } => {
     if (project.studentId === student.id) {
-        return { name: `${student.firstName} ${student.lastName}`, logoUrl: student.profilePictureUrl };
+        return { name: `${student.firstName} ${student.lastName}`, profilePictureUrl: student.profilePictureUrl };
     }
     const org = getOrganizationById(project.studentId);
     return org ? { name: org.name, logoUrl: org.logoUrl } : { name: 'Naməlum' };
-};
+  };
 
   return (
     <div className="container mx-auto max-w-6xl py-8 md:py-12 px-4">
@@ -311,7 +305,7 @@ export default function ProfilePage() {
                                     
                                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                                         <Avatar className="h-4 w-4">
-                                            <AvatarImage src={owner.logoUrl} />
+                                            <AvatarImage src={owner.logoUrl || owner.profilePictureUrl} />
                                             <AvatarFallback>{owner.name.charAt(0)}</AvatarFallback>
                                         </Avatar>
                                         <span>{owner.name}</span>

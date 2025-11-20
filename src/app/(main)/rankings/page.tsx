@@ -3,7 +3,6 @@ import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { getStudents, getFaculties, getCategories } from '@/lib/data';
 import { Student } from '@/types';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import {
   Select,
   SelectContent,
@@ -22,7 +21,7 @@ export default function RankingsPage() {
   const [facultyFilter, setFacultyFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
-  const [enrichedStudents, setEnrichedStudents] = useState<Student[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
 
   const faculties = getFaculties();
   const categories = getCategories();
@@ -30,27 +29,19 @@ export default function RankingsPage() {
   useEffect(() => {
     // Fetch only approved students
     const allStudents = getStudents().filter(s => s.status === 'təsdiqlənmiş');
-    const studentsWithPics = allStudents.map((student, index) => {
-      const placeholder = PlaceHolderImages.find(p => p.id.slice(-1) === student.id.slice(-1)) || PlaceHolderImages[index % PlaceHolderImages.length];
-      return {
-        ...student,
-        profilePictureUrl: placeholder.imageUrl,
-        profilePictureHint: placeholder.imageHint,
-      };
-    });
-    setEnrichedStudents(studentsWithPics);
+    setStudents(allStudents);
     setIsLoading(false);
   }, []);
 
   const rankedStudents = useMemo(() => {
-    return enrichedStudents
+    return students
       ?.filter(student => {
         const facultyMatch = facultyFilter === 'all' || student.faculty === facultyFilter;
         const categoryMatch = categoryFilter === 'all' || student.category.includes(categoryFilter);
         return facultyMatch && categoryMatch;
       })
       .sort((a, b) => (b.talentScore || 0) - (a.talentScore || 0));
-  }, [enrichedStudents, facultyFilter, categoryFilter]);
+  }, [students, facultyFilter, categoryFilter]);
 
   const getRankBadgeClass = (rank: number) => {
     if (rank === 1) return 'bg-amber-400 text-amber-900 border-amber-500';

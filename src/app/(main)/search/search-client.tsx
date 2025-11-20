@@ -2,7 +2,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Student } from '@/types';
 import { StudentCard } from '@/components/student-card';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Input } from '@/components/ui/input';
 import { Search as SearchIcon } from 'lucide-react';
 import {
@@ -30,7 +29,7 @@ export default function SearchClient() {
   const [quickFilter, setQuickFilter] = useState<QuickFilter>('none');
 
   const [isLoading, setIsLoading] = useState(true);
-  const [enrichedStudents, setEnrichedStudents] = useState<Student[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
 
   const faculties = getFaculties();
   const categories = getCategories();
@@ -38,15 +37,7 @@ export default function SearchClient() {
   useEffect(() => {
     // Fetch only approved students
     const allStudents = getStudents().filter(s => s.status === 'təsdiqlənmiş');
-    const studentsWithPics = allStudents.map((student, index) => {
-      const placeholder = PlaceHolderImages.find(p => p.id.slice(-1) === student.id.slice(-1)) || PlaceHolderImages[index % PlaceHolderImages.length];
-      return {
-        ...student,
-        profilePictureUrl: placeholder.imageUrl,
-        profilePictureHint: placeholder.imageHint,
-      };
-    });
-    setEnrichedStudents(studentsWithPics);
+    setStudents(allStudents);
     setIsLoading(false);
 
     // Check for URL params to set initial state
@@ -58,20 +49,20 @@ export default function SearchClient() {
 
 
   const filteredStudents = useMemo(() => {
-    let students = [...enrichedStudents];
+    let filtered = [...students];
 
     // Apply quick filters first
     if (quickFilter === 'high-potential') {
-        students = students.filter(s => (s.talentScore || 0) >= 90);
+        filtered = filtered.filter(s => (s.talentScore || 0) >= 90);
     } else if (quickFilter === 'startup') {
-        students = students.filter(s => s.category.includes('Sahibkarlıq') || s.category.includes('Texnologiya'));
+        filtered = filtered.filter(s => s.category.includes('Sahibkarlıq') || s.category.includes('Texnologiya'));
     } else if (quickFilter === 'newcomer') {
-        students = students.filter(s => s.courseYear === 1);
+        filtered = filtered.filter(s => s.courseYear === 1);
     }
 
 
     // Apply standard filters
-    students = students.filter(student => {
+    filtered = filtered.filter(student => {
       if (student.role !== 'student') return false;
 
       const searchTermMatch =
@@ -88,14 +79,14 @@ export default function SearchClient() {
 
      // Apply sorting
     if (sortBy === 'createdAt') {
-      students.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     } else { // Default to talentScore
-      students.sort((a, b) => (b.talentScore || 0) - (a.talentScore || 0));
+      filtered.sort((a, b) => (b.talentScore || 0) - (a.talentScore || 0));
     }
 
 
-    return students;
-  }, [enrichedStudents, searchTerm, facultyFilter, courseFilter, categoryFilter, sortBy, quickFilter]);
+    return filtered;
+  }, [students, searchTerm, facultyFilter, courseFilter, categoryFilter, sortBy, quickFilter]);
 
   const handleQuickFilterClick = (filter: QuickFilter) => {
     setQuickFilter(current => current === filter ? 'none' : filter);

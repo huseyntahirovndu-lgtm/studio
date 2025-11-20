@@ -45,7 +45,6 @@ export function StudentCard({ student, className }: StudentCardProps) {
     lastName,
     faculty,
     profilePictureUrl,
-    profilePictureHint,
     skills,
     talentScore,
     id,
@@ -102,7 +101,7 @@ export function StudentCard({ student, className }: StudentCardProps) {
         )}
         <div className="p-6 flex items-center gap-4">
           <Avatar className="h-16 w-16 border-4 border-background shadow-md">
-            <AvatarImage src={profilePictureUrl} alt={`${firstName} ${lastName}`} data-ai-hint={profilePictureHint} />
+            <AvatarImage src={profilePictureUrl} alt={`${firstName} ${lastName}`} />
             <AvatarFallback>{firstName?.charAt(0)}{lastName?.charAt(0)}</AvatarFallback>
           </Avatar>
           <div>

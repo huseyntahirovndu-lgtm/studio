@@ -17,7 +17,6 @@ import { StudentCard } from '@/components/student-card';
 import { CategoryPieChart } from '@/components/charts/category-pie-chart';
 import { FacultyBarChart } from '@/components/charts/faculty-bar-chart';
 import { Student, Project, Certificate, Organization } from '@/types';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getStudents, getProjects, getCertificates, getFaculties, getStudentById, getOrganizations, addInvitation } from '@/lib/data';
 import { useEffect, useState } from 'react';
@@ -37,9 +36,8 @@ interface OrgProject extends Project {
 }
 
 
-const SuccessStoryCard = ({ story }: { story: { name: string, faculty: string, story: string, imageUrl: string, imageHint: string } }) => (
+const SuccessStoryCard = ({ story }: { story: { name: string, faculty: string, story: string } }) => (
     <Card className="flex flex-col overflow-hidden">
-        <Image src={story.imageUrl} alt={story.name} width={400} height={250} className="w-full h-48 object-cover" data-ai-hint={story.imageHint} />
         <CardHeader>
             <CardTitle>{story.name}</CardTitle>
             <CardDescription>{story.faculty}</CardDescription>
@@ -127,34 +125,21 @@ export default function HomePage() {
           name: "Aysel Məmmədova",
           faculty: "İqtisadiyyat və idarəetmə",
           story: "İstedad Mərkəzi sayəsində Tech Solutions şirkətində təcrübə proqramına qatıldım və maliyyə analitikası sahəsində ilk real iş təcrübəmi qazandım.",
-          imageUrl: PlaceHolderImages[0].imageUrl,
-          imageHint: PlaceHolderImages[0].imageHint,
       },
       {
           name: "Orxan Əliyev",
           faculty: "Memarlıq və mühəndislik",
           story: "Platformada yaratdığım layihə portfoliom bir startapın diqqətini çəkdi və indi mobil tətbiqlərinin UX/UI dizaynı üzərində işləyirəm.",
-          imageUrl: PlaceHolderImages[1].imageUrl,
-          imageHint: PlaceHolderImages[1].imageHint,
       }
   ];
 
   useEffect(() => {
     // Simulate fetching data
     const allStudents = getStudents().filter(s => s.status === 'təsdiqlənmiş');
-    const enrichedStudents = allStudents.map((student, index) => {
-      const placeholder = PlaceHolderImages[index % PlaceHolderImages.length];
-      return {
-        ...student,
-        profilePictureUrl: placeholder.imageUrl,
-        profilePictureHint: placeholder.imageHint,
-      };
-    });
-
-    setStudents(enrichedStudents);
+    setStudents(allStudents);
 
     // Top 10 Talents
-    const sortedByTalent = [...enrichedStudents].sort((a, b) => (b.talentScore || 0) - (a.talentScore || 0));
+    const sortedByTalent = [...allStudents].sort((a, b) => (b.talentScore || 0) - (a.talentScore || 0));
     setTopTalents(sortedByTalent.slice(0, 10));
     
     // Strongest Student Projects (from top 5 students)
@@ -179,7 +164,7 @@ export default function HomePage() {
     setOrganizationProjects(orgProjects);
     
     // Popular skills
-    const allSkills = enrichedStudents.flatMap(s => s.skills).map(s => s.name);
+    const allSkills = allStudents.flatMap(s => s.skills).map(s => s.name);
     const skillCounts = allSkills.reduce((acc, skill) => {
         acc[skill] = (acc[skill] || 0) + 1;
         return acc;
@@ -189,7 +174,7 @@ export default function HomePage() {
     setPopularSkills(sortedSkills.slice(0, 10));
 
 
-    const sortedByDate = [...enrichedStudents].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const sortedByDate = [...allStudents].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     setNewMembers(sortedByDate.slice(0, 5));
     
     setIsLoading(false);
