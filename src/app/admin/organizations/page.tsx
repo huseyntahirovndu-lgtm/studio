@@ -4,9 +4,10 @@ import {
   ListFilter,
   MoreHorizontal,
   PlusCircle,
+  Search,
 } from "lucide-react"
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -24,16 +25,25 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Input } from "@/components/ui/input";
 import { getOrganizations } from "@/lib/data";
 import { Organization } from "@/types";
 
 
 export default function AdminOrganizationsPage() {
     const [organizations, setOrganizations] = useState<Organization[]>([]);
+    const [searchTerm, setSearchTerm] = useState("");
 
     useEffect(() => {
         setOrganizations(getOrganizations());
     }, []);
+
+    const filteredOrganizations = useMemo(() => {
+        return organizations.filter(org => 
+            org.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            org.sector.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [organizations, searchTerm]);
 
     return (
         <Card>
@@ -42,6 +52,16 @@ export default function AdminOrganizationsPage() {
                 <CardDescription>
                 Platformadakı partnyor təşkilatları idarə edin.
                 </CardDescription>
+                <div className="relative mt-4">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input
+                        type="text"
+                        placeholder="Təşkilat adı və ya sektora görə axtar..."
+                        className="pl-10 w-full"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
             </CardHeader>
             <CardContent>
                 <Table>
@@ -60,7 +80,7 @@ export default function AdminOrganizationsPage() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {organizations.map((org) => (
+                    {filteredOrganizations.map((org) => (
                     <TableRow key={org.id}>
                         <TableCell className="font-medium">{org.name}</TableCell>
                         <TableCell className="hidden md:table-cell">
@@ -79,7 +99,7 @@ export default function AdminOrganizationsPage() {
             </CardContent>
             <CardFooter>
                 <div className="text-xs text-muted-foreground">
-                Göstərilir <strong>1-{organizations.length}</strong> / <strong>{organizations.length}</strong>{" "}
+                Göstərilir <strong>{filteredOrganizations.length}</strong> / <strong>{organizations.length}</strong>{" "}
                 təşkilat
                 </div>
             </CardFooter>

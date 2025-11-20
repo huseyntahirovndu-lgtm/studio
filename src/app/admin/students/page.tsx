@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useMemo, useEffect } from "react";
-import { File, ListFilter, MoreHorizontal } from "lucide-react"
+import { File, ListFilter, MoreHorizontal, Search } from "lucide-react"
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -49,6 +49,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
 import { getFaculties, deleteUser, updateUser, getStudents } from "@/lib/data";
 import type { Student, StudentStatus } from "@/types";
 import { useToast } from "@/hooks/use-toast";
@@ -60,10 +61,13 @@ export default function AdminStudentsPage() {
   const router = useRouter();
   const { toast } = useToast();
   const faculties = getFaculties();
+  const [activeTab, setActiveTab] = useState<StudentStatus | 'all'>('all');
+  const [selectedFaculties, setSelectedFaculties] = useState<string[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     setStudents(getStudents());
-  }, [])
+  }, []);
 
   const handleStatusChange = (student: Student, newStatus: StudentStatus) => {
     const updatedStudent = { ...student, status: newStatus };
@@ -85,6 +89,12 @@ export default function AdminStudentsPage() {
         toast({ variant: 'destructive', title: "Xəta", description: "Tələbə silinərkən xəta baş verdi."});
     }
   }
+
+  const handleFacultyFilterChange = (facultyName: string, checked: boolean) => {
+    setSelectedFaculties(prev => 
+        checked ? [...prev, facultyName] : prev.filter(f => f !== facultyName)
+    );
+  };
   
     const statusMap: Record<StudentStatus, string> = {
         'təsdiqlənmiş': 'Təsdiqlənmiş',
@@ -92,8 +102,19 @@ export default function AdminStudentsPage() {
         'arxivlənmiş': 'Arxivlənmiş'
     };
 
+    const filteredStudents = useMemo(() => {
+        return students.filter(student => {
+            const statusMatch = activeTab === 'all' || student.status === activeTab;
+            const facultyMatch = selectedFaculties.length === 0 || selectedFaculties.includes(student.faculty);
+            const searchMatch = 
+                `${student.firstName} ${student.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                student.email.toLowerCase().includes(searchTerm.toLowerCase());
+            return statusMatch && facultyMatch && searchMatch;
+        })
+    }, [students, activeTab, selectedFaculties, searchTerm]);
+
     return (
-        <Tabs defaultValue="all">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
             <div className="flex items-center">
               <TabsList>
                 <TabsTrigger value="all">Hamısı</TabsTrigger>
@@ -106,7 +127,7 @@ export default function AdminStudentsPage() {
               <div className="ml-auto flex items-center gap-2">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-7 gap-1">
+                    <Button variant="outline" size="sm" className="h-8 gap-1">
                       <ListFilter className="h-3.5 w-3.5" />
                       <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                         Filtr
@@ -117,124 +138,142 @@ export default function AdminStudentsPage() {
                     <DropdownMenuLabel>Fakültəyə görə</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     {faculties.map(faculty => (
-                       <DropdownMenuCheckboxItem key={faculty.id}>
+                       <DropdownMenuCheckboxItem 
+                            key={faculty.id}
+                            checked={selectedFaculties.includes(faculty.name)}
+                            onCheckedChange={(checked) => handleFacultyFilterChange(faculty.name, !!checked)}
+                        >
                         {faculty.name}
                        </DropdownMenuCheckboxItem>
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <Button size="sm" variant="outline" className="h-7 gap-1">
+                <Button size="sm" variant="outline" className="h-8 gap-1" disabled>
                   <File className="h-3.5 w-3.5" />
-                  <span className="sr-only sm:not-srely sm:whitespace-nowrap">
+                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                     Eksport
                   </span>
                 </Button>
               </div>
             </div>
-            <TabsContent value="all">
-               <Card>
-                <CardHeader>
-                  <CardTitle>Tələbələr</CardTitle>
-                  <CardDescription>
-                    Sistemdəki bütün tələbələri idarə edin.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Ad Soyad</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="hidden md:table-cell">
-                          İstedad Balı
-                        </TableHead>
-                        <TableHead className="hidden md:table-cell">
-                          Qeydiyyat Tarixi
-                        </TableHead>
-                        <TableHead>
-                          <span className="sr-only">Əməliyyatlar</span>
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                     {students.map((student) => (
-                        <TableRow key={student.id}>
-                            <TableCell className="font-medium">
-                                {student.firstName} {student.lastName}
-                            </TableCell>
-                            <TableCell>
-                                <Badge variant={student.status === 'təsdiqlənmiş' ? 'default' : student.status === 'gözləyir' ? 'secondary' : 'outline'}>
-                                  {statusMap[student.status]}
-                                </Badge>
-                            </TableCell>
-                            <TableCell className="hidden md:table-cell">
-                                {student.talentScore}
-                            </TableCell>
-                            <TableCell className="hidden md:table-cell">
-                                {new Date(student.createdAt).toLocaleDateString()}
-                            </TableCell>
-                            <TableCell>
-                                <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button
-                                    aria-haspopup="true"
-                                    size="icon"
-                                    variant="ghost"
-                                    >
-                                     <MoreHorizontal className="h-4 w-4" />
-                                     <span className="sr-only">Menyunu aç</span>
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuLabel>Əməliyyatlar</DropdownMenuLabel>
-                                    <DropdownMenuItem asChild>
-                                      <Link href={`/profile/${student.id}`}>Profilə bax</Link>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem asChild>
-                                        <Link href={`/profile/edit?userId=${student.id}`}>Redaktə et</Link>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSub>
-                                        <DropdownMenuSubTrigger>Statusu dəyiş</DropdownMenuSubTrigger>
-                                        <DropdownMenuSubContent>
-                                            <DropdownMenuItem onClick={() => handleStatusChange(student, 'təsdiqlənmiş')}>Təsdiqlə</DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => handleStatusChange(student, 'gözləyir')}>Gözləməyə al</DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => handleStatusChange(student, 'arxivlənmiş')}>Arxivlə</DropdownMenuItem>
-                                        </DropdownMenuSubContent>
-                                    </DropdownMenuSub>
-                                    <DropdownMenuSeparator />
-                                     <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">Sil</DropdownMenuItem>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>Təsdiq edirsiniz?</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                    Bu əməliyyat geri qaytarılmazdır. Bu, tələbəni sistemdən həmişəlik siləcək.
-                                                </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel>Ləğv et</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => handleDeleteStudent(student.id)} className="bg-destructive hover:bg-destructive/90">Bəli, sil</AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
-                                </DropdownMenuContent>
-                                </DropdownMenu>
-                            </TableCell>
-                        </TableRow>
-                     ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-                <CardFooter>
-                  <div className="text-xs text-muted-foreground">
-                    Göstərilir: <strong>1-10</strong> / <strong>{students.length}</strong>{" "}
-                    tələbə
-                  </div>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-          </Tabs>
+            <Card className="mt-4">
+            <CardHeader>
+                <CardTitle>Tələbələr</CardTitle>
+                <CardDescription>
+                Sistemdəki bütün tələbələri idarə edin.
+                </CardDescription>
+                <div className="relative pt-2">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input
+                        type="text"
+                        placeholder="Ad, soyad və ya email ilə axtar..."
+                        className="pl-10 w-full"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                <TableHeader>
+                    <TableRow>
+                    <TableHead>Ad Soyad</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="hidden md:table-cell">
+                        İstedad Balı
+                    </TableHead>
+                    <TableHead className="hidden md:table-cell">
+                        Qeydiyyat Tarixi
+                    </TableHead>
+                    <TableHead>
+                        <span className="sr-only">Əməliyyatlar</span>
+                    </TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {filteredStudents.map((student) => (
+                    <TableRow key={student.id}>
+                        <TableCell className="font-medium">
+                            {student.firstName} {student.lastName}
+                            <div className="text-xs text-muted-foreground">{student.email}</div>
+                        </TableCell>
+                        <TableCell>
+                            <Badge variant={student.status === 'təsdiqlənmiş' ? 'default' : student.status === 'gözləyir' ? 'secondary' : 'outline'}>
+                                {statusMap[student.status]}
+                            </Badge>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                            {student.talentScore}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                            {new Date(student.createdAt).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                            <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                aria-haspopup="true"
+                                size="icon"
+                                variant="ghost"
+                                >
+                                    <MoreHorizontal className="h-4 w-4" />
+                                    <span className="sr-only">Menyunu aç</span>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Əməliyyatlar</DropdownMenuLabel>
+                                <DropdownMenuItem asChild>
+                                    <Link href={`/profile/${student.id}`}>Profilə bax</Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <Link href={`/profile/edit?userId=${student.id}`}>Redaktə et</Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuSub>
+                                    <DropdownMenuSubTrigger>Statusu dəyiş</DropdownMenuSubTrigger>
+                                    <DropdownMenuSubContent>
+                                        <DropdownMenuItem onClick={() => handleStatusChange(student, 'təsdiqlənmiş')}>Təsdiqlə</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleStatusChange(student, 'gözləyir')}>Gözləməyə al</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleStatusChange(student, 'arxivlənmiş')}>Arxivlə</DropdownMenuItem>
+                                    </DropdownMenuSubContent>
+                                </DropdownMenuSub>
+                                <DropdownMenuSeparator />
+                                    <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">Sil</DropdownMenuItem>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Təsdiq edirsiniz?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Bu əməliyyat geri qaytarılmazdır. Bu, tələbəni sistemdən həmişəlik siləcək.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Ləğv et</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleDeleteStudent(student.id)} className="bg-destructive hover:bg-destructive/90">Bəli, sil</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </DropdownMenuContent>
+                            </DropdownMenu>
+                        </TableCell>
+                    </TableRow>
+                    ))}
+                </TableBody>
+                </Table>
+                 {filteredStudents.length === 0 && (
+                    <div className="text-center py-10 text-muted-foreground">
+                        Nəticə tapılmadı.
+                    </div>
+                )}
+            </CardContent>
+            <CardFooter>
+                <div className="text-xs text-muted-foreground">
+                Göstərilir: <strong>{filteredStudents.length}</strong> / <strong>{students.length}</strong>{" "}
+                tələbə
+                </div>
+            </CardFooter>
+            </Card>
+        </Tabs>
     )
 }
