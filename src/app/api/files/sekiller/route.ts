@@ -16,16 +16,17 @@ export async function POST(request: NextRequest) {
 
     // Generate a unique filename
     const filename = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
-    const publicPath = join(process.cwd(), 'public', 'sekiller');
-    const path = join(publicPath, filename);
+    const uploadsPath = join(process.cwd(), 'uploads');
+    const path = join(uploadsPath, filename);
     
     // Ensure the directory exists
-    await mkdir(publicPath, { recursive: true });
+    await mkdir(uploadsPath, { recursive: true });
 
     await writeFile(path, buffer);
     console.log(`File uploaded to ${path}`);
 
-    const fileUrl = `/sekiller/${filename}`;
+    // Return a URL that points to our new file serving API
+    const fileUrl = `/api/files/view/${filename}`;
     return NextResponse.json({ success: true, url: fileUrl });
 
   } catch (error) {
