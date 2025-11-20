@@ -2,37 +2,37 @@
   "placeholderImages": [
     {
       "id": "student-1",
-      "description": "A smiling female student in a library",
-      "imageUrl": "https://images.unsplash.com/photo-1525134479668-1bee5c7c6845?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxmZW1hbGUlMjBzdHVkZW50fGVufDB8fHx8MTc2MzQ0NjQxM3ww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "female student"
+      "description": "A male student focused on coding on his laptop in a modern setting.",
+      "imageUrl": "https://images.unsplash.com/photo-1555066931-4365d1469c98?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxtYWxlJTIwY29kaW5nJTIwbGFwdG9wfGVufDB8fHx8MTc2MzUyNDM4Nnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "male coding"
     },
     {
       "id": "student-2",
-      "description": "A male student working on a laptop",
-      "imageUrl": "https://images.unsplash.com/photo-1631131428457-3c14bdcb81d4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxtYWxlJTIwc3R1ZGVudHxlbnwwfHx8fDE3NjM1MTA1NzJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "male student"
+      "description": "A female graphic designer working on a tablet with a stylus.",
+      "imageUrl": "https://images.unsplash.com/photo-1626785774573-4b799315345d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxmZW1hbGUlMjBncmFwaGljJTIwZGVzaWduZXJ8ZW58MHx8fHwxNzYzNDQ2NDE0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "female designer"
     },
     {
       "id": "student-3",
-      "description": "A student presenting a project",
-      "imageUrl": "https://images.unsplash.com/photo-1758270704587-43339a801396?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxzdHVkZW50JTIwcHJlc2VudGF0aW9ufGVufDB8fHx8MTc2MzU2MjIyN3ww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "student presentation"
+      "description": "A young male entrepreneur confidently presenting in a meeting.",
+      "imageUrl": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxtYWxlJTIwcHJlc2VudGluZyUyMGJ1c2luZXNzfGVufDB8fHx8MTc2NTU2MDUxOXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "male presenting"
     },
     {
       "id": "student-4",
-      "description": "A group of students collaborating",
-      "imageUrl": "https://images.unsplash.com/photo-1758525861742-fef623c2ad2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxzdHVkZW50cyUyMGNvbGxhYm9yYXRpbmd8ZW58MHx8fHwxNzYzNTI0NTQ1fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "students collaborating"
+      "description": "A female medical student in a lab coat, looking thoughtfully at a test tube.",
+      "imageUrl": "https://images.unsplash.com/photo-1628891890377-57378393524b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxmZW1hbGUlMjBtZWRpY2FsJTIwc3R1ZGVudCUyMGxhYnxlbnwwfHx8fDE3NjU1NjA1MjB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "medical student"
     },
     {
       "id": "student-5",
-      "description": "A student participating in a sports event",
-      "imageUrl": "https://images.unsplash.com/photo-1606589551604-86f49d5e8dbd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxzdHVkZW50JTIwc3BvcnR8ZW58MHx8fHwxNzYzNTYyMjI4fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "student sport"
+      "description": "A student athlete running on a track.",
+      "imageUrl": "https://images.unsplash.com/photo-1485686531765-ba63b07845a7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxzdHVkZW50JTIwcnVubmluZ3xlbnwwfHx8fDE3NjU1NjA1MjF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "student running"
     },
     {
       "id": "student-6",
-      "description": "A female student coding on her computer",
+      "description": "A female student focused on coding on her computer",
       "imageUrl": "https://images.unsplash.com/photo-1549082984-1323b94df9a6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHx3b21hbiUyMGNvZGluZ3xlbnwwfHx8fDE3NjM1MjQ0MDN8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "woman coding"
     },
@@ -55,7 +55,7 @@
       "imageHint": "entrepreneur pitch"
     },
     {
-      "id": "student-10",
+      "id": "student-0",
       "description": "A female student reading a book outdoors",
       "imageUrl": "https://images.unsplash.com/photo-1527963841590-34ea3172750d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx3b21hbiUyMHJlYWRpbmd8ZW58MHx8fHwxNzYzNTE0OTMzfDA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "woman reading"
