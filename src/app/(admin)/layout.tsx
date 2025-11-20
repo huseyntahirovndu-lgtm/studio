@@ -16,7 +16,7 @@ import { useEffect } from "react";
 import type { Admin } from "@/types";
 
 const NAV_LINKS = [
-    { href: "/admin/dashboard", icon: Home, label: "Dashboard" },
+    { href: "/admin/dashboard", icon: Home, label: "Dashboard", exact: true },
     { href: "/admin/students", icon: Users2, label: "Tələbələr" },
     { href: "/admin/organizations", icon: Building, label: "Təşkilatlar" },
     { href: "/admin/categories", icon: ListTree, label: "Kateqoriyalar" },
@@ -42,6 +42,10 @@ export default function AdminLayout({
   if (loading || !user || (user as Admin).role !== 'admin') {
       return <div className="flex h-screen items-center justify-center">Yüklənir...</div>;
   }
+  
+  const isActive = (href: string, exact?: boolean) => {
+    return exact ? pathname === href : pathname.startsWith(href);
+  }
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
@@ -62,7 +66,7 @@ export default function AdminLayout({
                     <Link
                         href={link.href}
                         className={cn("flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8",
-                            pathname.startsWith(link.href) && "bg-accent text-accent-foreground"
+                            isActive(link.href, link.exact) && "bg-accent text-accent-foreground"
                         )}
                     >
                         <link.icon className="h-5 w-5" />

@@ -663,7 +663,7 @@ function EditProfilePageComponent() {
 
 export default function EditProfilePage() {
   return (
-    <Suspense fallback={<div>Yüklənir...</div>}>
+    <Suspense fallback={<div className="container mx-auto py-8 text-center">Yüklənir...</div>}>
       <EditProfilePageComponent />
     </Suspense>
   )

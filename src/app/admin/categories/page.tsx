@@ -47,7 +47,7 @@ import { getCategories, addCategory, deleteCategory } from '@/lib/data';
 
 
 export default function AdminCategoriesPage() {
-  const [categories, setCategories] = useState<CategoryData[]>(getCategories());
+  const [categories, setCategories] = useState<CategoryData[]>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
