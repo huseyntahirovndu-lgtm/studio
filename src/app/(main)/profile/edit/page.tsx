@@ -30,8 +30,6 @@ import {
 import { getStudentById, getProjectsByStudentId, getAchievementsByStudentId, getCertificatesByStudentId, addProject, addAchievement, addCertificate, deleteProject, deleteAchievement, deleteCertificate } from '@/lib/data';
 import { v4 as uuidv4 } from 'uuid';
 import { Badge } from '@/components/ui/badge';
-import { uploadFile } from '@/services/file-upload';
-
 
 const skillSchema = z.object({
     name: z.string().min(1, "Bacarıq adı boş ola bilməz."),
@@ -76,11 +74,8 @@ const achievementSchema = z.object({
 
 const certificateSchema = z.object({
     name: z.string().min(3, "Sertifikat adı boş ola bilməz."),
-    certificateFile: z.any().optional(),
+    certificateURL: z.string().url({ message: "Etibarlı bir link daxil edin." }).min(1, "Link boş ola bilməz."),
     level: z.enum(['Beynəlxalq', 'Respublika', 'Regional', 'Universitet']),
-}).refine(data => data.certificateFile, {
-    message: "Sertifikat faylı təqdim edilməlidir.",
-    path: ["certificateFile"],
 });
 
 const SKILL_LEVELS: SkillLevel[] = ['Başlanğıc', 'Orta', 'İrəli'];
@@ -145,7 +140,7 @@ function EditProfilePageComponent() {
   
   const certificateForm = useForm<z.infer<typeof certificateSchema>>({
     resolver: zodResolver(certificateSchema),
-    defaultValues: { name: '', level: 'Universitet' }
+    defaultValues: { name: '', level: 'Universitet', certificateURL: '' }
   });
 
   const fetchData = useCallback(() => {
@@ -259,20 +254,11 @@ function EditProfilePageComponent() {
  const onCertificateSubmit: SubmitHandler<z.infer<typeof certificateSchema>> = async (data) => {
     if (!targetUser) return;
     setIsSaving(true);
-    let fileUrl = '';
-
     try {
-      if (data.certificateFile && data.certificateFile.length > 0) {
-        const file = data.certificateFile[0];
-        toast({ title: "Fayl Yüklənir...", description: "Sertifikatınız serverə yüklənir." });
-        const response = await uploadFile(file);
-        fileUrl = response.url;
-      }
-
       const newCertificate: Certificate = {
         name: data.name,
         level: data.level,
-        certificateURL: fileUrl,
+        certificateURL: data.certificateURL,
         id: uuidv4(),
         studentId: targetUser!.id,
       };
@@ -289,8 +275,8 @@ function EditProfilePageComponent() {
       toast({ title: "Sertifikat əlavə edildi" });
 
     } catch (error) {
-      console.error("Error uploading certificate:", error);
-      toast({ variant: "destructive", title: "Xəta", description: "Sertifikat yüklənərkən xəta baş verdi." });
+      console.error("Error adding certificate:", error);
+      toast({ variant: "destructive", title: "Xəta", description: "Sertifikat əlavə edilərkən xəta baş verdi." });
     } finally {
       setIsSaving(false);
     }
@@ -615,12 +601,12 @@ function EditProfilePageComponent() {
                 )} />
                 <FormField
                   control={certificateForm.control}
-                  name="certificateFile"
-                  render={({ field: { onChange, value, ...rest } }) => (
+                  name="certificateURL"
+                  render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Sertifikat Faylı (Şəkil və ya PDF)</FormLabel>
+                      <FormLabel>Sertifikat Linki</FormLabel>
                       <FormControl>
-                        <Input type="file" accept="image/*,application/pdf" onChange={e => onChange(e.target.files)} {...rest} />
+                        <Input type="url" placeholder="https://example.com/sertifikat.pdf" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -682,5 +668,3 @@ export default function EditProfilePage() {
     </Suspense>
   )
 }
-
-    

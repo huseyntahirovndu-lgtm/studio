@@ -27,14 +27,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { uploadFile } from '@/services/file-upload';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const orgProfileSchema = z.object({
   name: z.string().min(2, { message: 'Təşkilat adı ən azı 2 hərfdən ibarət olmalıdır.' }),
   companyName: z.string().min(2, { message: 'Şirkət adı ən azı 2 hərfdən ibarət olmalıdır.' }),
   sector: z.string().min(2, { message: 'Sektor adı ən azı 2 hərfdən ibarət olmalıdır.' }),
-  logoFile: z.any().optional(),
+  logoUrl: z.string().url({ message: 'Etibarlı bir URL daxil edin.' }).or(z.literal('')).optional(),
 });
 
 const projectSchema = z.object({
@@ -73,6 +72,7 @@ export default function EditOrganizationProfilePage() {
         name: organization.name || '',
         companyName: organization.companyName || '',
         sector: organization.sector || '',
+        logoUrl: organization.logoUrl || '',
       });
       if(organization.projectIds) {
         setProjects(getProjectsByIds(organization.projectIds));
@@ -84,39 +84,23 @@ export default function EditOrganizationProfilePage() {
     if (!organization) return;
     setIsSaving(true);
 
-    let logoUrl = organization.logoUrl;
-
     try {
-        if (data.logoFile && data.logoFile.length > 0) {
-            const file = data.logoFile[0];
-            toast({ title: "Logo Yüklənir..."});
-            const response = await uploadFile(file);
-            logoUrl = response.url;
-        }
-
         const updatedUser = { 
             ...organization, 
-            name: data.name,
-            companyName: data.companyName,
-            sector: data.sector,
-            logoUrl: logoUrl 
+            ...data
         };
         
         const success = updateUser(updatedUser);
         
         if (success) {
             toast({ title: "Profil məlumatları uğurla yeniləndi!" });
-            orgForm.reset({
-                name: updatedUser.name,
-                companyName: updatedUser.companyName,
-                sector: updatedUser.sector,
-            });
+            orgForm.reset(updatedUser);
         } else {
             toast({ variant: "destructive", title: "Xəta", description: "Profil yenilənərkən xəta baş verdi." });
         }
 
     } catch (error) {
-        toast({ variant: "destructive", title: "Xəta", description: "Logo yüklənərkən xəta baş verdi." });
+        toast({ variant: "destructive", title: "Xəta", description: "Profil yenilənərkən xəta baş verdi." });
     }
     
     setIsSaving(false);
@@ -199,15 +183,18 @@ export default function EditOrganizationProfilePage() {
           <Form {...orgForm}>
             <form onSubmit={orgForm.handleSubmit(onProfileSubmit)} className="space-y-6">
                 <div className="flex items-center gap-6">
-                    {organization.logoUrl && <Avatar className="h-20 w-20"><AvatarImage src={organization.logoUrl} /><AvatarFallback>{organization.name.charAt(0)}</AvatarFallback></Avatar>}
+                    <Avatar className="h-20 w-20">
+                      <AvatarImage src={orgForm.watch('logoUrl') || undefined} />
+                      <AvatarFallback>{organization.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
                     <FormField
                     control={orgForm.control}
-                    name="logoFile"
-                    render={({ field: { onChange, value, ...rest } }) => (
+                    name="logoUrl"
+                    render={({ field }) => (
                         <FormItem className="flex-1">
-                        <FormLabel>Logo (kvadrat şəkil tövsiyə olunur)</FormLabel>
+                        <FormLabel>Logo URL</FormLabel>
                         <FormControl>
-                            <Input type="file" accept="image/*" onChange={e => onChange(e.target.files)} {...rest} />
+                            <Input placeholder="https://example.com/logo.png" {...field} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
