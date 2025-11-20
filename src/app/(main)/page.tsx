@@ -9,25 +9,33 @@ import {
   Lightbulb,
   Sparkles,
   BookOpen,
+  Briefcase,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StatCard } from '@/components/stat-card';
 import { StudentCard } from '@/components/student-card';
 import { CategoryPieChart } from '@/components/charts/category-pie-chart';
 import { FacultyBarChart } from '@/components/charts/faculty-bar-chart';
-import { Student, Project, Certificate } from '@/types';
+import { Student, Project, Certificate, Organization } from '@/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getStudents, getProjects, getCertificates, getFaculties, getStudentById } from '@/lib/data';
+import { getStudents, getProjects, getCertificates, getFaculties, getStudentById, getOrganizations, addInvitation } from '@/lib/data';
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-
+import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
+import { v4 as uuidv4 } from 'uuid';
 
 interface EnrichedProject extends Project {
     student?: Student;
 }
+
+interface OrgProject extends Project {
+    organization: Organization;
+}
+
 
 const SuccessStoryCard = ({ story }: { story: { name: string, faculty: string, story: string, imageUrl: string, imageHint: string } }) => (
     <Card className="flex flex-col overflow-hidden">
@@ -42,11 +50,73 @@ const SuccessStoryCard = ({ story }: { story: { name: string, faculty: string, s
     </Card>
 );
 
+const OrganizationProjectCard = ({ project }: { project: OrgProject }) => {
+    const { user } = useAuth();
+    const { toast } = useToast();
+
+    const handleApply = () => {
+        if (!user || user.role !== 'student') {
+            toast({ variant: 'destructive', title: "Xəta", description: "Müraciət etmək üçün tələbə kimi daxil olmalısınız." });
+            return;
+        }
+
+        const isAlreadyMember = (project.teamMemberIds || []).includes(user.id);
+        const isAlreadyApplicant = (project.applicantIds || []).includes(user.id);
+
+        if(isAlreadyMember) {
+            toast({ variant: 'destructive', title: "Xəta", description: "Siz artıq bu layihənin üzvüsünüz." });
+            return;
+        }
+
+        if(isAlreadyApplicant) {
+            toast({ title: "Müraciətiniz Qeydə Alınıb", description: "Bu layihəyə artıq müraciət etmisiniz." });
+            return;
+        }
+
+        const application: Invitation = {
+            id: uuidv4(),
+            organizationId: project.organization.id,
+            studentId: user.id,
+            projectId: project.id,
+            status: 'müraciət',
+            createdAt: new Date(),
+        };
+
+        addInvitation(application, project.id);
+        toast({ title: "Müraciət Göndərildi", description: `"${project.title}" layihəsinə müraciətiniz uğurla göndərildi.` });
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                 <div className="flex items-center gap-3 mb-2">
+                    <Avatar className="h-10 w-10">
+                        <AvatarImage src={project.organization.logoUrl} />
+                        <AvatarFallback>{project.organization.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                        <CardTitle className="text-lg">{project.title}</CardTitle>
+                        <CardDescription>{project.organization.name}</CardDescription>
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <p className="text-sm text-muted-foreground line-clamp-3 mb-4">{project.description}</p>
+                <Button onClick={handleApply} className="w-full">
+                    <Briefcase className="mr-2 h-4 w-4" /> Müraciət Et
+                </Button>
+            </CardContent>
+        </Card>
+    );
+};
+
+
 export default function HomePage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [topTalents, setTopTalents] = useState<Student[]>([]);
   const [newMembers, setNewMembers] = useState<Student[]>([]);
   const [strongestProjects, setStrongestProjects] = useState<EnrichedProject[]>([]);
+  const [organizationProjects, setOrganizationProjects] = useState<OrgProject[]>([]);
   const [popularSkills, setPopularSkills] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -87,7 +157,7 @@ export default function HomePage() {
     const sortedByTalent = [...enrichedStudents].sort((a, b) => (b.talentScore || 0) - (a.talentScore || 0));
     setTopTalents(sortedByTalent.slice(0, 10));
     
-    // Strongest Projects (from top 5 students)
+    // Strongest Student Projects (from top 5 students)
     const allProjects = getProjects();
     const topStudentIds = sortedByTalent.slice(0,5).map(s => s.id);
     const projectsFromTopStudents: EnrichedProject[] = allProjects
@@ -97,6 +167,16 @@ export default function HomePage() {
             student: getStudentById(p.studentId)
         }));
     setStrongestProjects(projectsFromTopStudents.slice(0, 3));
+    
+     // Organization Projects
+    const organizations = getOrganizations();
+    const orgProjects: OrgProject[] = organizations.flatMap(org => 
+        (org.projectIds || [])
+            .map(projectId => getProjects().find(p => p.id === projectId))
+            .filter((p): p is Project => !!p)
+            .map(p => ({ ...p, organization: org }))
+    ).slice(0, 3); // take first 3 org projects
+    setOrganizationProjects(orgProjects);
     
     // Popular skills
     const allSkills = enrichedStudents.flatMap(s => s.skills).map(s => s.name);
@@ -204,11 +284,32 @@ export default function HomePage() {
               </div>
            )}
         </section>
+
+        {/* Organization Projects Section */}
+        <section className="py-12 bg-muted -mx-4 px-4 rounded-lg">
+             <div className="text-center mb-12">
+                <h2 className="text-3xl md:text-4xl font-bold">Aktiv Təşkilat Layihələri</h2>
+                <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Tərəfdaş təşkilatlarımızın təqdim etdiyi layihələrə qoşulun və real təcrübə qazanın.</p>
+            </div>
+             {isLoading ? (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <Skeleton className="h-48 w-full" />
+                        <Skeleton className="h-48 w-full" />
+                        <Skeleton className="h-48 w-full" />
+                    </div>
+                ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {organizationProjects.map(project => (
+                        <OrganizationProjectCard key={project.id} project={project} />
+                    ))}
+                </div>
+            )}
+        </section>
         
         {/* Strongest Projects & Popular Skills Section */}
         <section className="py-12 grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
             <div className="lg:col-span-2">
-                <h2 className="text-3xl md:text-4xl font-bold mb-8">Ən Güclü Layihələr</h2>
+                <h2 className="text-3xl md:text-4xl font-bold mb-8">Ən Güclü Tələbə Layihələri</h2>
                 {isLoading ? (
                      <div className="space-y-4">
                         <Skeleton className="h-32 w-full" />

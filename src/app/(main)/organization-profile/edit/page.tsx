@@ -27,11 +27,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { uploadFile } from '@/services/file-upload';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const orgProfileSchema = z.object({
   name: z.string().min(2, { message: 'Təşkilat adı ən azı 2 hərfdən ibarət olmalıdır.' }),
   companyName: z.string().min(2, { message: 'Şirkət adı ən azı 2 hərfdən ibarət olmalıdır.' }),
   sector: z.string().min(2, { message: 'Sektor adı ən azı 2 hərfdən ibarət olmalıdır.' }),
+  logoFile: z.any().optional(),
 });
 
 const projectSchema = z.object({
@@ -80,14 +83,38 @@ export default function EditOrganizationProfilePage() {
   const onProfileSubmit: SubmitHandler<z.infer<typeof orgProfileSchema>> = async (data) => {
     if (!user) return;
     setIsSaving(true);
-    const updatedUser = { ...user, ...data };
-    const success = updateUser(updatedUser);
-    
-    if (success) {
-      toast({ title: "Profil məlumatları uğurla yeniləndi!" });
-    } else {
-      toast({ variant: "destructive", title: "Xəta", description: "Profil yenilənərkən xəta baş verdi." });
+
+    let logoUrl = organization.logoUrl;
+
+    try {
+        if (data.logoFile && data.logoFile.length > 0) {
+            const file = data.logoFile[0];
+            toast({ title: "Logo Yüklənir..."});
+            const response = await uploadFile(file);
+            logoUrl = response.url;
+        }
+
+        const updatedUser = { 
+            ...user, 
+            name: data.name,
+            companyName: data.companyName,
+            sector: data.sector,
+            logoUrl: logoUrl 
+        };
+        
+        const success = updateUser(updatedUser);
+        
+        if (success) {
+            toast({ title: "Profil məlumatları uğurla yeniləndi!" });
+            orgForm.reset(data); // reset form with new data
+        } else {
+            toast({ variant: "destructive", title: "Xəta", description: "Profil yenilənərkən xəta baş verdi." });
+        }
+
+    } catch (error) {
+        toast({ variant: "destructive", title: "Xəta", description: "Logo yüklənərkən xəta baş verdi." });
     }
+    
     setIsSaving(false);
   };
   
@@ -101,7 +128,8 @@ export default function EditOrganizationProfilePage() {
           role: 'Təşkilat Layihəsi', // Default role
           status: 'davam edir', // Default status
           teamMemberIds: [],
-          invitedStudentIds: []
+          invitedStudentIds: [],
+          applicantIds: []
         };
 
       addProjectToData(newProject);
@@ -161,11 +189,28 @@ export default function EditOrganizationProfilePage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Building /> Təşkilat Məlumatları</CardTitle>
-          <CardDescription>Rəsmi məlumatlarınızı yeniləyin.</CardDescription>
+          <CardDescription>Rəsmi məlumatlarınızı və logonuzu yeniləyin.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...orgForm}>
             <form onSubmit={orgForm.handleSubmit(onProfileSubmit)} className="space-y-6">
+                <div className="flex items-center gap-6">
+                    {organization.logoUrl && <Avatar className="h-20 w-20"><AvatarImage src={organization.logoUrl} /><AvatarFallback>{organization.name.charAt(0)}</AvatarFallback></Avatar>}
+                    <FormField
+                    control={orgForm.control}
+                    name="logoFile"
+                    render={({ field: { onChange, value, ...rest } }) => (
+                        <FormItem className="flex-1">
+                        <FormLabel>Logo (kvadrat şəkil tövsiyə olunur)</FormLabel>
+                        <FormControl>
+                            <Input type="file" accept="image/*" onChange={e => onChange(e.target.files)} {...rest} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                </div>
+
               <FormField name="name" control={orgForm.control} render={({ field }) => (
                 <FormItem>
                   <FormLabel>Təşkilatın Adı</FormLabel>
@@ -198,7 +243,7 @@ export default function EditOrganizationProfilePage() {
        <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Briefcase /> Layihələri İdarə Et</CardTitle>
-          <CardDescription>Yeni layihələr yaradın və ya mövcud olanları silin.</CardDescription>
+          <CardDescription>Yeni layihələr yaradın və ya mövcud olanları silin. Tələbələr bu layihələrə müraciət edə biləcəklər.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...projectForm}>

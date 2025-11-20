@@ -32,7 +32,7 @@ export interface Skill {
 
 export interface Project {
   id: string;
-  studentId: string;
+  studentId: string; // Owner ID (can be student or organization)
   title: string;
   description: string;
   role: string;
@@ -41,6 +41,7 @@ export interface Project {
   teamMembers?: string[];
   teamMemberIds?: string[];
   invitedStudentIds?: string[];
+  applicantIds?: string[];
   status: 'davam edir' | 'tamamlanıb';
 }
 
@@ -106,6 +107,7 @@ export interface Organization extends BaseUser {
     name: string;
     companyName: string;
     sector: string;
+    logoUrl?: string;
     savedStudentIds: string[];
     projectIds?: string[];
 }
@@ -126,12 +128,13 @@ export interface CategoryData {
     name: string;
 }
 
+export type InvitationStatus = 'gözləyir' | 'qəbul edildi' | 'rədd edildi' | 'müraciət';
 export interface Invitation {
     id: string;
     organizationId: string;
     studentId: string;
     projectId: string;
-    status: 'gözləyir' | 'qəbul edildi' | 'rədd edildi';
+    status: InvitationStatus;
     createdAt: Date;
 }
 

@@ -52,7 +52,7 @@ export const getProjectsByIds = (ids: string[]): Project[] => {
 }
 
 export const getProjectsByStudentId = (studentId: string): Project[] => {
-  return projects.filter(p => p.studentId === studentId).map(p => ({...p}));
+  return projects.filter(p => p.studentId === studentId || (p.teamMemberIds || []).includes(studentId)).map(p => ({...p}));
 };
 
 export const getAchievementsByStudentId = (studentId: string): Achievement[] => {
@@ -66,6 +66,11 @@ export const getCertificatesByStudentId = (studentId: string): Certificate[] => 
 export const getInvitationsByStudentId = (studentId: string): Invitation[] => {
     return invitations.filter(i => i.studentId === studentId).map(i => ({...i}));
 }
+
+export const getInvitationsByOrganizationId = (orgId: string): Invitation[] => {
+    return invitations.filter(i => i.organizationId === orgId).map(i => ({...i}));
+}
+
 
 // --- DATA MUTATION FUNCTIONS ---
 export const addUser = (user: AppUser) => {
@@ -84,7 +89,7 @@ export const updateUser = (user: AppUser): boolean => {
 export const deleteUser = (userId: string): boolean => {
     const initialLength = users.length;
     users = users.filter(u => u.id !== userId);
-    // Also delete associated data
+    // Also delete associated data if they are the owner
     projects = projects.filter(p => p.studentId !== userId);
     achievements = achievements.filter(a => a.studentId !== userId);
     certificates = certificates.filter(c => c.studentId !== userId);
@@ -95,10 +100,10 @@ export const addProject = (project: Project): void => {
   projects.push(project);
 };
 
-export const deleteProject = (projectId: string, studentId: string): void => {
+export const deleteProject = (projectId: string, ownerId: string): void => {
   projects = projects.filter(p => p.id !== projectId);
-  const user = users.find(u => u.id === studentId) as Student | Organization | undefined;
-  if(user && user.projectIds){
+  const user = users.find(u => u.id === ownerId) as Student | Organization | undefined;
+  if(user && 'projectIds' in user && user.projectIds){
     user.projectIds = user.projectIds.filter(id => id !== projectId);
   }
 };
@@ -140,10 +145,13 @@ export const addInvitation = (invitation: Invitation, projectId: string) => {
     invitations.push(invitation);
     const project = projects.find(p => p.id === projectId);
     if (project) {
-        if (!project.invitedStudentIds) {
-            project.invitedStudentIds = [];
+        if(invitation.status === 'müraciət') {
+            if (!project.applicantIds) project.applicantIds = [];
+            project.applicantIds.push(invitation.studentId);
+        } else {
+             if (!project.invitedStudentIds) project.invitedStudentIds = [];
+             project.invitedStudentIds.push(invitation.studentId);
         }
-        project.invitedStudentIds.push(invitation.studentId);
     }
 }
 
@@ -151,18 +159,24 @@ export const updateInvitationStatus = (invitationId: string, status: 'qəbul edi
     const invitation = invitations.find(i => i.id === invitationId);
     if (invitation) {
         invitation.status = status;
+        
+        const project = projects.find(p => p.id === projectId);
+        if(!project) return;
+
+        // remove from applicant/invited lists
+        if (project.applicantIds) {
+            project.applicantIds = project.applicantIds.filter(id => id !== studentId);
+        }
+        if (project.invitedStudentIds) {
+            project.invitedStudentIds = project.invitedStudentIds.filter(id => id !== studentId);
+        }
+
+        // if accepted, add to team
         if (status === 'qəbul edildi') {
-            const project = projects.find(p => p.id === projectId);
-            if (project) {
-                if (!project.teamMemberIds) {
-                    project.teamMemberIds = [];
-                }
-                project.teamMemberIds.push(studentId);
-                // remove from invited
-                if (project.invitedStudentIds) {
-                    project.invitedStudentIds = project.invitedStudentIds.filter(id => id !== studentId);
-                }
+            if (!project.teamMemberIds) {
+                project.teamMemberIds = [];
             }
+            project.teamMemberIds.push(studentId);
         }
     }
 }

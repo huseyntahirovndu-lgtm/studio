@@ -1,7 +1,7 @@
 'use client';
 import { useAuth } from '@/hooks/use-auth';
 import { useParams } from 'next/navigation';
-import { Student, Project, Achievement, Certificate, Organization, Invitation, Skill } from '@/types';
+import { Student, Project, Achievement, Certificate, Organization, Invitation, Skill, InvitationStatus } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { Star, Linkedin, Github, Dribbble, Instagram, Link as LinkIcon, Award, B
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { getStudentById, getProjectsByStudentId, getAchievementsByStudentId, getCertificatesByStudentId, getProjectsByIds, addInvitation } from '@/lib/data';
+import { getStudentById, getProjectsByStudentId, getAchievementsByStudentId, getCertificatesByStudentId, getProjectsByIds, addInvitation, getOrganizationById } from '@/lib/data';
 import {
   Dialog,
   DialogContent,
@@ -185,6 +185,14 @@ export default function ProfilePage() {
     }
   };
 
+  const getProjectOwner = (project: Project): { name: string; logoUrl?: string } => {
+    if (project.studentId === student.id) {
+        return { name: `${student.firstName} ${student.lastName}`, logoUrl: student.profilePictureUrl };
+    }
+    const org = getOrganizationById(project.studentId);
+    return org ? { name: org.name, logoUrl: org.logoUrl } : { name: 'Naməlum' };
+};
+
   return (
     <div className="container mx-auto max-w-6xl py-8 md:py-12 px-4">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -223,10 +231,18 @@ export default function ProfilePage() {
                         </DialogTrigger>
                         <DialogContent>
                             <DialogHeader>
-                                <DialogTitle>Layihəyə Dəvət Et</DialogTitle>
-                                <DialogDescription>
-                                    {student.firstName} {student.lastName} tələbəsini hansı layihəyə dəvət etmək istəyirsiniz?
-                                </DialogDescription>
+                                <div className="flex items-center gap-3 mb-4">
+                                    <Avatar className="h-12 w-12">
+                                        <AvatarImage src={organization.logoUrl} />
+                                        <AvatarFallback>{organization.name.charAt(0)}</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <DialogTitle>Layihəyə Dəvət Et</DialogTitle>
+                                        <DialogDescription>
+                                            {student.firstName} {student.lastName} tələbəsini hansı layihəyə dəvət etmək istəyirsiniz?
+                                        </DialogDescription>
+                                    </div>
+                                </div>
                             </DialogHeader>
                             <div className="py-4">
                                 <Select onValueChange={setSelectedProject}>
@@ -287,16 +303,29 @@ export default function ProfilePage() {
                         <CardTitle className="flex items-center gap-2"><Briefcase /> Layihələr</CardTitle>
                     </CardHeader>
                     <CardContent className="divide-y">
-                        {projects.map((project) => (
-                            <div key={project.id} className="py-4 first:pt-0 last:pb-0">
-                                <h3 className="font-semibold">{project.title} <span className="text-sm font-normal text-muted-foreground">- {project.role}</span></h3>
-                                <p className="text-sm text-muted-foreground mt-1">{project.description}</p>
-                                {project.teamMembers && project.teamMembers.length > 0 && (
-                                  <p className="text-xs text-muted-foreground mt-1"><strong>Komanda:</strong> {project.teamMembers.join(', ')}</p>
-                                )}
-                                {project.link && <Button variant="link" asChild className="p-0 h-auto mt-1"><a href={project.link} target="_blank" rel="noopener noreferrer">Layihəyə bax</a></Button>}
-                            </div>
-                        ))}
+                        {projects.map((project) => {
+                            const owner = getProjectOwner(project);
+                            return (
+                                <div key={project.id} className="py-4 first:pt-0 last:pb-0">
+                                    <h3 className="font-semibold">{project.title} <span className="text-sm font-normal text-muted-foreground">- {project.role}</span></h3>
+                                    
+                                     <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                                        <Avatar className="h-4 w-4">
+                                            <AvatarImage src={owner.logoUrl} />
+                                            <AvatarFallback>{owner.name.charAt(0)}</AvatarFallback>
+                                        </Avatar>
+                                        <span>{owner.name}</span>
+                                    </div>
+                                    
+                                    <p className="text-sm text-muted-foreground mt-2">{project.description}</p>
+                                    
+                                    {project.teamMembers && project.teamMembers.length > 0 && (
+                                    <p className="text-xs text-muted-foreground mt-1"><strong>Komanda:</strong> {project.teamMembers.join(', ')}</p>
+                                    )}
+                                    {project.link && <Button variant="link" asChild className="p-0 h-auto mt-1"><a href={project.link} target="_blank" rel="noopener noreferrer">Layihəyə bax</a></Button>}
+                                </div>
+                            )
+                        })}
                     </CardContent>
                 </Card>
             )}
