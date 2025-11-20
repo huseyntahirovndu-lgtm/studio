@@ -75,17 +75,6 @@ export function Header() {
               {link.label}
             </Link>
           ))}
-           {appUser?.role === 'admin' && (
-             <Link
-              href="/admin/dashboard"
-              className={cn(
-                "transition-colors hover:text-primary-foreground/80 flex items-center gap-2",
-                pathname.startsWith('/admin') ? "text-primary-foreground" : "text-primary-foreground/60"
-              )}
-            >
-              <ShieldCheck className="h-4 w-4"/> Admin Paneli
-            </Link>
-           )}
         </nav>
         <div className="flex flex-1 items-center justify-end space-x-2">
           {loading ? (
@@ -178,17 +167,6 @@ export function Header() {
                       {link.label}
                     </Link>
                   ))}
-                   {appUser?.role === 'admin' && (
-                    <Link
-                      href="/admin/dashboard"
-                      className={cn(
-                        "transition-colors hover:text-foreground/80 flex items-center gap-2",
-                        pathname.startsWith('/admin') ? "text-primary" : "text-foreground/60"
-                      )}
-                    >
-                      <ShieldCheck className="h-5 w-5"/> Admin Paneli
-                    </Link>
-                  )}
                 </nav>
                 <div className="mt-auto p-4 border-t flex flex-col gap-2">
                    {!user && !loading && (
