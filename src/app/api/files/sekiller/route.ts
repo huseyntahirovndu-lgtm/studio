@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
 
     // Generate a unique filename
     const filename = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
-    const uploadsPath = join(process.cwd(), 'uploads');
+    const uploadsPath = join(process.cwd(), 'api');
     const path = join(uploadsPath, filename);
     
     // Ensure the directory exists

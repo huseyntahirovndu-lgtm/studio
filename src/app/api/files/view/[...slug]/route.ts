@@ -13,7 +13,7 @@ export async function GET(
   }
 
   const filename = slug.join('/');
-  const filePath = join(process.cwd(), 'uploads', filename);
+  const filePath = join(process.cwd(), 'api', filename);
 
   try {
     const fileBuffer = await readFile(filePath);
