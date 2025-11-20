@@ -28,8 +28,8 @@ export default function RankingsPage() {
   const categories = getCategories();
 
   useEffect(() => {
-    // Simulate fetching data
-    const allStudents = getStudents();
+    // Fetch only approved students
+    const allStudents = getStudents().filter(s => s.status === 'təsdiqlənmiş');
     const studentsWithPics = allStudents.map((student, index) => {
       const placeholder = PlaceHolderImages.find(p => p.id.slice(-1) === student.id.slice(-1)) || PlaceHolderImages[index % PlaceHolderImages.length];
       return {

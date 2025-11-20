@@ -36,8 +36,8 @@ export default function SearchClient() {
   const categories = getCategories();
 
   useEffect(() => {
-    // This effect runs when the component mounts
-    const allStudents = getStudents();
+    // Fetch only approved students
+    const allStudents = getStudents().filter(s => s.status === 'təsdiqlənmiş');
     const studentsWithPics = allStudents.map((student, index) => {
       const placeholder = PlaceHolderImages.find(p => p.id.slice(-1) === student.id.slice(-1)) || PlaceHolderImages[index % PlaceHolderImages.length];
       return {

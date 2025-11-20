@@ -71,7 +71,7 @@ export default function HomePage() {
 
   useEffect(() => {
     // Simulate fetching data
-    const allStudents = getStudents();
+    const allStudents = getStudents().filter(s => s.status === 'təsdiqlənmiş');
     const enrichedStudents = allStudents.map((student, index) => {
       const placeholder = PlaceHolderImages[index % PlaceHolderImages.length];
       return {
@@ -159,12 +159,12 @@ export default function HomePage() {
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
               title="Ümumi Tələbə Sayı"
-              value={isLoading ? '...' : (students?.length.toString() ?? '0')}
+              value={isLoading ? '...' : (getStudents().length.toString() ?? '0')}
               icon={Users}
             />
             <StatCard
               title="Aktiv Profillər"
-              value={isLoading ? '...' : (students?.filter(s => s.status === 'təsdiqlənmiş').length.toString() ?? '0')}
+              value={isLoading ? '...' : (students?.length.toString() ?? '0')}
               icon={Users}
             />
             <StatCard

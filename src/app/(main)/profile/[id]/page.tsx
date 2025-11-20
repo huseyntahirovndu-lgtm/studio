@@ -42,14 +42,20 @@ export default function ProfilePage() {
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [isInviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAllowedToView, setIsAllowedToView] = useState(false);
 
   useEffect(() => {
     if (!studentId) return;
+    
+    const studentData = getStudentById(studentId);
+    if (studentData) {
+      // Check if user is allowed to view the profile
+      const isApproved = studentData.status === 'təsdiqlənmiş';
+      const isAdmin = currentUser?.role === 'admin';
+      const isOwner = currentUser?.id === studentId;
 
-    const fetchData = async () => {
-      setIsLoading(true);
-      const studentData = getStudentById(studentId);
-      if (studentData) {
+      if (isApproved || isAdmin || isOwner) {
+        setIsAllowedToView(true);
         const studentProjects = getProjectsByStudentId(studentId);
         const studentAchievements = getAchievementsByStudentId(studentId);
         const studentCertificates = getCertificatesByStudentId(studentId);
@@ -63,12 +69,15 @@ export default function ProfilePage() {
         setProjects(studentProjects);
         setAchievements(studentAchievements);
         setCertificates(studentCertificates);
+      } else {
+        setIsAllowedToView(false);
       }
-      setIsLoading(false);
-    };
+    } else {
+        setIsAllowedToView(false);
+    }
+    setIsLoading(false);
 
-    fetchData();
-  }, [studentId]);
+  }, [studentId, currentUser]);
 
   useEffect(() => {
     if (organization?.projectIds) {
@@ -149,6 +158,10 @@ export default function ProfilePage() {
   if (isLoading) {
     return <div className="container mx-auto py-8 text-center">Yüklənir...</div>;
   }
+  
+  if (!isAllowedToView) {
+    return <div className="container mx-auto py-8 text-center">Tələbə tapılmadı və ya profil təsdiqlənməyib.</div>;
+  }
 
   if (!student) {
     return <div className="container mx-auto py-8 text-center">Tələbə tapılmadı.</div>;
@@ -193,6 +206,9 @@ export default function ProfilePage() {
                 </div>
                 <p className="text-sm text-muted-foreground">İstedad Balı</p>
               </div>
+              {student.status !== 'təsdiqlənmiş' && (
+                  <Badge variant="destructive" className="mt-2">Təsdiqlənməyib</Badge>
+              )}
                {organization && (
                  <div className='flex items-center gap-2 mt-4 w-full'>
                     <Button onClick={handleBookmark} variant={isSaved ? 'default' : 'outline'} className="w-full">
