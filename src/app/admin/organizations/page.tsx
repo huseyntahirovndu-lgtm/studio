@@ -26,17 +26,48 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Input } from "@/components/ui/input";
-import { getOrganizations } from "@/lib/data";
+import { 
+    DropdownMenu, 
+    DropdownMenuContent, 
+    DropdownMenuItem, 
+    DropdownMenuLabel, 
+    DropdownMenuSeparator, 
+    DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { getOrganizations, deleteUser } from "@/lib/data";
 import { Organization } from "@/types";
+import { useToast } from "@/hooks/use-toast";
 
 
 export default function AdminOrganizationsPage() {
     const [organizations, setOrganizations] = useState<Organization[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
+    const { toast } = useToast();
 
     useEffect(() => {
         setOrganizations(getOrganizations());
     }, []);
+
+    const handleDeleteOrganization = (orgId: string) => {
+        const success = deleteUser(orgId);
+        if (success) {
+            setOrganizations(prev => prev.filter(o => o.id !== orgId));
+            toast({ title: "Təşkilat uğurla silindi." });
+        } else {
+            toast({ variant: 'destructive', title: "Xəta", description: "Təşkilat silinərkən xəta baş verdi." });
+        }
+    };
 
     const filteredOrganizations = useMemo(() => {
         return organizations.filter(org => 
@@ -89,8 +120,43 @@ export default function AdminOrganizationsPage() {
                         <TableCell className="hidden md:table-cell">
                             {new Date(org.createdAt).toLocaleDateString()}
                         </TableCell>
-                        <TableCell>
-                            {/* Actions can be added here */}
+                        <TableCell className="text-right">
+                           <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                    aria-haspopup="true"
+                                    size="icon"
+                                    variant="ghost"
+                                    >
+                                     <MoreHorizontal className="h-4 w-4" />
+                                     <span className="sr-only">Menyunu aç</span>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Əməliyyatlar</DropdownMenuLabel>
+                                    <DropdownMenuItem asChild>
+                                        <Link href={`/admin/organizations/edit/${org.id}`}>Redaktə et</Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                     <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">Sil</DropdownMenuItem>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Təsdiq edirsiniz?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Bu əməliyyat geri qaytarılmazdır. "{org.name}" təşkilatı sistemdən həmişəlik silinəcək.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Ləğv et</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleDeleteOrganization(org.id)} className="bg-destructive hover:bg-destructive/90">Bəli, sil</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </DropdownMenuContent>
+                                </DropdownMenu>
                         </TableCell>
                     </TableRow>
                     ))}
