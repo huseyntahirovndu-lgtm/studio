@@ -108,6 +108,78 @@
       "status": "təsdiqlənmiş",
       "createdAt": "2024-04-18T09:20:00Z"
     },
+     {
+      "id": "student-5",
+      "role": "student",
+      "firstName": "Polad",
+      "lastName": "Əlizadə",
+      "email": "polad.elizade@example.com",
+      "faculty": "Memarlıq və mühəndislik",
+      "major": "İnformasiya Texnologiyaları",
+      "courseYear": 3,
+      "educationForm": "Əyani",
+      "gpa": 92.0,
+      "skills": [
+        {"name": "React", "level": "İrəli"},
+        {"name": "Node.js", "level": "Orta"},
+        {"name": "Startup", "level": "İrəli"}
+      ],
+      "category": "Startup, Texnologiya",
+      "projectIds": [],
+      "achievementIds": [],
+      "certificateIds": [],
+      "talentScore": 94,
+      "status": "təsdiqlənmiş",
+      "createdAt": "2024-05-15T12:00:00Z"
+    },
+    {
+      "id": "student-6",
+      "role": "student",
+      "firstName": "Şövkət",
+      "lastName": "Əlisoy",
+      "email": "shovket.elisoy@example.com",
+      "faculty": "Tibb",
+      "major": "Müalicə işi (SABAH)",
+      "courseYear": 3,
+      "educationForm": "Əyani",
+      "gpa": 97.5,
+      "skills": [
+        {"name": "Kliniki tədqiqat", "level": "Orta"},
+        {"name": "Anatomiya", "level": "İrəli"},
+        {"name": "Elmi məqalə yazmaq", "level": "Orta"}
+      ],
+      "category": "Elmi məqalə yazmaq",
+      "projectIds": [],
+      "achievementIds": [],
+      "certificateIds": [],
+      "talentScore": 95,
+      "status": "təsdiqlənmiş",
+      "createdAt": "2024-05-16T14:00:00Z"
+    },
+    {
+      "id": "student-7",
+      "role": "student",
+      "firstName": "Zeynəb",
+      "lastName": "Seyidli",
+      "email": "zeyneb.seyidli@example.com",
+      "faculty": "Tarix-filologiya",
+      "major": "Jurnalistika",
+      "courseYear": 2,
+      "educationForm": "Əyani",
+      "gpa": 88.0,
+      "skills": [
+        {"name": "Məqalə yazmaq", "level": "İrəli"},
+        {"name": "Araşdırmaçı jurnalistika", "level": "Orta"},
+        {"name": "Sosial Media Marketinqi", "level": "Başlanğıc"}
+      ],
+      "category": "Media və yaradıcılıq",
+      "projectIds": [],
+      "achievementIds": [],
+      "certificateIds": [],
+      "talentScore": 89,
+      "status": "təsdiqlənmiş",
+      "createdAt": "2024-05-17T16:00:00Z"
+    },
     {
       "id": "org-thik",
       "role": "organization",

@@ -26,21 +26,21 @@
     },
     {
       "id": "student-5",
-      "description": "A student athlete running on a track.",
-      "imageUrl": "https://images.unsplash.com/photo-1485686531765-ba63b07845a7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxzdHVkZW50JTIwcnVubmluZ3xlbnwwfHx8fDE3NjU1NjA1MjF8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "student running"
+      "description": "Polad Əlizadə - A young man working on a laptop with code on the screen.",
+      "imageUrl": "https://tec.ndu.edu.az/api/files/sekiller/1760210826936-3b46017b.jpg",
+      "imageHint": "male technology"
     },
     {
       "id": "student-6",
-      "description": "A female student focused on coding on her computer",
-      "imageUrl": "https://images.unsplash.com/photo-1549082984-1323b94df9a6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHx3b21hbiUyMGNvZGluZ3xlbnwwfHx8fDE3NjM1MjQ0MDN8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "woman coding"
+      "description": "Şövkət Əlisoy - A female medical student in a modern setting.",
+      "imageUrl": "https://tec.ndu.edu.az/api/files/sekiller/1760210143161-04a7beb8.jpg",
+      "imageHint": "female medical"
     },
     {
       "id": "student-7",
-      "description": "A male student in a science lab",
-      "imageUrl": "https://images.unsplash.com/photo-1630959302862-82cec6653d60?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxtYW4lMjBzY2llbmNlfGVufDB8fHx8MTc2MzU2MjIyN3ww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "man science"
+      "description": "Zeynəb Seyidli - A female journalism student writing in a notebook.",
+      "imageUrl": "https://tec.ndu.edu.az/api/files/sekiller/1760211530654-3f3af9a4.jpg",
+      "imageHint": "female journalism"
     },
     {
       "id": "student-8",

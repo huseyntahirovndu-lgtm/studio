@@ -23,7 +23,10 @@ const FAKE_PASSWORDS: { [email: string]: string } = {
   'leyla@example.com': 'password123',
   'contact@techsolutions.com': 'password123',
   'startup@ndu.edu.az': 'password123',
-  'admin@ndu.edu.az': 'adminpassword'
+  'admin@ndu.edu.az': 'adminpassword',
+  'polad.elizade@example.com': 'password123',
+  'shovket.elisoy@example.com': 'password123',
+  'zeyneb.seyidli@example.com': 'password123'
 };
 
 
