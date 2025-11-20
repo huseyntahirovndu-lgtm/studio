@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile } from 'fs/promises';
+import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 
 export async function POST(request: NextRequest) {
@@ -19,9 +19,8 @@ export async function POST(request: NextRequest) {
     const publicPath = join(process.cwd(), 'public', 'sekiller');
     const path = join(publicPath, filename);
     
-    // Ensure the directory exists (optional, as Next.js public is usually there)
-    // For more robust applications, you might want to use fs.mkdir if the path is dynamic
-    // await require('fs/promises').mkdir(publicPath, { recursive: true });
+    // Ensure the directory exists
+    await mkdir(publicPath, { recursive: true });
 
     await writeFile(path, buffer);
     console.log(`File uploaded to ${path}`);
