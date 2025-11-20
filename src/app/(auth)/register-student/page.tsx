@@ -35,7 +35,7 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { faculties, categories } from '@/lib/data';
+import { getFaculties, getCategories } from '@/lib/data';
 import type { Student } from '@/types';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -70,6 +70,9 @@ export default function RegisterStudentPage() {
   const { register } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+
+  const faculties = getFaculties();
+  const categories = getCategories();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -296,6 +299,7 @@ export default function RegisterStudentPage() {
                       render={({ field }) => {
                         return (
                           <FormItem
+                            key={item.id}
                             className="flex flex-row items-start space-x-3 space-y-0"
                           >
                             <FormControl>

@@ -18,7 +18,7 @@ import { FacultyBarChart } from '@/components/charts/faculty-bar-chart';
 import { Student, Project, Certificate } from '@/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getStudents, getProjects, getCertificates, faculties, getStudentById } from '@/lib/data';
+import { getStudents, getProjects, getCertificates, getFaculties, getStudentById } from '@/lib/data';
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -49,6 +49,8 @@ export default function HomePage() {
   const [strongestProjects, setStrongestProjects] = useState<EnrichedProject[]>([]);
   const [popularSkills, setPopularSkills] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const faculties = getFaculties();
 
   const successStories = [
       {

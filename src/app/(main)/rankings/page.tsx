@@ -1,7 +1,7 @@
 'use client';
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { getStudents, faculties, categories } from '@/lib/data';
+import { getStudents, getFaculties, getCategories } from '@/lib/data';
 import { Student } from '@/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import {
@@ -23,6 +23,9 @@ export default function RankingsPage() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
   const [enrichedStudents, setEnrichedStudents] = useState<Student[]>([]);
+
+  const faculties = getFaculties();
+  const categories = getCategories();
 
   useEffect(() => {
     // Simulate fetching data

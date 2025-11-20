@@ -17,8 +17,9 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 import { Student } from '@/types';
-import { categories as allCategories } from '@/lib/data';
+import { getCategories } from '@/lib/data';
 
+const allCategories = getCategories();
 const categories = allCategories.map(c => c.name);
 
 

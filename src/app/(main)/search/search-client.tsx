@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { getStudents, faculties, categories } from '@/lib/data';
+import { getStudents, getFaculties, getCategories } from '@/lib/data';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
@@ -31,6 +31,9 @@ export default function SearchClient() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [enrichedStudents, setEnrichedStudents] = useState<Student[]>([]);
+
+  const faculties = getFaculties();
+  const categories = getCategories();
 
   useEffect(() => {
     // This effect runs when the component mounts

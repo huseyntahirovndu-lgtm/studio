@@ -213,77 +213,84 @@ function EditProfilePageComponent() {
     }
   }, [toast, updateUser, currentUser]);
 
-  const handleGenericSubmit = (submitAction: () => void, successMessage: string, formToReset?: any) => {
-    if (!targetUser) return;
-    setIsSaving(true);
-    try {
-      submitAction();
-      toast({ title: successMessage });
-      if (formToReset) formToReset.reset();
-      fetchData();
-      const updatedStudent = getStudentById(targetUser.id);
-      if (updatedStudent) {
-          triggerTalentScoreUpdate(updatedStudent);
-      }
-    } catch (error) {
-      console.error(`Error: ${error}`);
-      toast({ variant: "destructive", title: "Xəta", description: "Əməliyyat zamanı xəta baş verdi." });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-  
     const onProfileSubmit: SubmitHandler<z.infer<typeof profileSchema>> = (data) => {
       if (!targetUser) return;
-      handleGenericSubmit(() => {
-          const updatedUser = { ...targetUser, ...data };
-          updateUser(updatedUser as AppUser);
-      }, "Profil məlumatları yeniləndi");
+      
+      const updatedUser: Student = { ...targetUser, ...data };
+      updateUser(updatedUser);
+      triggerTalentScoreUpdate(updatedUser);
+      toast({ title: "Profil məlumatları yeniləndi" });
     };
   
   const onProjectSubmit: SubmitHandler<z.infer<typeof projectSchema>> = (data) => {
-    handleGenericSubmit(() => {
-        const newProject: Project = { ...data, id: uuidv4(), studentId: targetUser!.id, teamMemberIds: [], invitedStudentIds: [] };
-        addProject(newProject);
-    }, "Layihə əlavə edildi", projectForm);
+    if (!targetUser) return;
+    const newProject: Project = { ...data, id: uuidv4(), studentId: targetUser.id, teamMemberIds: [], invitedStudentIds: [] };
+    addProject(newProject);
+    const updatedStudent = {
+      ...targetUser,
+      projectIds: [...(targetUser.projectIds || []), newProject.id]
+    };
+    updateUser(updatedStudent);
+    projectForm.reset();
+    fetchData();
+    triggerTalentScoreUpdate(updatedStudent);
+    toast({ title: "Layihə əlavə edildi" });
   };
   
   const onAchievementSubmit: SubmitHandler<z.infer<typeof achievementSchema>> = (data) => {
-    handleGenericSubmit(() => {
-        const newAchievement: Achievement = { ...data, id: uuidv4(), studentId: targetUser!.id };
-        addAchievement(newAchievement);
-    }, "Nailiyyət əlavə edildi", achievementForm);
+    if (!targetUser) return;
+    const newAchievement: Achievement = { ...data, id: uuidv4(), studentId: targetUser!.id };
+    addAchievement(newAchievement);
+    const updatedStudent = {
+      ...targetUser,
+      achievementIds: [...(targetUser.achievementIds || []), newAchievement.id]
+    };
+    updateUser(updatedStudent);
+    achievementForm.reset();
+    fetchData();
+    triggerTalentScoreUpdate(updatedStudent);
+    toast({ title: "Nailiyyət əlavə edildi" });
   };
   
   const onCertificateSubmit: SubmitHandler<z.infer<typeof certificateSchema>> = (data) => {
-    handleGenericSubmit(() => {
-        const newCertificate: Certificate = { ...data, id: uuidv4(), studentId: targetUser!.id };
-        addCertificate(newCertificate);
-    }, "Sertifikat əlavə edildi", certificateForm);
+    if (!targetUser) return;
+    const newCertificate: Certificate = { ...data, id: uuidv4(), studentId: targetUser!.id };
+    addCertificate(newCertificate);
+    const updatedStudent = {
+      ...targetUser,
+      certificateIds: [...(targetUser.certificateIds || []), newCertificate.id]
+    };
+    updateUser(updatedStudent);
+    certificateForm.reset();
+    fetchData();
+    triggerTalentScoreUpdate(updatedStudent);
+    toast({ title: "Sertifikat əlavə edildi" });
   };
   
   const handleDelete = (docId: string, itemType: 'project' | 'achievement' | 'certificate') => {
       if (!targetUser) return;
-      setIsSaving(true);
+      
+      let updatedStudent: Student = { ...targetUser };
 
-      try {
-          switch (itemType) {
-              case 'project': deleteProject(docId, targetUser.id); break;
-              case 'achievement': deleteAchievement(docId, targetUser.id); break;
-              case 'certificate': deleteCertificate(docId, targetUser.id); break;
-          }
-          toast({ title: "Element silindi", description: "Seçilmiş element uğurla silindi." });
-          fetchData();
-          const updatedStudent = getStudentById(targetUser.id);
-          if (updatedStudent) {
-              triggerTalentScoreUpdate(updatedStudent);
-          }
-      } catch (error) {
-          console.error("Error deleting document:", error);
-          toast({ variant: "destructive", title: "Xəta", description: "Elementi silərkən xəta baş verdi." });
-      } finally {
-          setIsSaving(false);
+      switch (itemType) {
+          case 'project': 
+            deleteProject(docId, targetUser.id); 
+            updatedStudent.projectIds = updatedStudent.projectIds?.filter(id => id !== docId);
+            break;
+          case 'achievement': 
+            deleteAchievement(docId, targetUser.id);
+            updatedStudent.achievementIds = updatedStudent.achievementIds?.filter(id => id !== docId);
+            break;
+          case 'certificate': 
+            deleteCertificate(docId, targetUser.id); 
+            updatedStudent.certificateIds = updatedStudent.certificateIds?.filter(id => id !== docId);
+            break;
       }
+      
+      updateUser(updatedStudent);
+      fetchData();
+      triggerTalentScoreUpdate(updatedStudent);
+      toast({ title: "Element silindi", description: "Seçilmiş element uğurla silindi." });
   };
 
   const handleSkillAdd = async () => {

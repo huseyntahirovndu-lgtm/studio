@@ -2,7 +2,7 @@ import { Student, Project, Achievement, Certificate, CategoryData, FacultyData, 
 import { v4 as uuidv4 } from 'uuid';
 import fullData from './istadad-merkezi.json';
 
-// In-memory data store
+// In-memory data store - Load data once
 let users: AppUser[] = [...fullData.users];
 let projects: Project[] = [...fullData.projects];
 let achievements: Achievement[] = [...fullData.achievements];
@@ -13,7 +13,15 @@ let invitations: Invitation[] = [...fullData.invitations];
 
 // --- DATA ACCESS FUNCTIONS ---
 
-export { users, projects, achievements, certificates, categories, faculties, invitations };
+// Return copies to avoid direct mutation from components
+export const getUsers = (): AppUser[] => [...users];
+export const getProjects = (): Project[] => [...projects];
+export const getAchievements = (): Achievement[] => [...achievements];
+export const getCertificates = (): Certificate[] => [...certificates];
+export const getCategories = (): CategoryData[] => [...categories];
+export const getFaculties = (): FacultyData[] => [...faculties];
+export const getInvitations = (): Invitation[] => [...invitations];
+
 
 export const getStudents = (): Student[] => {
   return users.filter(u => u.role === 'student') as Student[];
@@ -24,43 +32,39 @@ export const getOrganizations = (): Organization[] => {
 };
 
 export const getStudentById = (id: string): Student | undefined => {
-  return users.find(u => u.id === id && u.role === 'student') as Student | undefined;
+  const user = users.find(u => u.id === id && u.role === 'student');
+  return user ? { ...user } as Student : undefined;
 };
 
 export const getOrganizationById = (id: string): Organization | undefined => {
-  return users.find(u => u.id === id && u.role === 'organization') as Organization | undefined;
+  const user = users.find(u => u.id === id && u.role === 'organization');
+  return user ? { ...user } as Organization : undefined;
 };
 
 export const getProjectById = (id: string): Project | undefined => {
-    return projects.find(p => p.id === id);
-}
-
-export const getProjects = (): Project[] => {
-    return projects;
-}
-export const getCertificates = (): Certificate[] => {
-    return certificates;
+    const project = projects.find(p => p.id === id);
+    return project ? { ...project } : undefined;
 }
 
 export const getProjectsByIds = (ids: string[]): Project[] => {
     if (!ids) return [];
-    return projects.filter(p => ids.includes(p.id));
+    return projects.filter(p => ids.includes(p.id)).map(p => ({...p}));
 }
 
 export const getProjectsByStudentId = (studentId: string): Project[] => {
-  return projects.filter(p => p.studentId === studentId);
+  return projects.filter(p => p.studentId === studentId).map(p => ({...p}));
 };
 
 export const getAchievementsByStudentId = (studentId: string): Achievement[] => {
-  return achievements.filter(a => a.studentId === studentId);
+  return achievements.filter(a => a.studentId === studentId).map(a => ({...a}));
 };
 
 export const getCertificatesByStudentId = (studentId: string): Certificate[] => {
-  return certificates.filter(c => c.studentId === studentId);
+  return certificates.filter(c => c.studentId === studentId).map(c => ({...c}));
 };
 
 export const getInvitationsByStudentId = (studentId: string): Invitation[] => {
-    return invitations.filter(i => i.studentId === studentId);
+    return invitations.filter(i => i.studentId === studentId).map(i => ({...i}));
 }
 
 // --- DATA MUTATION FUNCTIONS ---
@@ -80,6 +84,10 @@ export const updateUser = (user: AppUser): boolean => {
 export const deleteUser = (userId: string): boolean => {
     const initialLength = users.length;
     users = users.filter(u => u.id !== userId);
+    // Also delete associated data
+    projects = projects.filter(p => p.studentId !== userId);
+    achievements = achievements.filter(a => a.studentId !== userId);
+    certificates = certificates.filter(c => c.studentId !== userId);
     return users.length < initialLength;
 }
 
@@ -89,10 +97,9 @@ export const addProject = (project: Project): void => {
 
 export const deleteProject = (projectId: string, studentId: string): void => {
   projects = projects.filter(p => p.id !== projectId);
-  const user = getStudentById(studentId);
+  const user = users.find(u => u.id === studentId) as Student | Organization | undefined;
   if(user && user.projectIds){
     user.projectIds = user.projectIds.filter(id => id !== projectId);
-    updateUser(user);
   }
 };
 
@@ -102,10 +109,9 @@ export const addAchievement = (achievement: Achievement): void => {
 
 export const deleteAchievement = (achievementId: string, studentId: string): void => {
   achievements = achievements.filter(a => a.id !== achievementId);
-   const user = getStudentById(studentId);
+   const user = users.find(u => u.id === studentId) as Student | undefined;
   if(user && user.achievementIds){
     user.achievementIds = user.achievementIds.filter(id => id !== achievementId);
-    updateUser(user);
   }
 };
 
@@ -115,10 +121,9 @@ export const addCertificate = (certificate: Certificate): void => {
 
 export const deleteCertificate = (certificateId: string, studentId: string): void => {
   certificates = certificates.filter(c => c.id !== certificateId);
-   const user = getStudentById(studentId);
+   const user = users.find(u => u.id === studentId) as Student | undefined;
   if(user && user.certificateIds){
     user.certificateIds = user.certificateIds.filter(id => id !== certificateId);
-    updateUser(user);
   }
 };
 
@@ -133,7 +138,7 @@ export const deleteCategory = (categoryId: string) => {
 
 export const addInvitation = (invitation: Invitation, projectId: string) => {
     invitations.push(invitation);
-    const project = getProjectById(projectId);
+    const project = projects.find(p => p.id === projectId);
     if (project) {
         if (!project.invitedStudentIds) {
             project.invitedStudentIds = [];
@@ -147,7 +152,7 @@ export const updateInvitationStatus = (invitationId: string, status: 'qəbul edi
     if (invitation) {
         invitation.status = status;
         if (status === 'qəbul edildi') {
-            const project = getProjectById(projectId);
+            const project = projects.find(p => p.id === projectId);
             if (project) {
                 if (!project.teamMemberIds) {
                     project.teamMemberIds = [];

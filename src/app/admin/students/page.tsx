@@ -49,7 +49,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { faculties, deleteUser, updateUser, getStudents } from "@/lib/data";
+import { getFaculties, deleteUser, updateUser, getStudents } from "@/lib/data";
 import type { Student, StudentStatus } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
@@ -59,6 +59,7 @@ export default function AdminStudentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const router = useRouter();
   const { toast } = useToast();
+  const faculties = getFaculties();
 
   useEffect(() => {
     setStudents(getStudents());

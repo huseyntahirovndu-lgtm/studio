@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MoreHorizontal, PlusCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,14 +43,18 @@ import { Label } from "@/components/ui/label";
 import { CategoryData } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '@/hooks/use-toast';
-import { categories as initialCategories, addCategory, deleteCategory } from '@/lib/data';
+import { categories as getCategories, addCategory, deleteCategory } from '@/lib/data';
 
 
 export default function AdminCategoriesPage() {
-  const [categories, setCategories] = useState<CategoryData[]>(initialCategories);
+  const [categories, setCategories] = useState<CategoryData[]>(getCategories());
   const [newCategoryName, setNewCategoryName] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    setCategories(getCategories());
+  }, []);
 
   const handleAddCategory = () => {
     if (newCategoryName.trim()) {
@@ -58,9 +62,8 @@ export default function AdminCategoriesPage() {
         id: uuidv4(),
         name: newCategoryName.trim(),
       };
-      // In a real app, you would call an API to save this
-      setCategories(prev => [...prev, newCategory]);
-      // addCategory(newCategory);
+      addCategory(newCategory);
+      setCategories(getCategories()); // Refresh from the source
       setNewCategoryName('');
       setIsDialogOpen(false);
       toast({ title: "Kateqoriya uğurla əlavə edildi." });
@@ -70,9 +73,8 @@ export default function AdminCategoriesPage() {
   };
 
   const handleDeleteCategory = (categoryId: string) => {
-    // In a real app, you would call an API to delete this
-    setCategories(prev => prev.filter(c => c.id !== categoryId));
-    // deleteCategory(categoryId);
+    deleteCategory(categoryId);
+    setCategories(getCategories()); // Refresh from the source
     toast({ title: "Kateqoriya uğurla silindi.", variant: "destructive" });
   };
 

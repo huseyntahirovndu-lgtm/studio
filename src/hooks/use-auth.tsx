@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppUser, Student, Organization, Admin } from '@/types';
-import { addUser, updateUser as updateUserData, users } from '@/lib/data';
+import { addUser, updateUser as updateUserData, getUsers } from '@/lib/data';
 import { v4 as uuidv4 } from 'uuid';
 
 interface AuthContextType {
@@ -47,7 +47,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = (email: string, pass: string): boolean => {
-    const foundUser = users.find(u => u.email === email);
+    const foundUser = getUsers().find(u => u.email === email);
     const storedPass = FAKE_PASSWORDS[email];
 
     if (foundUser && storedPass === pass) {
@@ -65,7 +65,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const register = (newUser: Omit<Student, 'id'|'createdAt'|'status'> | Omit<Organization, 'id'|'createdAt'>, pass: string): boolean => {
-    if (users.some(u => u.email === newUser.email)) {
+    if (getUsers().some(u => u.email === newUser.email)) {
       return false; // User already exists
     }
 
