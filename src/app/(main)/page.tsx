@@ -218,23 +218,25 @@ export default function HomePage() {
                 ) : (
                     <div className="space-y-6">
                         {strongestProjects.map(project => (
-                            <Card key={project.id}>
-                                <CardHeader>
-                                    <CardTitle className="text-lg">{project.title}</CardTitle>
-                                    <CardDescription>
-                                        <Link href={`/profile/${project.student?.id}`} className="hover:underline flex items-center gap-2">
-                                            <Avatar className="h-6 w-6">
-                                                <AvatarImage src={project.student?.profilePictureUrl} />
-                                                <AvatarFallback>{project.student?.firstName?.[0]}{project.student?.lastName?.[0]}</AvatarFallback>
-                                            </Avatar>
-                                            <span>{project.student?.firstName} {project.student?.lastName}</span>
-                                        </Link>
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-sm text-muted-foreground line-clamp-2">{project.description}</p>
-                                </CardContent>
-                            </Card>
+                            <Link key={project.id} href={`/profile/${project.student?.id}`} className="block">
+                                <Card className="hover:shadow-md hover:border-primary/50 transition-all">
+                                    <CardHeader>
+                                        <CardTitle className="text-lg">{project.title}</CardTitle>
+                                        <CardDescription>
+                                            <div className="flex items-center gap-2">
+                                                <Avatar className="h-6 w-6">
+                                                    <AvatarImage src={project.student?.profilePictureUrl} />
+                                                    <AvatarFallback>{project.student?.firstName?.[0]}{project.student?.lastName?.[0]}</AvatarFallback>
+                                                </Avatar>
+                                                <span>{project.student?.firstName} {project.student?.lastName}</span>
+                                            </div>
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <p className="text-sm text-muted-foreground line-clamp-2">{project.description}</p>
+                                    </CardContent>
+                                </Card>
+                            </Link>
                         ))}
                     </div>
                 )}

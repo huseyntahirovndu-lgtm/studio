@@ -343,5 +343,3 @@ function SocialLink({ href, icon: Icon, text }: { href: string; icon: React.Elem
         </a>
     );
 }
-
-    

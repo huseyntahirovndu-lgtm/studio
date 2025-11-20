@@ -139,5 +139,3 @@ export function StudentCard({ student, className }: StudentCardProps) {
     </Card>
   );
 }
-
-    
