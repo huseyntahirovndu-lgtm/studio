@@ -81,7 +81,7 @@ export default function EditOrganizationProfilePage() {
   }, [organization, orgForm]);
 
   const onProfileSubmit: SubmitHandler<z.infer<typeof orgProfileSchema>> = async (data) => {
-    if (!user) return;
+    if (!organization) return;
     setIsSaving(true);
 
     let logoUrl = organization.logoUrl;
@@ -95,7 +95,7 @@ export default function EditOrganizationProfilePage() {
         }
 
         const updatedUser = { 
-            ...user, 
+            ...organization, 
             name: data.name,
             companyName: data.companyName,
             sector: data.sector,
@@ -106,7 +106,11 @@ export default function EditOrganizationProfilePage() {
         
         if (success) {
             toast({ title: "Profil məlumatları uğurla yeniləndi!" });
-            orgForm.reset(data); // reset form with new data
+            orgForm.reset({
+                name: updatedUser.name,
+                companyName: updatedUser.companyName,
+                sector: updatedUser.sector,
+            });
         } else {
             toast({ variant: "destructive", title: "Xəta", description: "Profil yenilənərkən xəta baş verdi." });
         }
