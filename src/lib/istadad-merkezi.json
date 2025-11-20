@@ -115,7 +115,7 @@
       "companyName": "NDU THİK",
       "email": "thik@ndu.edu.az",
       "sector": "Tələbə Təşkilatı",
-      "logoUrl": "https://i.ibb.co/L8zTjH1/thik-logo.png",
+      "logoUrl": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRbvyJnucC7yGpAc6wetzpwxU9uUddnWbgJHw&s",
       "savedStudentIds": ["student-1"],
       "projectIds": ["proj-thik-1", "proj-thik-2"],
       "createdAt": "2023-05-10T09:00:00Z"
@@ -127,7 +127,7 @@
         "companyName": "NDU TEC",
         "email": "tec@ndu.edu.az",
         "sector": "Elm və Təhsil",
-        "logoUrl": "https://i.ibb.co/P9tPqFv/tec-logo.png",
+        "logoUrl": "https://tec.ndu.edu.az/logo1.png",
         "savedStudentIds": ["student-4"],
         "projectIds": ["proj-tec-1", "proj-tec-2"],
         "createdAt": "2023-06-12T11:00:00Z"
@@ -139,7 +139,7 @@
         "companyName": "NDU TGT",
         "email": "tgt@ndu.edu.az",
         "sector": "İctimai Fəaliyyət",
-        "logoUrl": "https://i.ibb.co/qj3P8cQ/tgt-logo.png",
+        "logoUrl": "https://ndu.edu.az//storage/pages/August2024/NDU-TGT%20(1).png",
         "savedStudentIds": ["student-2", "student-3"],
         "projectIds": ["proj-tgt-1", "proj-tgt-2"],
         "createdAt": "2023-04-01T15:00:00Z"
