@@ -43,7 +43,7 @@ import { Label } from "@/components/ui/label";
 import { CategoryData } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '@/hooks/use-toast';
-import { categories as getCategories, addCategory, deleteCategory } from '@/lib/data';
+import { getCategories, addCategory, deleteCategory } from '@/lib/data';
 
 
 export default function AdminCategoriesPage() {
