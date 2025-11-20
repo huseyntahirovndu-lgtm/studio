@@ -77,10 +77,9 @@ const achievementSchema = z.object({
 const certificateSchema = z.object({
     name: z.string().min(3, "Sertifikat adı boş ola bilməz."),
     certificateFile: z.any().optional(),
-    certificateURL: z.string().url("Etibarlı bir URL daxil edin.").optional(),
     level: z.enum(['Beynəlxalq', 'Respublika', 'Regional', 'Universitet']),
-}).refine(data => data.certificateFile || data.certificateURL, {
-    message: "Sertifikat faylı və ya linki təqdim edilməlidir.",
+}).refine(data => data.certificateFile, {
+    message: "Sertifikat faylı təqdim edilməlidir.",
     path: ["certificateFile"],
 });
 
@@ -146,7 +145,7 @@ function EditProfilePageComponent() {
   
   const certificateForm = useForm<z.infer<typeof certificateSchema>>({
     resolver: zodResolver(certificateSchema),
-    defaultValues: { name: '', certificateURL: '', level: 'Universitet' }
+    defaultValues: { name: '', level: 'Universitet' }
   });
 
   const fetchData = useCallback(() => {
@@ -273,7 +272,7 @@ function EditProfilePageComponent() {
       const newCertificate: Certificate = {
         name: data.name,
         level: data.level,
-        certificateURL: fileUrl || data.certificateURL || '',
+        certificateURL: fileUrl,
         id: uuidv4(),
         studentId: targetUser!.id,
       };
@@ -683,3 +682,5 @@ export default function EditProfilePage() {
     </Suspense>
   )
 }
+
+    

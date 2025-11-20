@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { v4 as uuidv4 } from 'uuid';
+import NextImage from 'next/image';
 
 export default function ProfilePage() {
   const { id } = useParams();
@@ -314,11 +315,15 @@ export default function ProfilePage() {
                     </CardHeader>
                     <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         {certificates.map((cert) => (
-                            <a key={cert.id} href={cert.certificateURL} target="_blank" rel="noopener noreferrer" className="block border rounded-lg overflow-hidden hover:opacity-80 transition-opacity">
-                               <div className="bg-muted h-24 flex items-center justify-center">
-                                   <FileText className="w-8 h-8 text-muted-foreground" />
+                            <a key={cert.id} href={cert.certificateURL} target="_blank" rel="noopener noreferrer" className="block border rounded-lg overflow-hidden hover:opacity-80 transition-opacity group">
+                               <div className="bg-muted h-24 flex items-center justify-center relative">
+                                  {cert.certificateURL.match(/\.(jpeg|jpg|gif|png)$/) != null ? (
+                                    <NextImage src={cert.certificateURL} alt={cert.name} layout="fill" objectFit="cover" />
+                                  ) : (
+                                    <FileText className="w-8 h-8 text-muted-foreground" />
+                                  )}
                                </div>
-                               <p className="p-2 text-xs text-center font-medium truncate" title={cert.name}>{cert.name}</p>
+                               <p className="p-2 text-xs text-center font-medium truncate group-hover:text-primary" title={cert.name}>{cert.name}</p>
                             </a>
                         ))}
                     </CardContent>
@@ -338,3 +343,5 @@ function SocialLink({ href, icon: Icon, text }: { href: string; icon: React.Elem
         </a>
     );
 }
+
+    
