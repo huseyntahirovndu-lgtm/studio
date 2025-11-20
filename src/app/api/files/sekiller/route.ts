@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile } from 'fs/promises';
-import { join } from 'path';
 
 export async function POST(request: NextRequest) {
   const data = await request.formData();
@@ -10,22 +8,37 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, message: 'No file uploaded' }, { status: 400 });
   }
 
-  const bytes = await file.arrayBuffer();
-  const buffer = Buffer.from(bytes);
-
-  // Use a unique name for the file to avoid collisions
-  const filename = `${Date.now()}-${file.name.replace(/\s/g, '_')}`;
-  const path = join(process.cwd(), 'public', 'uploads', filename);
-
   try {
-    await writeFile(path, buffer);
-    console.log(`File saved to ${path}`);
+    // We will now upload to a third-party hosting service like imgbb
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    
+    const imgbbFormData = new FormData();
+    imgbbFormData.append('image', buffer.toString('base64'));
 
-    // Return the public URL of the file
-    const fileUrl = `/uploads/${filename}`;
+    const apiKey = process.env.NEXT_PUBLIC_IMGBB_API_KEY;
+    if (!apiKey) {
+      throw new Error("ImgBB API key is not defined. Please add NEXT_PUBLIC_IMGBB_API_KEY to your .env file.");
+    }
+
+    const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+      method: 'POST',
+      body: imgbbFormData,
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      console.error('ImgBB upload failed:', result);
+      throw new Error(result?.error?.message || 'Error uploading to ImgBB');
+    }
+
+    const fileUrl = result.data.url;
     return NextResponse.json({ success: true, url: fileUrl });
+
   } catch (error) {
-    console.error('Error saving file:', error);
-    return NextResponse.json({ success: false, message: 'Error saving file' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error saving file';
+    console.error('Error handling file upload:', error);
+    return NextResponse.json({ success: false, message: errorMessage }, { status: 500 });
   }
 }
