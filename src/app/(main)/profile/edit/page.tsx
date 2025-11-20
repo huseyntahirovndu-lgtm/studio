@@ -30,6 +30,7 @@ import {
 import { getStudentById, getProjectsByStudentId, getAchievementsByStudentId, getCertificatesByStudentId, addProject, addAchievement, addCertificate, deleteProject, deleteAchievement, deleteCertificate } from '@/lib/data';
 import { v4 as uuidv4 } from 'uuid';
 import { Badge } from '@/components/ui/badge';
+import { uploadFile } from '@/services/file-upload';
 
 
 const skillSchema = z.object({
@@ -75,8 +76,12 @@ const achievementSchema = z.object({
 
 const certificateSchema = z.object({
     name: z.string().min(3, "Sertifikat adı boş ola bilməz."),
-    certificateURL: z.string().url("Etibarlı bir URL daxil edin."),
+    certificateFile: z.any().optional(),
+    certificateURL: z.string().url("Etibarlı bir URL daxil edin.").optional(),
     level: z.enum(['Beynəlxalq', 'Respublika', 'Regional', 'Universitet']),
+}).refine(data => data.certificateFile || data.certificateURL, {
+    message: "Sertifikat faylı və ya linki təqdim edilməlidir.",
+    path: ["certificateFile"],
 });
 
 const SKILL_LEVELS: SkillLevel[] = ['Başlanğıc', 'Orta', 'İrəli'];
@@ -252,21 +257,46 @@ function EditProfilePageComponent() {
     toast({ title: "Nailiyyət əlavə edildi" });
   };
   
-  const onCertificateSubmit: SubmitHandler<z.infer<typeof certificateSchema>> = (data) => {
+ const onCertificateSubmit: SubmitHandler<z.infer<typeof certificateSchema>> = async (data) => {
     if (!targetUser) return;
-    const newCertificate: Certificate = { ...data, id: uuidv4(), studentId: targetUser!.id };
-    addCertificate(newCertificate);
-    const updatedStudent = {
-      ...targetUser,
-      certificateIds: [...(targetUser.certificateIds || []), newCertificate.id]
-    };
-    updateUser(updatedStudent);
-    certificateForm.reset();
-    fetchData();
-    triggerTalentScoreUpdate(updatedStudent);
-    toast({ title: "Sertifikat əlavə edildi" });
+    setIsSaving(true);
+    let fileUrl = '';
+
+    try {
+      if (data.certificateFile && data.certificateFile.length > 0) {
+        const file = data.certificateFile[0];
+        toast({ title: "Fayl Yüklənir...", description: "Sertifikatınız serverə yüklənir." });
+        const response = await uploadFile(file);
+        fileUrl = response.url;
+      }
+
+      const newCertificate: Certificate = {
+        name: data.name,
+        level: data.level,
+        certificateURL: fileUrl || data.certificateURL || '',
+        id: uuidv4(),
+        studentId: targetUser!.id,
+      };
+
+      addCertificate(newCertificate);
+      const updatedStudent = {
+        ...targetUser,
+        certificateIds: [...(targetUser.certificateIds || []), newCertificate.id],
+      };
+      updateUser(updatedStudent);
+      certificateForm.reset();
+      fetchData();
+      triggerTalentScoreUpdate(updatedStudent);
+      toast({ title: "Sertifikat əlavə edildi" });
+
+    } catch (error) {
+      console.error("Error uploading certificate:", error);
+      toast({ variant: "destructive", title: "Xəta", description: "Sertifikat yüklənərkən xəta baş verdi." });
+    } finally {
+      setIsSaving(false);
+    }
   };
-  
+
   const handleDelete = (docId: string, itemType: 'project' | 'achievement' | 'certificate') => {
       if (!targetUser) return;
       
@@ -571,64 +601,74 @@ function EditProfilePageComponent() {
             </CardContent>
         </Card>
         
-         <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><FileText /> Sertifikatlar</CardTitle>
-                <CardDescription>
-                    Əldə etdiyiniz sertifikatları profilinizə əlavə edin. Sertifikatın linkini (məs. Google Drive, Dropbox) yerləşdirin.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                 <Form {...certificateForm}>
-                    <form onSubmit={certificateForm.handleSubmit(onCertificateSubmit)} className="space-y-4">
-                        <FormField name="name" control={certificateForm.control} render={({ field }) => (
-                           <FormItem><FormLabel>Sertifikatın Adı</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                        )} />
-                        <FormField name="certificateURL" control={certificateForm.control} render={({ field }) => (
-                            <FormItem><FormLabel>Sertifikat Linki</FormLabel><FormControl><Input type="url" placeholder="Sertifikatın yükləndiyi link (Google Drive, Dropbox və s.)" {...field} /></FormControl><FormMessage /></FormItem>
-                        )} />
-                         <FormField name="level" control={certificateForm.control} render={({ field }) => (
-                            <FormItem><FormLabel>Səviyyə</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                                <SelectContent>
-                                     {(['Universitet', 'Regional', 'Respublika', 'Beynəlxalq'] as CertificateLevel[]).map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                            <FormMessage /></FormItem>
-                        )} />
-                        <Button type="submit" disabled={isSaving}>
-                            <PlusCircle className="mr-2 h-4 w-4" /> {isSaving ? 'Əlavə edilir...' : 'Sertifikat Əlavə Et'}
-                        </Button>
-                    </form>
-                </Form>
-                 <Separator className="my-6" />
-                <h4 className="text-md font-medium mb-4">Mövcud Sertifikatlar</h4>
-                <div className="space-y-4">
-                    {isLoadingData ? <p>Yüklənir...</p> : certificates?.map(c => (
-                        <div key={c.id} className="flex justify-between items-center p-2 border rounded-md">
-                            <a href={c.certificateURL} target="_blank" rel="noopener noreferrer" className="hover:underline">{c.name}</a>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" disabled={isSaving}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                    <AlertDialogTitle>Silməni təsdiq edirsiniz?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        Bu əməliyyat geri qaytarıla bilməz. "{c.name}" adlı sertifikat profilinizdən həmişəlik silinəcək.
-                                    </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                    <AlertDialogCancel>Ləğv et</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDelete(c.id, 'certificate')} className="bg-destructive hover:bg-destructive/90">Bəli, sil</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        </div>
-                    ))}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><FileText /> Sertifikatlar</CardTitle>
+            <CardDescription>
+              Əldə etdiyiniz sertifikatları profilinizə əlavə edin.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...certificateForm}>
+              <form onSubmit={certificateForm.handleSubmit(onCertificateSubmit)} className="space-y-4">
+                <FormField name="name" control={certificateForm.control} render={({ field }) => (
+                  <FormItem><FormLabel>Sertifikatın Adı</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField
+                  control={certificateForm.control}
+                  name="certificateFile"
+                  render={({ field: { onChange, value, ...rest } }) => (
+                    <FormItem>
+                      <FormLabel>Sertifikat Faylı (Şəkil və ya PDF)</FormLabel>
+                      <FormControl>
+                        <Input type="file" accept="image/*,application/pdf" onChange={e => onChange(e.target.files)} {...rest} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField name="level" control={certificateForm.control} render={({ field }) => (
+                    <FormItem><FormLabel>Səviyyə</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                        <SelectContent>
+                              {(['Universitet', 'Regional', 'Respublika', 'Beynəlxalq'] as CertificateLevel[]).map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                    <FormMessage /></FormItem>
+                )} />
+                <Button type="submit" disabled={isSaving}>
+                  <PlusCircle className="mr-2 h-4 w-4" /> {isSaving ? 'Əlavə edilir...' : 'Sertifikat Əlavə Et'}
+                </Button>
+              </form>
+            </Form>
+            <Separator className="my-6" />
+            <h4 className="text-md font-medium mb-4">Mövcud Sertifikatlar</h4>
+            <div className="space-y-4">
+              {isLoadingData ? <p>Yüklənir...</p> : certificates?.map(c => (
+                <div key={c.id} className="flex justify-between items-center p-2 border rounded-md">
+                  <a href={c.certificateURL} target="_blank" rel="noopener noreferrer" className="hover:underline">{c.name}</a>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" disabled={isSaving}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Silməni təsdiq edirsiniz?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Bu əməliyyat geri qaytarıla bilməz. "{c.name}" adlı sertifikat profilinizdən həmişəlik silinəcək.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Ləğv et</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDelete(c.id, 'certificate')} className="bg-destructive hover:bg-destructive/90">Bəli, sil</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
-            </CardContent>
+              ))}
+            </div>
+          </CardContent>
         </Card>
 
       </div>
