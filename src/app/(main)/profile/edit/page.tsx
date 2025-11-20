@@ -1,7 +1,7 @@
 'use client';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, Suspense } from 'react';
 import { useForm, SubmitHandler, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -81,7 +81,7 @@ const certificateSchema = z.object({
 
 const SKILL_LEVELS: SkillLevel[] = ['Başlanğıc', 'Orta', 'İrəli'];
 
-export default function EditProfilePage() {
+function EditProfilePageComponent() {
   const { user: currentUser, loading, updateUser } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -627,4 +627,12 @@ export default function EditProfilePage() {
       </div>
     </div>
   );
+}
+
+export default function EditProfilePage() {
+  return (
+    <Suspense fallback={<div>Yüklənir...</div>}>
+      <EditProfilePageComponent />
+    </Suspense>
+  )
 }
