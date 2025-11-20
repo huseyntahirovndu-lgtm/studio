@@ -45,10 +45,11 @@ export default function EditOrganizationProfilePage() {
   const { user, loading, updateUser } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const organization = user as Organization;
+  
 
   const [isSaving, setIsSaving] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [organization, setOrganization] = useState<Organization | null>(null);
 
   const orgForm = useForm<z.infer<typeof orgProfileSchema>>({
     resolver: zodResolver(orgProfileSchema),
@@ -61,10 +62,15 @@ export default function EditOrganizationProfilePage() {
   });
 
   useEffect(() => {
-    if (!loading && (!user || (user as Organization)?.role !== 'organization')) {
-      router.push('/login');
+    if (!loading) {
+        if (user && user.role === 'organization') {
+            setOrganization(user as Organization);
+        } else {
+            router.push('/login');
+        }
     }
   }, [user, loading, router]);
+
 
   useEffect(() => {
     if (organization) {
@@ -94,7 +100,7 @@ export default function EditOrganizationProfilePage() {
         
         if (success) {
             toast({ title: "Profil məlumatları uğurla yeniləndi!" });
-            orgForm.reset(updatedUser);
+            orgForm.reset(updatedUser); // Formu yeni datalarla yeniləyirik
         } else {
             toast({ variant: "destructive", title: "Xəta", description: "Profil yenilənərkən xəta baş verdi." });
         }
@@ -157,8 +163,6 @@ export default function EditOrganizationProfilePage() {
           toast({ title: "Layihə silindi." });
       } else {
           toast({ variant: "destructive", title: "Xəta", description: "Layihə silinərkən xəta baş verdi." });
-          // If update fails, we should ideally re-add the project to the data source
-          // This is a simplification for the in-memory store.
       }
       setIsSaving(false);
   };
