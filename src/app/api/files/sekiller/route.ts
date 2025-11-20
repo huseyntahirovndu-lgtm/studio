@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { writeFile } from 'fs/promises';
+import { join } from 'path';
 
 export async function POST(request: NextRequest) {
   const data = await request.formData();
@@ -9,31 +11,22 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // We will now upload to a third-party hosting service like imgbb
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
+
+    // Generate a unique filename
+    const filename = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
+    const publicPath = join(process.cwd(), 'public', 'sekiller');
+    const path = join(publicPath, filename);
     
-    const imgbbFormData = new FormData();
-    imgbbFormData.append('image', buffer.toString('base64'));
+    // Ensure the directory exists (optional, as Next.js public is usually there)
+    // For more robust applications, you might want to use fs.mkdir if the path is dynamic
+    // await require('fs/promises').mkdir(publicPath, { recursive: true });
 
-    const apiKey = process.env.NEXT_PUBLIC_IMGBB_API_KEY;
-    if (!apiKey) {
-      throw new Error("ImgBB API key is not defined. Please add NEXT_PUBLIC_IMGBB_API_KEY to your .env file.");
-    }
+    await writeFile(path, buffer);
+    console.log(`File uploaded to ${path}`);
 
-    const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
-      method: 'POST',
-      body: imgbbFormData,
-    });
-
-    const result = await response.json();
-
-    if (!response.ok || !result.success) {
-      console.error('ImgBB upload failed:', result);
-      throw new Error(result?.error?.message || 'Error uploading to ImgBB');
-    }
-
-    const fileUrl = result.data.url;
+    const fileUrl = `/sekiller/${filename}`;
     return NextResponse.json({ success: true, url: fileUrl });
 
   } catch (error) {
