@@ -118,11 +118,11 @@
       "major": "İnformasiya Texnologiyaları",
       "courseYear": 3,
       "educationForm": "Əyani",
-      "gpa": 92.0,
+      "gpa": 92,
       "skills": [
-        {"name": "React", "level": "İrəli"},
-        {"name": "Node.js", "level": "Orta"},
-        {"name": "Startup", "level": "İrəli"}
+        { "name": "React", "level": "İrəli" },
+        { "name": "Node.js", "level": "Orta" },
+        { "name": "Startup", "level": "İrəli" }
       ],
       "category": "Startup, Texnologiya",
       "projectIds": [],
@@ -145,9 +145,9 @@
       "educationForm": "Əyani",
       "gpa": 97.5,
       "skills": [
-        {"name": "Kliniki tədqiqat", "level": "Orta"},
-        {"name": "Anatomiya", "level": "İrəli"},
-        {"name": "Elmi məqalə yazmaq", "level": "Orta"}
+        { "name": "Kliniki tədqiqat", "level": "Orta" },
+        { "name": "Anatomiya", "level": "İrəli" },
+        { "name": "Elmi məqalə yazmaq", "level": "Orta" }
       ],
       "category": "Elmi məqalə yazmaq",
       "projectIds": [],
@@ -168,11 +168,11 @@
       "major": "Jurnalistika",
       "courseYear": 2,
       "educationForm": "Əyani",
-      "gpa": 88.0,
+      "gpa": 88,
       "skills": [
-        {"name": "Məqalə yazmaq", "level": "İrəli"},
-        {"name": "Araşdırmaçı jurnalistika", "level": "Orta"},
-        {"name": "Sosial Media Marketinqi", "level": "Başlanğıc"}
+        { "name": "Məqalə yazmaq", "level": "İrəli" },
+        { "name": "Araşdırmaçı jurnalistika", "level": "Orta" },
+        { "name": "Sosial Media Marketinqi", "level": "Başlanğıc" }
       ],
       "category": "Media və yaradıcılıq",
       "projectIds": [],
@@ -180,7 +180,8 @@
       "certificateIds": [],
       "talentScore": 89,
       "status": "təsdiqlənmiş",
-      "createdAt": "2024-05-17T16:00:00Z"
+      "createdAt": "2024-05-17T16:00:00Z",
+      "profilePictureUrl": "https://tec.ndu.edu.az/api/files/sekiller/1760211530654-3f3af9a4.jpg"
     },
     {
       "id": "org-thik",
