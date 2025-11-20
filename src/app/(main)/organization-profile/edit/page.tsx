@@ -118,7 +118,6 @@ export default function EditOrganizationProfilePage() {
           projectForm.reset();
       } else {
           toast({ variant: "destructive", title: "Xəta", description: "Layihə əlavə edilərkən xəta baş verdi." });
-          // In a real app, you would rollback the addProjectToData operation
           deleteProjectFromData(newProject.id, organization.id);
       }
       
@@ -142,6 +141,8 @@ export default function EditOrganizationProfilePage() {
           toast({ title: "Layihə silindi." });
       } else {
           toast({ variant: "destructive", title: "Xəta", description: "Layihə silinərkən xəta baş verdi." });
+          // If update fails, we should ideally re-add the project to the data source
+          // This is a simplification for the in-memory store.
       }
       setIsSaving(false);
   };

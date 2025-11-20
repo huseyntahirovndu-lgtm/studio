@@ -46,13 +46,13 @@ const profileSchema = z.object({
   educationForm: z.string().optional(),
   gpa: z.coerce.number().optional(),
   skills: z.array(skillSchema).min(1, "Ən azı bir bacarıq daxil edin."),
-  linkedInURL: z.string().url().or(z.literal('')),
-  githubURL: z.string().url().or(z.literal('')),
-  behanceURL: z.string().url().or(z.literal('')),
-  instagramURL: z.string().url().or(z.literal('')),
-  portfolioURL: z.string().url().or(z.literal('')),
-  googleScholarURL: z.string().url().or(z.literal('')),
-  youtubeURL: z.string().url().or(z.literal('')),
+  linkedInURL: z.string().url().or(z.literal('')).optional(),
+  githubURL: z.string().url().or(z.literal('')).optional(),
+  behanceURL: z.string().url().or(z.literal('')).optional(),
+  instagramURL: z.string().url().or(z.literal('')).optional(),
+  portfolioURL: z.string().url().or(z.literal('')).optional(),
+  googleScholarURL: z.string().url().or(z.literal('')).optional(),
+  youtubeURL: z.string().url().or(z.literal('')).optional(),
 });
 
 const projectSchema = z.object({

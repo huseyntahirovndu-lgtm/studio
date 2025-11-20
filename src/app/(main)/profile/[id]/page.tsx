@@ -243,6 +243,7 @@ export default function ProfilePage() {
                         {skill.name}
                       </Badge>
                   ))}
+                  {!student.skills || student.skills.length === 0 && <p className="text-sm text-muted-foreground">Heç bir bacarıq qeyd edilməyib.</p>}
               </CardContent>
           </Card>
            <Card>
