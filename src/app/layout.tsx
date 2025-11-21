@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 import { SessionProvider } from '@/hooks/use-auth';
+import MaintenancePage from '@/components/maintenance-page';
 
 export const metadata: Metadata = {
   title: 'İstedad Mərkəzi - Naxçıvan Dövlət Universiteti',
@@ -14,6 +15,19 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Set this to true to enable maintenance mode
+  const isMaintenanceMode = true;
+
+  if (isMaintenanceMode) {
+    return (
+      <html lang="az">
+        <body className="font-body bg-background antialiased">
+          <MaintenancePage />
+        </body>
+      </html>
+    );
+  }
+
   return (
     <html lang="az">
       <head>
