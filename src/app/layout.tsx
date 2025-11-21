@@ -13,8 +13,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const pathname = usePathname();
-  const isAuthPage = pathname === '/login' || pathname.startsWith('/register');
+  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/register-student') || pathname.startsWith('/register-organization');
   
+  const isAdminRoute = pathname.startsWith('/admin');
+  const isOrgRoute = pathname.startsWith('/organization-panel');
+
+  const showHeaderFooter = !isAuthPage && !isAdminRoute && !isOrgRoute;
+
   return (
     <html lang="az">
       <head>
@@ -33,9 +38,9 @@ export default function RootLayout({
               </main>
             ) : (
               <div className="flex flex-col min-h-screen">
-                <Header />
+                {showHeaderFooter && <Header />}
                 <main className="flex-1">{children}</main>
-                <Footer />
+                {showHeaderFooter && <Footer />}
               </div>
             )}
             <Toaster />

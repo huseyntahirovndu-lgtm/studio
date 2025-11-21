@@ -8,8 +8,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { Calendar, User } from 'lucide-react';
-import { Header } from '@/components/layout/header';
-import { Footer } from '@/components/layout/footer';
 
 function NewsCard({ news }: { news: News }) {
     return (
@@ -61,8 +59,6 @@ export default function NewsPage() {
     const { data: news, isLoading } = useCollection<News>(newsQuery);
 
     return (
-        <>
-            <Header />
             <div className="container mx-auto py-8 md:py-12 px-4">
                 <div className="mb-8 text-center">
                     <h1 className="text-3xl md:text-4xl font-bold mb-2">Xəbərlər və Elanlar</h1>
@@ -99,7 +95,5 @@ export default function NewsPage() {
                     </div>
                 )}
             </div>
-            <Footer />
-        </>
     );
 }

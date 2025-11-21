@@ -84,7 +84,6 @@ export default function RegisterOrganizationPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
     <Card className="w-full max-w-lg">
       <CardHeader>
         <CardTitle className="text-2xl">Təşkilat Qeydiyyatı</CardTitle>
@@ -173,6 +172,5 @@ export default function RegisterOrganizationPage() {
         </Button>
       </CardFooter>
     </Card>
-    </div>
   );
 }
