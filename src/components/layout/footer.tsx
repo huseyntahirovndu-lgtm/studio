@@ -13,11 +13,11 @@ export function Footer() {
           
           {/* Column 1: Logo and University Info */}
           <div className="flex flex-col items-start gap-4 md:col-span-1 lg:col-span-1">
-            <Link href="/" className="flex items-center gap-3">
-              <Logo className="h-14 w-auto" />
+            <Link href="/" className="flex flex-col items-start gap-4">
+              <Logo className="h-16 w-auto" />
               <div>
                 <p className="font-bold text-lg">İstedad Mərkəzi</p>
-                <p className="text-sm text-primary-foreground/80">Naxçıvan Dövlət Universiteti</p>
+                <p className="text-base text-primary-foreground/80">Naxçıvan Dövlət Universiteti</p>
               </div>
             </Link>
           </div>
@@ -73,7 +73,9 @@ export function Footer() {
             <p>&copy; {currentYear} Naxçıvan Dövlət Universiteti | Bütün hüquqlar qorunur.</p>
             <p>Tələbələrlə iş və tədbirlərin təşkili şöbəsi</p>
           </div>
-          <p className="text-center sm:text-right">Designed by Hüseyn Tahirov</p>
+          <div className="text-center sm:text-right">
+            <p>Designed by Hüseyn Tahirov</p>
+          </div>
         </div>
       </div>
     </footer>
