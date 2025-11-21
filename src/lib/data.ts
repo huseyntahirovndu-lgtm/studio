@@ -1,15 +1,38 @@
 import { Student, Project, Achievement, Certificate, CategoryData, FacultyData, Organization, AppUser, Invitation } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
-import fullData from './istadad-merkezi.json';
 
-// In-memory data store - Load data once
-let users: AppUser[] = [...fullData.users];
-let projects: Project[] = [...fullData.projects];
-let achievements: Achievement[] = [...fullData.achievements];
-let certificates: Certificate[] = [...fullData.certificates];
-let categories: CategoryData[] = [...fullData.categories];
-let faculties: FacultyData[] = [...fullData.faculties];
-let invitations: Invitation[] = [...fullData.invitations];
+const FAKE_PASSWORDS: { [email: string]: string } = {
+  'aysel@example.com': 'password123',
+  'orxan@example.com': 'password123',
+  'leyla@example.com': 'password123',
+  'contact@techsolutions.com': 'password123',
+  'startup@ndu.edu.az': 'password123',
+  'admin@ndu.edu.az': 'adminpassword',
+  'polad.elizade@example.com': 'password123',
+  'shovket.elisoy@example.com': 'password123',
+  'zeyneb.seyidli@example.com': 'password123'
+};
+
+
+// In-memory data store - Will be replaced by Firebase
+let users: AppUser[] = [];
+let projects: Project[] = [];
+let achievements: Achievement[] = [];
+let certificates: Certificate[] = [];
+let categories: CategoryData[] = [];
+let faculties: FacultyData[] = [
+    { "id": "f-1", "name": "İqtisadiyyat və idarəetmə" },
+    { "id": "f-2", "name": "Memarlıq və mühəndislik" },
+    { "id": "f-3", "name": "Pedaqoji" },
+    { "id": "f-4", "name": "Təbiətşünaslıq və kənd təsərrüfatı" },
+    { "id": "f-5", "name": "Beynəlxalq Münasibətlər və hüquq" },
+    { "id": "f-6", "name": "Tarix-filologiya" },
+    { "id": "f-7", "name": "Fizika-Riyaziyyat" },
+    { "id": "f-8", "name": "Xarici dillər" },
+    { "id": "f-9", "name": "Tibb" },
+    { "id": "f-10", "name": "İncəsənət" }
+];
+let invitations: Invitation[] = [];
 
 // --- DATA ACCESS FUNCTIONS ---
 
@@ -73,8 +96,9 @@ export const getInvitationsByOrganizationId = (orgId: string): Invitation[] => {
 
 
 // --- DATA MUTATION FUNCTIONS ---
-export const addUser = (user: AppUser) => {
+export const addUser = (user: AppUser, pass: string) => {
   users.push(user);
+  FAKE_PASSWORDS[user.email] = pass;
 };
 
 export const updateUser = (user: AppUser): boolean => {
@@ -179,4 +203,14 @@ export const updateInvitationStatus = (invitationId: string, status: 'qəbul edi
             project.teamMemberIds.push(studentId);
         }
     }
+}
+
+export const login = (email: string, pass: string): AppUser | null => {
+    const foundUser = users.find(u => u.email === email);
+    const storedPass = FAKE_PASSWORDS[email];
+
+    if (foundUser && storedPass === pass) {
+      return foundUser;
+    }
+    return null;
 }

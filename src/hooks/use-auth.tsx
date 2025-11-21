@@ -1,99 +1,79 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { AppUser, Student, Organization, Admin } from '@/types';
-import { addUser, updateUser as updateUserData, getUsers } from '@/lib/data';
-import { v4 as uuidv4 } from 'uuid';
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+} from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { useFirebase, useUser, useFirestore, useAuth as useFirebaseAuth } from '@/firebase';
+import type { AppUser, Student, Organization } from '@/types';
+import { setDocumentNonBlocking, initiateEmailSignUp, initiateEmailSignIn } from '@/firebase';
 
 interface AuthContextType {
   user: AppUser | null;
   loading: boolean;
-  login: (email: string, pass: string) => boolean;
+  login: (email: string, pass: string) => void;
   logout: () => void;
-  register: (user: Omit<Student, 'id' | 'createdAt' | 'status'> | Omit<Organization, 'id' | 'createdAt'>, pass: string) => boolean;
-  updateUser: (user: AppUser) => boolean;
+  register: (
+    user: Omit<Student, 'id' | 'createdAt'> | Omit<Organization, 'id' | 'createdAt'>,
+    pass: string
+  ) => void;
+  updateUser: (user: AppUser) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const FAKE_PASSWORDS: { [email: string]: string } = {
-  'aysel@example.com': 'password123',
-  'orxan@example.com': 'password123',
-  'leyla@example.com': 'password123',
-  'contact@techsolutions.com': 'password123',
-  'startup@ndu.edu.az': 'password123',
-  'admin@ndu.edu.az': 'adminpassword',
-  'polad.elizade@example.com': 'password123',
-  'shovket.elisoy@example.com': 'password123',
-  'zeyneb.seyidli@example.com': 'password123'
-};
-
-
 export const SessionProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<AppUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user: firebaseUser, isUserLoading } = useUser();
+  // We will fetch the user profile from firestore
+  // const { data: userProfile, isLoading: isProfileLoading } = useDoc<AppUser>(
+  //   firebaseUser ? doc(useFirestore(), 'users', firebaseUser.uid) : null
+  // );
+
+  const auth = useFirebaseAuth();
+  const firestore = useFirestore();
   const router = useRouter();
 
-  useEffect(() => {
-    // Check local storage for a saved session
-    try {
-      const savedUser = localStorage.getItem('session-user');
-      if (savedUser) {
-        setUser(JSON.parse(savedUser));
-      }
-    } catch (error) {
-      console.error("Failed to parse user from localStorage", error);
-      localStorage.removeItem('session-user');
-    }
-    setLoading(false);
-  }, []);
-
-  const login = (email: string, pass: string): boolean => {
-    const foundUser = getUsers().find(u => u.email === email);
-    const storedPass = FAKE_PASSWORDS[email];
-
-    if (foundUser && storedPass === pass) {
-      setUser(foundUser);
-      localStorage.setItem('session-user', JSON.stringify(foundUser));
-      return true;
-    }
-    return false;
+  const login = (email: string, pass: string) => {
+    initiateEmailSignIn(auth, email, pass);
   };
 
   const logout = () => {
-    localStorage.removeItem('session-user');
-    setUser(null);
+    signOut(auth);
     router.push('/login');
   };
 
-  const register = (newUser: Omit<Student, 'id'|'createdAt'|'status'> | Omit<Organization, 'id'|'createdAt'>, pass: string): boolean => {
-    if (getUsers().some(u => u.email === newUser.email)) {
-      return false; // User already exists
-    }
-
-    const userWithId: AppUser = {
-      ...newUser,
-      id: uuidv4(),
-      createdAt: new Date().toISOString(),
-      ...(newUser.role === 'student' && { status: 'gözləyir' }),
-    };
-
-    addUser(userWithId);
-    FAKE_PASSWORDS[userWithId.email] = pass;
-
-    return true;
-  };
-  
-  const updateUser = (updatedUser: AppUser): boolean => {
-    const success = updateUserData(updatedUser);
-    if(success) {
-        setUser(updatedUser);
-        localStorage.setItem('session-user', JSON.stringify(updatedUser));
-    }
-    return success;
+  const register = (
+    newUser: Omit<Student, 'id' | 'createdAt' | 'status'> | Omit<Organization, 'id' | 'createdAt'>,
+    pass: string
+  ) => {
+    createUserWithEmailAndPassword(auth, newUser.email, pass)
+      .then(userCredential => {
+        const user = userCredential.user;
+        const userWithId: AppUser = {
+          ...newUser,
+          id: user.uid,
+          createdAt: new Date().toISOString(),
+          ...(newUser.role === 'student' && { status: 'gözləyir' }),
+        };
+        const userDocRef = doc(firestore, 'users', user.uid);
+        setDocumentNonBlocking(userDocRef, userWithId, { merge: true });
+      })
+      .catch(error => {
+        console.error('Registration failed:', error);
+      });
   };
 
+  const updateUser = (updatedUser: AppUser) => {
+    const userDocRef = doc(firestore, 'users', updatedUser.id);
+    setDocumentNonBlocking(userDocRef, updatedUser, { merge: true });
+  };
+
+  const loading = isUserLoading; // || isProfileLoading;
+  const user = null; //userProfile;
 
   return (
     <AuthContext.Provider value={{ user, loading, login, logout, register, updateUser }}>
