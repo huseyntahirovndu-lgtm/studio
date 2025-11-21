@@ -24,8 +24,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import NextImage from 'next/image';
 import { useDoc, useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, doc, query, where, getDoc, writeBatch } from 'firebase/firestore';
-import { Header } from '@/components/layout/header';
-import { Footer } from '@/components/layout/footer';
 
 
 function ProfilePageContent() {
@@ -193,7 +191,6 @@ function ProfilePageContent() {
 
   return (
     <>
-      <Header />
       <main className="flex-1">
         <div className="container mx-auto max-w-6xl py-8 md:py-12 px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -380,7 +377,6 @@ function ProfilePageContent() {
           </div>
         </div>
       </main>
-      <Footer />
     </>
   );
 }

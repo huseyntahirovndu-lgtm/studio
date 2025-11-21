@@ -3,13 +3,10 @@ import { Suspense } from 'react';
 import SearchClient from './search-client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Header } from '@/components/layout/header';
-import { Footer } from '@/components/layout/footer';
 
 function SearchLoading() {
   return (
     <>
-    <Header />
     <main className='flex-1'>
       <div className="container mx-auto py-8 md:py-12 px-4">
         <div className="mb-8">
@@ -57,7 +54,6 @@ function SearchLoading() {
         </div>
       </div>
     </main>
-    <Footer />
     </>
   );
 }
@@ -66,11 +62,9 @@ function SearchLoading() {
 export default function SearchPage() {
   return (
     <Suspense fallback={<SearchLoading />}>
-      <Header />
       <main className="flex-1">
         <SearchClient />
       </main>
-      <Footer />
     </Suspense>
   );
 }

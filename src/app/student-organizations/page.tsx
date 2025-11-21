@@ -6,8 +6,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
-import { Header } from '@/components/layout/header';
-import { Footer } from '@/components/layout/footer';
 
 function StudentOrganizationCard({ org }: { org: StudentOrganization }) {
     return (
@@ -44,7 +42,6 @@ export default function StudentOrganizationsPage() {
 
     return (
         <>
-        <Header />
         <main className="flex-1">
             <div className="container mx-auto py-8 md:py-12 px-4">
                 <div className="mb-8 text-center">
@@ -86,7 +83,6 @@ export default function StudentOrganizationsPage() {
                 )}
             </div>
         </main>
-        <Footer />
         </>
     );
 }

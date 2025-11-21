@@ -24,8 +24,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { selectTopStories } from '@/ai/flows/story-selector';
-import { Header } from '@/components/layout/header';
-import { Footer } from '@/components/layout/footer';
 
 
 interface EnrichedProject extends Project {
@@ -209,7 +207,6 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col">
-       <Header />
        <main className="flex-1">
         <section className="relative w-full h-screen">
             <Image
@@ -431,7 +428,6 @@ export default function HomePage() {
           </section>
         </div>
       </main>
-      <Footer />
     </div>
   );
 }

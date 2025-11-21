@@ -17,8 +17,6 @@ import { Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
-import { Header } from '@/components/layout/header';
-import { Footer } from '@/components/layout/footer';
 
 
 export default function RankingsPage() {
@@ -62,7 +60,6 @@ export default function RankingsPage() {
 
   return (
     <>
-        <Header />
         <main className="flex-1">
             <div className="container mx-auto py-8 md:py-12 px-4">
             <div className="mb-8 text-center">
@@ -151,7 +148,6 @@ export default function RankingsPage() {
             )}
             </div>
         </main>
-        <Footer />
     </>
   );
 }

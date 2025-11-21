@@ -9,8 +9,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Users, User, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import DOMPurify from 'dompurify';
-import { Header } from '@/components/layout/header';
-import { Footer } from '@/components/layout/footer';
 
 function UpdateCard({ update }: { update: StudentOrgUpdate }) {
     const sanitizedContent = typeof window !== 'undefined' ? DOMPurify.sanitize(update.content) : update.content;
@@ -58,7 +56,6 @@ export default function StudentOrganizationDetailsPage() {
     if (isLoading) {
         return (
             <>
-            <Header />
             <main className='flex-1'>
             <div className="container mx-auto py-8 md:py-12 px-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -73,7 +70,6 @@ export default function StudentOrganizationDetailsPage() {
                 </div>
             </div>
             </main>
-            <Footer />
             </>
         );
     }
@@ -81,18 +77,15 @@ export default function StudentOrganizationDetailsPage() {
     if (!org) {
         return (
             <>
-            <Header />
             <main className='flex-1'>
             <div className="text-center py-16">Tələbə təşkilatı tapılmadı.</div>
             </main>
-            <Footer />
             </>
         )
     }
 
     return (
         <>
-        <Header />
         <main className='flex-1'>
         <div className="container mx-auto py-8 md:py-12 px-4">
             <Card className="mb-8 overflow-hidden">
@@ -172,7 +165,6 @@ export default function StudentOrganizationDetailsPage() {
             </div>
         </div>
         </main>
-        <Footer />
         </>
     );
 }
