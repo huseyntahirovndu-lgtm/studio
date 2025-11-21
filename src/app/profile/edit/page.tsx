@@ -1,7 +1,7 @@
 'use client';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState, useCallback, useRef, Suspense } from 'react';
+import { useEffect, useState, useCallback, useRef, Suspense, ChangeEvent } from 'react';
 import { useForm, SubmitHandler, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Trash2, PlusCircle, Award, Briefcase, FileText, User as UserIcon, X, Book, Youtube, PenLine, Link } from 'lucide-react';
+import { Trash2, PlusCircle, Award, Briefcase, FileText, User as UserIcon, X, Book, Youtube, PenLine, Link, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -93,6 +93,7 @@ function EditProfilePageComponent() {
   const firestore = useFirestore();
   
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   
   const userIdFromQuery = searchParams.get('userId');
   const userIdToFetch = currentUser?.role === 'admin' && userIdFromQuery ? userIdFromQuery : currentUser?.id;
@@ -112,6 +113,8 @@ function EditProfilePageComponent() {
   const [skillInput, setSkillInput] = useState('');
   const [skillLevel, setSkillLevel] = useState<SkillLevel>('Başlanğıc');
   const skillInputRef = useRef<HTMLInputElement>(null);
+  const profilePictureInputRef = useRef<HTMLInputElement>(null);
+  const certificateFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!loading && !currentUser) {
@@ -205,6 +208,40 @@ function EditProfilePageComponent() {
         setIsSaving(false);
     }
   }, [firestore, toast]);
+  
+  const handleFileUpload = async (file: File, type: 'sekil' | 'sened'): Promise<string | null> => {
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const endpoint = type === 'sekil' ? '/api/upload/sekiller' : '/api/upload/senedler';
+
+    try {
+        const response = await fetch(endpoint, { method: 'POST', body: formData });
+        const result = await response.json();
+        if (result.success) {
+            toast({ title: "Fayl uğurla yükləndi." });
+            return result.url;
+        } else {
+            throw new Error(result.error || 'Fayl yüklənərkən xəta baş verdi.');
+        }
+    } catch (err: any) {
+        toast({ variant: 'destructive', title: "Yükləmə Xətası", description: err.message });
+        return null;
+    } finally {
+        setIsUploading(false);
+    }
+  };
+
+  const onProfilePictureChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const url = await handleFileUpload(file, 'sekil');
+    if (url) {
+        setProfileValue('profilePictureUrl', url, { shouldValidate: true, shouldDirty: true });
+    }
+  };
 
     const onProfileSubmit: SubmitHandler<z.infer<typeof profileSchema>> = (data) => {
       if (!targetUser || !userDocRef) return;
@@ -234,9 +271,24 @@ function EditProfilePageComponent() {
   
  const onCertificateSubmit: SubmitHandler<z.infer<typeof certificateSchema>> = async (data) => {
     if (!targetUser || !firestore) return;
+
+    const fileInput = certificateFileInputRef.current;
+    if (fileInput && fileInput.files && fileInput.files[0]) {
+        const url = await handleFileUpload(fileInput.files[0], 'sened');
+        if (url) {
+            data.certificateURL = url;
+        } else {
+            return; // Stop if upload fails
+        }
+    } else if (!data.certificateURL) {
+        toast({ variant: 'destructive', title: "Xəta", description: "Sertifikat faylı və ya linki mütləqdir."});
+        return;
+    }
+
     const certificateCollectionRef = collection(firestore, `users/${targetUser.id}/certificates`);
     addDocumentNonBlocking(certificateCollectionRef, { ...data, studentId: targetUser.id });
     certificateForm.reset();
+    if(fileInput) fileInput.value = '';
     triggerTalentScoreUpdate(targetUser.id);
     toast({ title: "Sertifikat əlavə edildi" });
   };
@@ -324,26 +376,28 @@ function EditProfilePageComponent() {
                     <FormItem><FormLabel>Soyad</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                   )} />
                 </div>
+                 
+                 <FormItem>
+                    <FormLabel>Profil Şəkli</FormLabel>
+                    <div className="flex items-center gap-4">
+                        <Avatar className="h-20 w-20">
+                            <AvatarImage src={profilePictureUrl} />
+                            <AvatarFallback>{getInitials(targetUser.firstName, targetUser.lastName)}</AvatarFallback>
+                        </Avatar>
+                        <Button type="button" onClick={() => profilePictureInputRef.current?.click()} disabled={isUploading}>
+                            <Upload className="mr-2 h-4 w-4" />
+                            {isUploading ? 'Yüklənir...' : 'Şəkil Yüklə'}
+                        </Button>
+                        <Input 
+                            ref={profilePictureInputRef}
+                            type="file" 
+                            className="hidden" 
+                            accept="image/*"
+                            onChange={onProfilePictureChange}
+                        />
+                    </div>
+                </FormItem>
 
-                <div className="flex items-center gap-4">
-                    <Avatar className="h-20 w-20">
-                        <AvatarImage src={profilePictureUrl} />
-                        <AvatarFallback>{getInitials(targetUser.firstName, targetUser.lastName)}</AvatarFallback>
-                    </Avatar>
-                    <FormField
-                        control={profileForm.control}
-                        name="profilePictureUrl"
-                        render={({ field }) => (
-                            <FormItem className="flex-grow">
-                                <FormLabel>Profil Şəkli URL</FormLabel>
-                                <FormControl>
-                                    <Input type="url" placeholder="https://example.com/image.png" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </div>
 
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                      <FormField name="major" control={profileForm.control} render={({ field }) => (
@@ -445,7 +499,7 @@ function EditProfilePageComponent() {
                   <FormField name="youtubeURL" control={profileForm.control} render={({ field }) => (
                     <FormItem><FormLabel>YouTube URL</FormLabel><FormControl><Input placeholder="https://youtube.com/channel/..." {...field} /></FormControl><FormMessage /></FormItem>
                   )} />
-                <Button type="submit" disabled={isSaving}>
+                <Button type="submit" disabled={isSaving || isUploading}>
                   {isSaving ? 'Yadda saxlanılır...' : 'Dəyişiklikləri Yadda Saxla'}
                 </Button>
               </form>
@@ -489,7 +543,7 @@ function EditProfilePageComponent() {
                         <FormField name="link" control={projectForm.control} render={({ field }) => (
                            <FormItem><FormLabel>Layihə Linki (GitHub, Vebsayt və s.)</FormLabel><FormControl><Input type="url" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
-                        <Button type="submit" disabled={isSaving}>
+                        <Button type="submit" disabled={isSaving || isUploading}>
                             <PlusCircle className="mr-2 h-4 w-4" /> {isSaving ? 'Əlavə edilir...' : 'Layihə Əlavə Et'}
                         </Button>
                     </form>
@@ -560,7 +614,7 @@ function EditProfilePageComponent() {
                                 <FormItem><FormLabel>Təsdiq Linki (Könüllü)</FormLabel><FormControl><Input type="url" {...field} /></FormControl><FormMessage /></FormItem>
                             )} />
                         </div>
-                        <Button type="submit" disabled={isSaving}>
+                        <Button type="submit" disabled={isSaving || isUploading}>
                             <PlusCircle className="mr-2 h-4 w-4" /> {isSaving ? 'Əlavə edilir...' : 'Nailiyyət Əlavə Et'}
                         </Button>
                     </form>
@@ -607,19 +661,14 @@ function EditProfilePageComponent() {
                 <FormField name="name" control={certificateForm.control} render={({ field }) => (
                   <FormItem><FormLabel>Sertifikatın Adı</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
-                <FormField
-                  control={certificateForm.control}
-                  name="certificateURL"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Sertifikat Linki</FormLabel>
-                      <FormControl>
-                        <Input type="url" placeholder="https://example.com/sertifikat.pdf" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                 <FormItem>
+                    <FormLabel>Sertifikat Faylı</FormLabel>
+                    <FormControl>
+                         <Input type="file" ref={certificateFileInputRef} accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" disabled={isUploading} />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+
                  <FormField name="level" control={certificateForm.control} render={({ field }) => (
                     <FormItem><FormLabel>Səviyyə</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -630,8 +679,8 @@ function EditProfilePageComponent() {
                     </Select>
                     <FormMessage /></FormItem>
                 )} />
-                <Button type="submit" disabled={isSaving}>
-                  <PlusCircle className="mr-2 h-4 w-4" /> {isSaving ? 'Əlavə edilir...' : 'Sertifikat Əlavə Et'}
+                <Button type="submit" disabled={isSaving || isUploading}>
+                  <PlusCircle className="mr-2 h-4 w-4" /> {isUploading ? 'Yüklənir...' : (isSaving ? 'Əlavə edilir...' : 'Sertifikat Əlavə Et')}
                 </Button>
               </form>
             </Form>
