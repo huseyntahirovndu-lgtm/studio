@@ -148,7 +148,7 @@ export default function AdminOrganizationsPage() {
             </CardContent>
             <CardFooter>
                 <div className="text-xs text-muted-foreground">
-                Göstərilir <strong>1-{organizations?.length || 0}</strong> / <strong>{organizations?.length || 0}</strong>{" "}
+                Göstərilir <strong>1-{organizations?.length ?? 0}</strong> / <strong>{organizations?.length ?? 0}</strong>{" "}
                 təşkilat
                 </div>
             </CardFooter>
