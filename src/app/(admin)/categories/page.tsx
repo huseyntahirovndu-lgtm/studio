@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import { MoreHorizontal, PlusCircle, Trash2 } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Trash2, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -44,7 +44,7 @@ import { CategoryData } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
-import { addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 
 export default function AdminCategoriesPage() {
@@ -54,18 +54,34 @@ export default function AdminCategoriesPage() {
   
   const [newCategoryName, setNewCategoryName] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<CategoryData | null>(null);
   const { toast } = useToast();
 
-  const handleAddCategory = () => {
-    if (newCategoryName.trim()) {
-      addDocumentNonBlocking(categoriesCollection, { name: newCategoryName.trim() });
-      setNewCategoryName('');
-      setIsDialogOpen(false);
-      toast({ title: "Kateqoriya uğurla əlavə edildi." });
+  const handleSaveCategory = () => {
+    const categoryName = editingCategory ? editingCategory.name : newCategoryName;
+
+    if (categoryName.trim()) {
+      if (editingCategory) {
+        // Update existing category
+        const categoryDoc = doc(firestore, 'categories', editingCategory.id);
+        updateDocumentNonBlocking(categoryDoc, { name: categoryName.trim() });
+        toast({ title: "Kateqoriya uğurla yeniləndi." });
+      } else {
+        // Add new category
+        addDocumentNonBlocking(categoriesCollection, { name: categoryName.trim() });
+        toast({ title: "Kateqoriya uğurla əlavə edildi." });
+      }
+      closeDialog();
     } else {
-        toast({ variant: 'destructive', title: "Xəta", description: "Kateqoriya adı boş ola bilməz." });
+      toast({ variant: 'destructive', title: "Xəta", description: "Kateqoriya adı boş ola bilməz." });
     }
   };
+  
+  const closeDialog = () => {
+    setNewCategoryName('');
+    setEditingCategory(null);
+    setIsDialogOpen(false);
+  }
 
   const handleDeleteCategory = (categoryId: string) => {
     const categoryDoc = doc(firestore, 'categories', categoryId);
@@ -88,16 +104,16 @@ export default function AdminCategoriesPage() {
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-                <Button>
+                <Button onClick={() => setEditingCategory(null)}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Yeni Kateqoriya Yarat
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[425px]" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={closeDialog}>
                 <DialogHeader>
-                    <DialogTitle>Yeni Kateqoriya Yarat</DialogTitle>
+                    <DialogTitle>{editingCategory ? 'Kateqoriyanı Redaktə Et' : 'Yeni Kateqoriya Yarat'}</DialogTitle>
                     <DialogDescription>
-                    Yeni bir istedad kateqoriyası əlavə edin. Bu, axtarış və filtr sistemlərində görünəcək.
+                    {editingCategory ? `"${editingCategory.name}" kateqoriyasının adını dəyişin.` : 'Yeni bir istedad kateqoriyası əlavə edin. Bu, axtarış və filtr sistemlərində görünəcək.'}
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -107,18 +123,16 @@ export default function AdminCategoriesPage() {
                         </Label>
                         <Input
                             id="name"
-                            value={newCategoryName}
-                            onChange={(e) => setNewCategoryName(e.target.value)}
+                            value={editingCategory ? editingCategory.name : newCategoryName}
+                            onChange={(e) => editingCategory ? setEditingCategory({...editingCategory, name: e.target.value}) : setNewCategoryName(e.target.value)}
                             className="col-span-3"
                             placeholder="Məs: Süni İntellekt"
                         />
                     </div>
                 </div>
                 <DialogFooter>
-                    <DialogClose asChild>
-                        <Button variant="outline">Ləğv et</Button>
-                    </DialogClose>
-                    <Button onClick={handleAddCategory}>Yarat</Button>
+                    <Button variant="outline" onClick={closeDialog}>Ləğv et</Button>
+                    <Button onClick={handleSaveCategory}>{editingCategory ? 'Yadda Saxla' : 'Yarat'}</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -138,6 +152,9 @@ export default function AdminCategoriesPage() {
                 <TableRow key={category.id}>
                   <TableCell className="font-medium">{category.name}</TableCell>
                   <TableCell className="text-right">
+                    <Button variant="ghost" size="icon" onClick={() => { setEditingCategory(category); setIsDialogOpen(true); }}>
+                        <Edit className="h-4 w-4" />
+                    </Button>
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="icon">
