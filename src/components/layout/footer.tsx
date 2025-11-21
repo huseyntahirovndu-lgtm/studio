@@ -13,7 +13,7 @@ export function Footer() {
           
           {/* Column 1: Logo and University Info */}
           <div className="flex flex-col items-start gap-4 md:col-span-1 lg:col-span-1">
-            <Link href="/" className="flex flex-col items-start gap-4">
+            <Link href="/" className="flex flex-row items-center gap-4">
               <Logo className="h-16 w-auto" />
               <div>
                 <p className="font-bold text-lg">İstedad Mərkəzi</p>
