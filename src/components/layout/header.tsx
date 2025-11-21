@@ -135,7 +135,7 @@ export function Header() {
                 <Link href="/login">Giriş</Link>
               </Button>
               <Button variant="secondary" asChild>
-                <Link href="/register">Qeydiyyat</Link>
+                <Link href="/register-student">Qeydiyyat</Link>
               </Button>
             </div>
           )}
@@ -177,7 +177,7 @@ export function Header() {
                         <Link href="/login">Giriş</Link>
                       </Button>
                       <Button className="w-full" asChild>
-                        <Link href="/register">Qeydiyyat</Link>
+                        <Link href="/register-student">Qeydiyyat</Link>
                       </Button>
                      </>
                    )}
