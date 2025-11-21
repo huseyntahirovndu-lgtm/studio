@@ -4,20 +4,12 @@ import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 import { SessionProvider } from '@/hooks/use-auth';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
-import { Header } from "@/components/layout/header";
-import { Footer } from "@/components/layout/footer";
-import { usePathname } from "next/navigation";
-
-
-const AUTH_ROUTES = ['/login', '/register', '/register-student', '/register-organization'];
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const pathname = usePathname();
-  const isAuthPage = AUTH_ROUTES.includes(pathname);
   
   return (
     <html lang="az">
@@ -31,17 +23,7 @@ export default function RootLayout({
       <body className="font-body bg-background antialiased">
         <FirebaseClientProvider>
           <SessionProvider>
-            {isAuthPage ? (
-               <div className="flex min-h-screen items-center justify-center bg-background p-4">
-                  {children}
-              </div>
-            ) : (
-              <div className="flex min-h-screen flex-col bg-background">
-                <Header />
-                <main className="flex-1">{children}</main>
-                <Footer />
-              </div>
-            )}
+            {children}
             <Toaster />
           </SessionProvider>
         </FirebaseClientProvider>
