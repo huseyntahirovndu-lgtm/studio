@@ -7,7 +7,7 @@ export function Footer() {
 
   return (
     <footer className="border-t bg-primary text-primary-foreground">
-      <div className="container py-8">
+      <div className="container pt-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="flex flex-col items-start gap-4">
             <Link href="/" className="flex items-center gap-3">
@@ -19,7 +19,6 @@ export function Footer() {
             </Link>
             <div className="text-sm text-primary-foreground/80">
               <p>&copy; {currentYear} Bütün hüquqlar qorunur.</p>
-              <p>Designed by Hüseyn Tahirov</p>
               <p>Naxçıvan Dövlət Universiteti | Tələbələrlə iş və tədbirlərin təşkili şöbəsi</p>
             </div>
           </div>
@@ -57,6 +56,9 @@ export function Footer() {
               </div>
             </div>
           </div>
+        </div>
+        <div className="mt-8 py-4 border-t border-primary-foreground/10 text-center text-sm text-primary-foreground/80">
+            <p>Designed by Hüseyn Tahirov</p>
         </div>
       </div>
     </footer>
