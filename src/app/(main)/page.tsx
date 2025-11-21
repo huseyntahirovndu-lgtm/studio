@@ -16,9 +16,8 @@ import { StatCard } from '@/components/stat-card';
 import { StudentCard } from '@/components/student-card';
 import { CategoryPieChart } from '@/components/charts/category-pie-chart';
 import { FacultyBarChart } from '@/components/charts/faculty-bar-chart';
-import { Student, Project, Certificate, Organization, FacultyData, CategoryData } from '@/types';
+import { Student, Project, Certificate, Organization, FacultyData, CategoryData, Invitation } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { addInvitation } from '@/lib/data';
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -26,7 +25,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { selectTopStories } from '@/ai/flows/story-selector';
 
@@ -90,9 +89,18 @@ const OrganizationProjectCard = ({ project }: { project: OrgProject }) => {
             toast({ title: "Müraciətiniz Qeydə Alınıb", description: "Bu layihəyə artıq müraciət etmisiniz." });
             return;
         }
-        
-        // This should be adapted to a non-blocking update
-        // addInvitation(application, project.id);
+
+        const invitation: Omit<Invitation, 'id'> = {
+            organizationId: project.organization.id,
+            studentId: user.id,
+            projectId: project.id,
+            status: 'müraciət',
+            createdAt: new Date(),
+        };
+
+        const invitationsCollection = collection(firestore, `organizations/${project.organization.id}/invitations`);
+        addDocumentNonBlocking(invitationsCollection, invitation);
+
         toast({ title: "Müraciət Göndərildi", description: `"${project.title}" layihəsinə müraciətiniz uğurla göndərildi.` });
     };
 
@@ -128,11 +136,13 @@ export default function HomePage() {
   const projectsQuery = useMemoFirebase(() => collection(firestore, "projects"), [firestore]);
   const organizationsQuery = useMemoFirebase(() => collection(firestore, "organizations"), [firestore]);
   const categoriesQuery = useMemoFirebase(() => collection(firestore, "categories"), [firestore]);
+  const achievementsQuery = useMemoFirebase(() => collection(firestore, "achievements"), [firestore]);
 
   const { data: students, isLoading: studentsLoading } = useCollection<Student>(studentsQuery);
   const { data: projects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
   const { data: organizations, isLoading: orgsLoading } = useCollection<Organization>(organizationsQuery);
   const { data: categories, isLoading: categoriesLoading } = useCollection<CategoryData>(categoriesQuery);
+  const { data: achievements, isLoading: achievementsLoading } = useCollection<Achievement>(achievementsQuery);
   
   const [topTalents, setTopTalents] = useState<Student[]>([]);
   const [newMembers, setNewMembers] = useState<Student[]>([]);
@@ -140,22 +150,18 @@ export default function HomePage() {
   const [organizationProjects, setOrganizationProjects] = useState<OrgProject[]>([]);
   const [popularSkills, setPopularSkills] = useState<string[]>([]);
   const [successStories, setSuccessStories] = useState<SuccessStory[]>([]);
-  const [achievementsCount, setAchievementsCount] = useState(0);
-
-  const isLoading = studentsLoading || projectsLoading || orgsLoading || categoriesLoading;
+  
+  const isLoading = studentsLoading || projectsLoading || orgsLoading || categoriesLoading || achievementsLoading;
 
   useEffect(() => {
     if (!students || students.length === 0) return;
 
-    // Top 10 Talents
     const sortedByTalent = [...students].sort((a, b) => (b.talentScore || 0) - (a.talentScore || 0));
     setTopTalents(sortedByTalent.slice(0, 10));
 
-    // Newest 5 members
     const sortedByDate = [...students].sort((a, b) => (a.createdAt && b.createdAt ? new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime() : 0));
     setNewMembers(sortedByDate.slice(0, 5));
     
-    // Popular skills
     const allSkills = students.flatMap(s => s.skills || []).map(s => s.name);
     const skillCounts = allSkills.reduce((acc, skill) => {
         acc[skill] = (acc[skill] || 0) + 1;
@@ -165,7 +171,6 @@ export default function HomePage() {
     const sortedSkills = Object.keys(skillCounts).sort((a, b) => skillCounts[b] - skillCounts[a]);
     setPopularSkills(sortedSkills.slice(0, 10));
     
-     // Fetch and select success stories
     const fetchStories = async () => {
         const storiesToConsider = students
             .filter(s => s.successStory && s.successStory.trim().length > 10)
@@ -177,7 +182,6 @@ export default function HomePage() {
                 setSuccessStories(result.selectedStories.map(s => ({...s, profilePictureUrl: storiesToConsider.find(stc => stc.id === s.studentId)?.profilePictureUrl})));
             } catch (error) {
                 console.error("AI story selection failed, using fallback:", error);
-                // Fallback to just showing the first 2 stories if AI fails
                 setSuccessStories(storiesToConsider.slice(0, 2).map(s => ({
                      studentId: s.id,
                      name: `${s.firstName} ${s.lastName}`,
@@ -192,21 +196,28 @@ export default function HomePage() {
 
   }, [students]);
 
-   // TODO: This is inefficient. This should be a counter document in Firestore.
    useEffect(() => {
-    if(students){
-        let count = 0;
-        // This is a temporary solution. For a production app, use a counter in Firestore.
-        // We'd need to query all subcollections, which is not efficient.
-        // For now, we will leave this as 0.
-        setAchievementsCount(0);
-    }
-   }, [students]);
+    if (!projects || !students || !organizations) return;
+    
+    const studentProjects = projects.filter(p => students.some(s => s.id === p.studentId));
+    const enrichedStudentProjects = studentProjects.map(p => ({
+      ...p,
+      student: students.find(s => s.id === p.studentId),
+    })).slice(0, 3);
+    setStrongestProjects(enrichedStudentProjects);
+
+    const orgProjects = projects.filter(p => organizations.some(o => o.id === p.studentId));
+    const enrichedOrgProjects = orgProjects.map(p => ({
+        ...p,
+        organization: organizations.find(o => o.id === p.studentId)!
+    })).slice(0, 3);
+    setOrganizationProjects(enrichedOrgProjects);
+
+   }, [projects, students, organizations]);
 
 
   return (
     <div className="flex flex-col">
-      {/* Hero Section */}
       <section className="relative w-full h-screen">
           <Image
             src="https://i.ibb.co/cXv2KzRR/q2.jpg"
@@ -241,7 +252,6 @@ export default function HomePage() {
       </section>
 
       <div className="container mx-auto px-4 py-8 md:py-12">
-        {/* Statistics Section */}
         <section className="py-12">
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
@@ -250,24 +260,23 @@ export default function HomePage() {
               icon={Users}
             />
             <StatCard
-              title="Aktiv Profillər"
-              value={isLoading ? '...' : (students?.length.toString() ?? '0')}
-              icon={Users}
-            />
-            <StatCard
-              title="Kateqoriya Sayı"
-              value={isLoading ? '...' : (categories?.length.toString() ?? '0')}
+              title="Aktiv Təşkilat"
+              value={isLoading ? '...' : (organizations?.length.toString() ?? '0')}
               icon={Building}
             />
             <StatCard
+              title="Aktiv Layihələr"
+              value={isLoading ? '...' : (projects?.length.toString() ?? '0')}
+              icon={Lightbulb}
+            />
+            <StatCard
               title="Ümumi Uğurlar"
-              value={isLoading ? '...' : achievementsCount.toString()}
+              value={isLoading ? '...' : (achievements?.length.toString() ?? '0')}
               icon={Trophy}
             />
           </div>
         </section>
 
-        {/* Top 10 Talents Section */}
         <section className="py-12">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl md:text-4xl font-bold">
@@ -292,7 +301,6 @@ export default function HomePage() {
            )}
         </section>
 
-        {/* Organization Projects Section */}
         <section className="py-12 bg-muted -mx-4 px-4 rounded-lg">
              <div className="text-center mb-12">
                 <h2 className="text-3xl md:text-4xl font-bold">Aktiv Təşkilat Layihələri</h2>
@@ -306,14 +314,15 @@ export default function HomePage() {
                     </div>
                 ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {organizationProjects.map(project => (
+                    {organizationProjects.length > 0 ? organizationProjects.map(project => (
                         <OrganizationProjectCard key={project.id} project={project} />
-                    ))}
+                    )) : (
+                        <p className="text-center col-span-full text-muted-foreground">Hazırda aktiv təşkilat layihəsi yoxdur.</p>
+                    )}
                 </div>
             )}
         </section>
         
-        {/* Strongest Projects & Popular Skills Section */}
         <section className="py-12 grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
             <div className="lg:col-span-2">
                 <h2 className="text-3xl md:text-4xl font-bold mb-8">Ən Güclü Tələbə Layihələri</h2>
@@ -325,7 +334,7 @@ export default function HomePage() {
                     </div>
                 ) : (
                     <div className="space-y-6">
-                        {strongestProjects.map(project => (
+                        {strongestProjects.length > 0 ? strongestProjects.map(project => (
                             <Link key={project.id} href={`/profile/${project.student?.id}`} className="block">
                                 <Card className="hover:shadow-md hover:border-primary/50 transition-all">
                                     <CardHeader>
@@ -345,7 +354,9 @@ export default function HomePage() {
                                     </CardContent>
                                 </Card>
                             </Link>
-                        ))}
+                        )) : (
+                             <p className="text-center text-muted-foreground py-10">Göstərmək üçün tələbə layihəsi tapılmadı.</p>
+                        )}
                     </div>
                 )}
             </div>
@@ -357,15 +368,16 @@ export default function HomePage() {
                     </div>
                 ) : (
                     <div className="flex flex-wrap gap-3">
-                        {popularSkills.map(skill => (
+                        {popularSkills.length > 0 ? popularSkills.map(skill => (
                             <Badge key={skill} variant="secondary" className="text-base px-4 py-2">{skill}</Badge>
-                        ))}
+                        )) : (
+                           <p className="text-muted-foreground">Heç bir bacarıq tapılmadı.</p>
+                        )}
                     </div>
                 )}
             </div>
         </section>
 
-        {/* Visual Statistics Section */}
         <section className="py-12">
            <div className="grid gap-8 lg:grid-cols-5">
               <div className="lg:col-span-2">
@@ -377,7 +389,6 @@ export default function HomePage() {
           </div>
         </section>
         
-        {/* Success Stories Section */}
         <section className="py-12">
             <div className="text-center mb-12">
                 <h2 className="text-3xl md:text-4xl font-bold">Tələbə Uğur Hekayələri</h2>
@@ -402,7 +413,6 @@ export default function HomePage() {
         </section>
 
 
-        {/* New Members Section */}
         <section className="py-12">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl md:text-4xl font-bold">
@@ -430,5 +440,3 @@ export default function HomePage() {
     </div>
   );
 }
-
-    
