@@ -45,7 +45,7 @@ export function Footer() {
                 </Link>
               </li>
                <li>
-                <Link href="/student-organizations" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors text-base">
+                <Link href="/telebe-teskilatlari" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors text-base">
                   Tələbə Təşkilatları
                 </Link>
               </li>

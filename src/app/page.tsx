@@ -392,7 +392,7 @@ export default function HomePage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                       {studentOrgs && studentOrgs.length > 0 ? studentOrgs.map(org => (
                            <Card key={org.id} className="hover:shadow-lg transition-shadow">
-                             <Link href={`/student-organizations/${org.id}`}>
+                             <Link href={`/telebe-teskilatlari/${org.id}`}>
                                 <CardHeader className="flex-row gap-4 items-center">
                                     <Avatar className="w-16 h-16">
                                         <AvatarImage src={org.logoUrl} alt={org.name} />
@@ -415,7 +415,7 @@ export default function HomePage() {
               )}
                 <div className="text-center mt-8">
                     <Button asChild variant="outline">
-                        <Link href="/student-organizations">Bütün Təşkilatlar <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                        <Link href="/telebe-teskilatlari">Bütün Təşkilatlar <ArrowRight className="ml-2 h-4 w-4" /></Link>
                     </Button>
                 </div>
           </section>

@@ -112,7 +112,7 @@ export default function AdminStudentOrganizationsPage() {
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuLabel>Əməliyyatlar</DropdownMenuLabel>
                                         <DropdownMenuItem asChild>
-                                            <Link href={`/student-organizations/${item.id}`} target="_blank">Təşkilata Bax</Link>
+                                            <Link href={`/telebe-teskilatlari/${item.id}`} target="_blank">Təşkilata Bax</Link>
                                         </DropdownMenuItem>
                                         <DropdownMenuItem asChild>
                                             <Link href={`/admin/student-organizations/edit/${item.id}`}>Redaktə Et</Link>
