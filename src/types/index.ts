@@ -129,6 +129,26 @@ export interface StudentOrganization {
   memberIds: string[]; // array of student ids
 }
 
+export interface News {
+  id: string;
+  slug: string;
+  title: string;
+  content: string;
+  coverImageUrl?: string;
+  authorId: string;
+  authorName: string;
+  createdAt: any;
+  updatedAt?: any;
+}
+
+export interface StudentOrgUpdate {
+  id: string;
+  organizationId: string;
+  title: string;
+  content: string;
+  createdAt: any;
+}
+
 export interface FacultyData {
     id: string;
     name: string;

@@ -12,14 +12,12 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-10">
           
           {/* Column 1: Logo and University Info */}
-          <div className="flex flex-col items-start gap-4 md:col-span-1 lg:col-span-1">
-            <Link href="/" className="flex flex-row items-center gap-4">
-              <Logo className="h-16 w-auto" />
-              <div>
-                <p className="font-bold text-lg">İstedad Mərkəzi</p>
-                <p className="text-base text-primary-foreground/80">Naxçıvan Dövlət Universiteti</p>
-              </div>
-            </Link>
+          <div className="flex flex-row items-center gap-4 md:col-span-1 lg:col-span-1">
+            <Logo className="h-16 w-auto" />
+            <div>
+              <p className="font-bold text-lg">İstedad Mərkəzi</p>
+              <p className="text-base text-primary-foreground/80">Naxçıvan Dövlət Universiteti</p>
+            </div>
           </div>
 
           {/* Column 2: Platforma Links */}
@@ -29,6 +27,11 @@ export function Footer() {
               <li>
                 <Link href="/" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors text-base">
                   Ana Səhifə
+                </Link>
+              </li>
+              <li>
+                <Link href="/news" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors text-base">
+                  Xəbərlər
                 </Link>
               </li>
               <li>

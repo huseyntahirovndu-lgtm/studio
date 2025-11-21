@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 
 const navLinks = [
   { href: '/', label: 'Ana Səhifə' },
+  { href: '/news', label: 'Xəbərlər' },
   { href: '/search', label: 'Axtarış' },
   { href: '/rankings', label: 'Reytinq' },
   { href: '/student-organizations', label: 'Tələbə Təşkilatları' },

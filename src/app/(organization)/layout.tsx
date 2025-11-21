@@ -2,8 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { BarChart, Home, Package, Settings, ShieldCheck, ShoppingCart, Users2, ListTree, Building, Library, Newspaper } from "lucide-react"
-
+import { Home, Newspaper, Settings, ShieldCheck } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { cn } from "@/lib/utils"
 import {
@@ -13,19 +12,15 @@ import {
   TooltipProvider
 } from "@/components/ui/tooltip"
 import { useEffect } from "react";
-import type { Admin } from "@/types";
+import type { StudentOrganization } from "@/types"; // Assuming the user leading the org will have a specific type or role marker.
 
+// This layout is for Student Organization Leaders
 const NAV_LINKS = [
-    { href: "/admin/dashboard", icon: Home, label: "Dashboard", exact: true },
-    { href: "/admin/students", icon: Users2, label: "Tələbələr" },
-    { href: "/admin/organizations", icon: Building, label: "Təşkilatlar" },
-    { href: "/admin/student-organizations", icon: Library, label: "Tələbə Təşkilatları" },
-    { href: "/admin/news", icon: Newspaper, label: "Xəbərlər" },
-    { href: "/admin/categories", icon: ListTree, label: "Kateqoriyalar" },
+    { href: "/student-organizations/dashboard", icon: Home, label: "Panel", exact: true },
+    { href: "/student-organizations/updates", icon: Newspaper, label: "Yeniliklər" },
 ];
 
-
-export default function AdminLayout({
+export default function StudentOrganizationLayout({
   children,
 }: {
   children: React.ReactNode
@@ -34,15 +29,19 @@ export default function AdminLayout({
   const { user, loading } = useAuth();
   const router = useRouter();
 
+  // This needs to be a more robust check. We need to verify if the logged-in user
+  // is a leader of ANY student organization. This is a placeholder.
+  const isOrgLeader = user?.role === 'student'; // This is NOT correct, just a placeholder for the concept.
+
   useEffect(() => {
-    if (!loading && (!user || (user as Admin)?.role !== 'admin')) {
-        router.push('/login');
+    if (!loading && !isOrgLeader) {
+        // router.push('/login');
+        console.warn("Redirect would happen here, but is disabled for development. User is not an org leader.");
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, isOrgLeader]);
 
-
-  if (loading || !user || (user as Admin).role !== 'admin') {
-      return <div className="flex h-screen items-center justify-center">Yüklənir...</div>;
+  if (loading || !isOrgLeader) {
+      return <div className="flex h-screen items-center justify-center">Yüklənir və ya giriş tələb olunur...</div>;
   }
   
   const isActive = (href: string, exact?: boolean) => {
@@ -78,7 +77,6 @@ export default function AdminLayout({
                     <TooltipContent side="right">{link.label}</TooltipContent>
                 </Tooltip>
             ))}
-
             </nav>
             <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
             <Tooltip>

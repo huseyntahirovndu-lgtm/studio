@@ -18,6 +18,9 @@ rules_version = '2';
  *   nested in subcollections under this path, inheriting ownership.
  * - /organizations/{organizationId}: Stores profiles for organizations.
  * - /skills/{skillId} & /categories/{categoryId}: Contain public, read-only reference data managed by Admins.
+ * - /news/{newsId}: Stores platform-wide news, managed by Admins. Publicly readable.
+ * - /student-organizations/{orgId}: Stores profiles for student-led organizations.
+ * - /student-organizations/{orgId}/updates/{updateId}: Updates for a student organization, managed by its leader.
  * - /roles_admin/{userId}: A dedicated collection where the existence of a document grants a user admin privileges.
  *
  * @decisions
@@ -220,6 +223,52 @@ service cloud.firestore {
       allow update, delete: if isAdmin() && resource != null;
     }
 
+    // -------------------------------------------------------------------------
+    // News Rules
+    // -------------------------------------------------------------------------
+    /**
+     * @description Manages platform-wide news. News is publicly readable by anyone
+     *              but can only be managed by administrators.
+     * @path /news/{newsId}
+     * @allow (list) Any user can list all news posts.
+     * @allow (create, update, delete) An admin can manage news posts.
+     * @deny (create) A non-admin user attempts to create a news post.
+     */
+    match /news/{newsId} {
+        allow get, list: if true;
+        allow create, update, delete: if isAdmin();
+    }
+    
+    // -------------------------------------------------------------------------
+    // Student Organization Rules
+    // -------------------------------------------------------------------------
+    
+    /**
+     * @description Manages student organization profiles. Publicly readable, but only
+     *              admins can create, update, or delete them.
+     * @path /student-organizations/{orgId}
+     * @allow (list) Any user can see all student organizations.
+     * @allow (create, update, delete) Only admins can manage the organizations.
+     */
+    match /student-organizations/{orgId} {
+        allow get, list: if true;
+        allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Manages updates for a specific student organization. Readable by anyone.
+     *              Writable only by an admin or the designated leader of the student organization.
+     * @path /student-organizations/{orgId}/updates/{updateId}
+     * @allow (list) Anyone can read updates for an organization.
+     * @allow (create) The org leader or an admin can post an update.
+     * @deny (update) A regular student tries to edit an update.
+     */
+    match /student-organizations/{orgId}/updates/{updateId} {
+        allow get, list: if true;
+        allow create: if isAdmin() || isOwner(get(/databases/$(database)/documents/student-organizations/$(orgId)).data.leaderId);
+        allow update, delete: if isAdmin() || isOwner(get(/databases/$(database)/documents/student-organizations/$(orgId)).data.leaderId);
+    }
+
 
     // -------------------------------------------------------------------------
     // Administrative Role Management
@@ -241,4 +290,3 @@ service cloud.firestore {
     }
   }
 }
-    
