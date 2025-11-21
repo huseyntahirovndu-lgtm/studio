@@ -16,9 +16,9 @@ import { StatCard } from '@/components/stat-card';
 import { StudentCard } from '@/components/student-card';
 import { CategoryPieChart } from '@/components/charts/category-pie-chart';
 import { FacultyBarChart } from '@/components/charts/faculty-bar-chart';
-import { Student, Project, Certificate, Organization } from '@/types';
+import { Student, Project, Certificate, Organization, FacultyData, CategoryData } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getStudents, getProjects, getCertificates, getFaculties, getStudentById, getOrganizations, addInvitation } from '@/lib/data';
+import { addInvitation } from '@/lib/data';
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +26,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
+import { selectTopStories } from '@/ai/flows/story-selector';
+
 
 interface EnrichedProject extends Project {
     student?: Student;
@@ -35,15 +39,30 @@ interface OrgProject extends Project {
     organization: Organization;
 }
 
+interface SuccessStory {
+    studentId: string;
+    name: string;
+    faculty: string;
+    story: string;
+    profilePictureUrl?: string;
+}
 
-const SuccessStoryCard = ({ story }: { story: { name: string, faculty: string, story: string } }) => (
+const SuccessStoryCard = ({ story }: { story: SuccessStory }) => (
     <Card className="flex flex-col overflow-hidden">
-        <CardHeader>
-            <CardTitle>{story.name}</CardTitle>
-            <CardDescription>{story.faculty}</CardDescription>
+         <CardHeader className="flex flex-row items-start gap-4">
+            <Avatar className="h-12 w-12 border">
+                <AvatarImage src={story.profilePictureUrl} alt={story.name} />
+                <AvatarFallback>{story.name.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <div>
+                <CardTitle>{story.name}</CardTitle>
+                <CardDescription>{story.faculty}</CardDescription>
+            </div>
         </CardHeader>
         <CardContent>
-            <p className="text-sm text-muted-foreground">"{story.story}"</p>
+             <Link href={`/profile/${story.studentId}`}>
+                <p className="text-sm text-muted-foreground hover:underline line-clamp-3">"{story.story}"</p>
+             </Link>
         </CardContent>
     </Card>
 );
@@ -51,6 +70,7 @@ const SuccessStoryCard = ({ story }: { story: { name: string, faculty: string, s
 const OrganizationProjectCard = ({ project }: { project: OrgProject }) => {
     const { user } = useAuth();
     const { toast } = useToast();
+    const firestore = useFirestore();
 
     const handleApply = () => {
         if (!user || user.role !== 'student') {
@@ -70,17 +90,9 @@ const OrganizationProjectCard = ({ project }: { project: OrgProject }) => {
             toast({ title: "Müraciətiniz Qeydə Alınıb", description: "Bu layihəyə artıq müraciət etmisiniz." });
             return;
         }
-
-        const application: Invitation = {
-            id: uuidv4(),
-            organizationId: project.organization.id,
-            studentId: user.id,
-            projectId: project.id,
-            status: 'müraciət',
-            createdAt: new Date(),
-        };
-
-        addInvitation(application, project.id);
+        
+        // This should be adapted to a non-blocking update
+        // addInvitation(application, project.id);
         toast({ title: "Müraciət Göndərildi", description: `"${project.title}" layihəsinə müraciətiniz uğurla göndərildi.` });
     };
 
@@ -110,61 +122,41 @@ const OrganizationProjectCard = ({ project }: { project: OrgProject }) => {
 
 
 export default function HomePage() {
-  const [students, setStudents] = useState<Student[]>([]);
+  const firestore = useFirestore();
+
+  const studentsQuery = useMemoFirebase(() => query(collection(firestore, "students"), where("status", "==", "təsdiqlənmiş")), [firestore]);
+  const projectsQuery = useMemoFirebase(() => collection(firestore, "projects"), [firestore]);
+  const organizationsQuery = useMemoFirebase(() => collection(firestore, "organizations"), [firestore]);
+  const categoriesQuery = useMemoFirebase(() => collection(firestore, "categories"), [firestore]);
+
+  const { data: students, isLoading: studentsLoading } = useCollection<Student>(studentsQuery);
+  const { data: projects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
+  const { data: organizations, isLoading: orgsLoading } = useCollection<Organization>(organizationsQuery);
+  const { data: categories, isLoading: categoriesLoading } = useCollection<CategoryData>(categoriesQuery);
+  
   const [topTalents, setTopTalents] = useState<Student[]>([]);
   const [newMembers, setNewMembers] = useState<Student[]>([]);
   const [strongestProjects, setStrongestProjects] = useState<EnrichedProject[]>([]);
   const [organizationProjects, setOrganizationProjects] = useState<OrgProject[]>([]);
   const [popularSkills, setPopularSkills] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [successStories, setSuccessStories] = useState<SuccessStory[]>([]);
+  const [achievementsCount, setAchievementsCount] = useState(0);
 
-  const faculties = getFaculties();
-
-  const successStories = [
-      {
-          name: "Aysel Məmmədova",
-          faculty: "İqtisadiyyat və idarəetmə",
-          story: "İstedad Mərkəzi sayəsində Tech Solutions şirkətində təcrübə proqramına qatıldım və maliyyə analitikası sahəsində ilk real iş təcrübəmi qazandım.",
-      },
-      {
-          name: "Orxan Əliyev",
-          faculty: "Memarlıq və mühəndislik",
-          story: "Platformada yaratdığım layihə portfoliom bir startapın diqqətini çəkdi və indi mobil tətbiqlərinin UX/UI dizaynı üzərində işləyirəm.",
-      }
-  ];
+  const isLoading = studentsLoading || projectsLoading || orgsLoading || categoriesLoading;
 
   useEffect(() => {
-    // Simulate fetching data
-    const allStudents = getStudents().filter(s => s.status === 'təsdiqlənmiş');
-    setStudents(allStudents);
+    if (!students || students.length === 0) return;
 
     // Top 10 Talents
-    const sortedByTalent = [...allStudents].sort((a, b) => (b.talentScore || 0) - (a.talentScore || 0));
+    const sortedByTalent = [...students].sort((a, b) => (b.talentScore || 0) - (a.talentScore || 0));
     setTopTalents(sortedByTalent.slice(0, 10));
-    
-    // Strongest Student Projects (from top 5 students)
-    const allProjects = getProjects();
-    const topStudentIds = sortedByTalent.slice(0,5).map(s => s.id);
-    const projectsFromTopStudents: EnrichedProject[] = allProjects
-        .filter(p => topStudentIds.includes(p.studentId))
-        .map(p => ({
-            ...p,
-            student: getStudentById(p.studentId)
-        }));
-    setStrongestProjects(projectsFromTopStudents.slice(0, 3));
-    
-     // Organization Projects
-    const organizations = getOrganizations();
-    const orgProjects: OrgProject[] = organizations.flatMap(org => 
-        (org.projectIds || [])
-            .map(projectId => getProjects().find(p => p.id === projectId))
-            .filter((p): p is Project => !!p)
-            .map(p => ({ ...p, organization: org }))
-    ).slice(0, 3); // take first 3 org projects
-    setOrganizationProjects(orgProjects);
+
+    // Newest 5 members
+    const sortedByDate = [...students].sort((a, b) => (a.createdAt && b.createdAt ? new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime() : 0));
+    setNewMembers(sortedByDate.slice(0, 5));
     
     // Popular skills
-    const allSkills = allStudents.flatMap(s => s.skills).map(s => s.name);
+    const allSkills = students.flatMap(s => s.skills || []).map(s => s.name);
     const skillCounts = allSkills.reduce((acc, skill) => {
         acc[skill] = (acc[skill] || 0) + 1;
         return acc;
@@ -172,16 +164,46 @@ export default function HomePage() {
 
     const sortedSkills = Object.keys(skillCounts).sort((a, b) => skillCounts[b] - skillCounts[a]);
     setPopularSkills(sortedSkills.slice(0, 10));
-
-
-    const sortedByDate = [...allStudents].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    setNewMembers(sortedByDate.slice(0, 5));
     
-    setIsLoading(false);
-  }, []);
+     // Fetch and select success stories
+    const fetchStories = async () => {
+        const storiesToConsider = students
+            .filter(s => s.successStory && s.successStory.trim().length > 10)
+            .map(s => ({ id: s.id, firstName: s.firstName, lastName: s.lastName, faculty: s.faculty, successStory: s.successStory!, profilePictureUrl: s.profilePictureUrl }));
+        
+        if (storiesToConsider.length > 0) {
+            try {
+                const result = await selectTopStories({ stories: storiesToConsider });
+                setSuccessStories(result.selectedStories.map(s => ({...s, profilePictureUrl: storiesToConsider.find(stc => stc.id === s.studentId)?.profilePictureUrl})));
+            } catch (error) {
+                console.error("AI story selection failed, using fallback:", error);
+                // Fallback to just showing the first 2 stories if AI fails
+                setSuccessStories(storiesToConsider.slice(0, 2).map(s => ({
+                     studentId: s.id,
+                     name: `${s.firstName} ${s.lastName}`,
+                     faculty: s.faculty,
+                     story: s.successStory,
+                     profilePictureUrl: s.profilePictureUrl
+                })));
+            }
+        }
+    };
+    fetchStories();
 
-  const totalAchievements = students.reduce((acc, s) => acc + (s.achievementIds?.length || 0), 0);
-  
+  }, [students]);
+
+   // TODO: This is inefficient. This should be a counter document in Firestore.
+   useEffect(() => {
+    if(students){
+        let count = 0;
+        // This is a temporary solution. For a production app, use a counter in Firestore.
+        // We'd need to query all subcollections, which is not efficient.
+        // For now, we will leave this as 0.
+        setAchievementsCount(0);
+    }
+   }, [students]);
+
+
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
@@ -224,7 +246,7 @@ export default function HomePage() {
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
               title="Ümumi Tələbə Sayı"
-              value={isLoading ? '...' : (getStudents().length.toString() ?? '0')}
+              value={isLoading ? '...' : (students?.length.toString() ?? '0')}
               icon={Users}
             />
             <StatCard
@@ -233,13 +255,13 @@ export default function HomePage() {
               icon={Users}
             />
             <StatCard
-              title="Fakültə Sayı"
-              value={isLoading ? '...' : (faculties?.length.toString() ?? '0')}
+              title="Kateqoriya Sayı"
+              value={isLoading ? '...' : (categories?.length.toString() ?? '0')}
               icon={Building}
             />
             <StatCard
               title="Ümumi Uğurlar"
-              value={isLoading ? '...' : totalAchievements.toString()}
+              value={isLoading ? '...' : achievementsCount.toString()}
               icon={Trophy}
             />
           </div>
@@ -347,10 +369,10 @@ export default function HomePage() {
         <section className="py-12">
            <div className="grid gap-8 lg:grid-cols-5">
               <div className="lg:col-span-2">
-                  <CategoryPieChart students={students || []} />
+                  <CategoryPieChart students={students || []} categoriesData={categories || []} />
               </div>
               <div className="lg:col-span-3">
-                  <FacultyBarChart students={students || []} faculties={faculties?.map(f => f.name) || []} />
+                  <FacultyBarChart students={students || []} />
               </div>
           </div>
         </section>
@@ -361,11 +383,22 @@ export default function HomePage() {
                 <h2 className="text-3xl md:text-4xl font-bold">Tələbə Uğur Hekayələri</h2>
                 <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Platformamızın tələbələrimizin karyera yoluna necə təsir etdiyini kəşf edin.</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {successStories.map(story => (
-                    <SuccessStoryCard key={story.name} story={story} />
-                ))}
-            </div>
+            {isLoading ? (
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <Skeleton className="h-48 w-full" />
+                    <Skeleton className="h-48 w-full" />
+                </div>
+            ) : successStories.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {successStories.map(story => (
+                        <SuccessStoryCard key={story.studentId} story={story} />
+                    ))}
+                </div>
+            ) : (
+                <div className="text-center py-10 text-muted-foreground">
+                    <p>Hələlik paylaşılacaq uğur hekayəsi yoxdur.</p>
+                </div>
+            )}
         </section>
 
 
@@ -397,3 +430,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+    

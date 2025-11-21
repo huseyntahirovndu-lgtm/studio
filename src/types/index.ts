@@ -100,6 +100,7 @@ export interface Student extends BaseUser {
   profilePictureUrl?: string;
   profilePictureHint?: string;
   status: StudentStatus;
+  successStory?: string;
 }
 
 export interface Organization extends BaseUser {
@@ -139,3 +140,5 @@ export interface Invitation {
 }
 
 export type AppUser = Student | Organization | Admin;
+
+    

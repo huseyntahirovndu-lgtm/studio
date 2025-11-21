@@ -20,6 +20,7 @@ export function Footer() {
             <div className="text-sm text-primary-foreground/80">
               <p>&copy; {currentYear} Bütün hüquqlar qorunur.</p>
               <p>Designed by Hüseyn Tahirov</p>
+              <p>Naxçıvan Dövlət Universiteti | Tələbələrlə iş və tədbirlərin təşkili şöbəsi</p>
             </div>
           </div>
 
@@ -60,3 +61,5 @@ export function Footer() {
     </footer>
   );
 }
+
+    

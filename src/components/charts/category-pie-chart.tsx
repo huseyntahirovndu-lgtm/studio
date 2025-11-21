@@ -16,12 +16,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
-import { Student } from '@/types';
-import { getCategories } from '@/lib/data';
-
-const allCategories = getCategories();
-const categories = allCategories.map(c => c.name);
-
+import { Student, CategoryData } from '@/types';
 
 const categoryColors: Record<string, string> = {
     STEM: 'hsl(var(--category-stem))',
@@ -34,14 +29,18 @@ const categoryColors: Record<string, string> = {
 
 interface CategoryPieChartProps {
   students: Student[];
+  categoriesData: CategoryData[];
 }
 
-export function CategoryPieChart({ students }: CategoryPieChartProps) {
+export function CategoryPieChart({ students, categoriesData }: CategoryPieChartProps) {
+    
+  const categories = categoriesData.map(c => c.name);
+
   const chartData = categories.map((category) => ({
     name: category,
     value: students.filter((student) => student.category.includes(category)).length,
     fill: categoryColors[category] || 'hsl(var(--muted))',
-  }));
+  })).filter(d => d.value > 0);
 
   const chartConfig = {
     value: {
