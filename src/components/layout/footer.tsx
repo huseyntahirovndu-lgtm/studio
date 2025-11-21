@@ -36,7 +36,7 @@ export function Footer() {
             <div>
               <h3 className="font-semibold mb-4">Əlaqə</h3>
               <ul className="space-y-2 text-primary-foreground/80">
-                <li>AZ7000, Naxçıvan şəh., İstiqlal küç. 85</li>
+                <li>Azərbaycan Respublikası, Naxçıvan şəhəri, Universitet şəhərciyi, AZ7012, Naxçıvan Dövlət Universiteti</li>
                 <li>Tel: +994 36 544 08 61</li>
                 <li>(daxili: 1909)</li>
                 <li>Email: tedbir@ndu.edu.az</li>
