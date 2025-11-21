@@ -2,7 +2,7 @@
 import { useParams } from 'next/navigation';
 import { useDoc, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { StudentOrganization, StudentOrgUpdate, Student } from '@/types';
-import { doc, collection, query, where, orderBy } from 'firebase/firestore';
+import { doc, collection, query, where, orderBy, documentId } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
 import { format } from 'date-fns';
@@ -28,7 +28,7 @@ export default function StudentOrganizationDetailsPage() {
         if (!org?.memberIds || org.memberIds.length === 0) return null;
         // Firestore 'in' queries are limited to 30 elements. If you expect more members, you'll need pagination.
         const memberIdsToQuery = org.memberIds.slice(0, 30);
-        return query(collection(firestore, 'users'), where('id', 'in', memberIdsToQuery));
+        return query(collection(firestore, 'users'), where(documentId(), 'in', memberIdsToQuery));
     }, [firestore, org?.memberIds]);
     const { data: members, isLoading: membersLoading } = useCollection<Student>(membersQuery as any);
 
