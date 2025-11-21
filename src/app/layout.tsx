@@ -1,15 +1,19 @@
 'use client';
-import type { Metadata } from 'next';
+import { usePathname } from 'next/navigation';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 import { SessionProvider } from '@/hooks/use-auth';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { Header } from '@/components/layout/header';
+import { Footer } from '@/components/layout/footer';
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const pathname = usePathname();
+  const isAuthPage = pathname === '/login' || pathname.startsWith('/register');
   
   return (
     <html lang="az">
@@ -23,7 +27,17 @@ export default function RootLayout({
       <body className="font-body bg-background antialiased">
         <FirebaseClientProvider>
           <SessionProvider>
-            {children}
+            {isAuthPage ? (
+              <main className="flex min-h-screen items-center justify-center bg-background p-4">
+                {children}
+              </main>
+            ) : (
+              <div className="flex flex-col min-h-screen">
+                <Header />
+                <main className="flex-1">{children}</main>
+                <Footer />
+              </div>
+            )}
             <Toaster />
           </SessionProvider>
         </FirebaseClientProvider>
