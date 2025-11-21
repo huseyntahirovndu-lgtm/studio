@@ -2,8 +2,8 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Home, Newspaper, Settings, ShieldCheck } from "lucide-react"
-import { useAuth } from "@/hooks/use-auth"
+import { Home, Newspaper, Settings, ShieldCheck, Library } from "lucide-react"
+import { useAuth, useCollection, useFirestore, useMemoFirebase } from "@/firebase"
 import { cn } from "@/lib/utils"
 import {
   Tooltip,
@@ -11,13 +11,13 @@ import {
   TooltipTrigger,
   TooltipProvider
 } from "@/components/ui/tooltip"
-import { useEffect } from "react";
-import type { StudentOrganization } from "@/types"; // Assuming the user leading the org will have a specific type or role marker.
+import { useEffect, useState } from "react";
+import type { StudentOrganization } from "@/types";
+import { collection, query, where } from "firebase/firestore";
 
-// This layout is for Student Organization Leaders
 const NAV_LINKS = [
-    { href: "/student-organizations/dashboard", icon: Home, label: "Panel", exact: true },
-    { href: "/student-organizations/updates", icon: Newspaper, label: "Yeniliklər" },
+    { href: "/organization-panel/dashboard", icon: Home, label: "Panel", exact: true },
+    { href: "/organization-panel/updates", icon: Newspaper, label: "Yeniliklər" },
 ];
 
 export default function StudentOrganizationLayout({
@@ -28,20 +28,24 @@ export default function StudentOrganizationLayout({
   const pathname = usePathname();
   const { user, loading } = useAuth();
   const router = useRouter();
+  const firestore = useFirestore();
 
-  // This needs to be a more robust check. We need to verify if the logged-in user
-  // is a leader of ANY student organization. This is a placeholder.
-  const isOrgLeader = user?.role === 'student'; // This is NOT correct, just a placeholder for the concept.
+  const ledOrgQuery = useMemoFirebase(() => 
+    user ? query(collection(firestore, 'student-organizations'), where('leaderId', '==', user.id)) : null,
+    [firestore, user]
+  );
+  const { data: ledOrgs, isLoading: ledOrgsLoading } = useCollection<StudentOrganization>(ledOrgQuery);
+
+  const isOrgLeader = ledOrgs && ledOrgs.length > 0;
 
   useEffect(() => {
-    if (!loading && !isOrgLeader) {
-        // router.push('/login');
-        console.warn("Redirect would happen here, but is disabled for development. User is not an org leader.");
+    if (!loading && !ledOrgsLoading && !isOrgLeader) {
+        router.push('/');
     }
-  }, [user, loading, router, isOrgLeader]);
+  }, [user, loading, router, isOrgLeader, ledOrgsLoading]);
 
-  if (loading || !isOrgLeader) {
-      return <div className="flex h-screen items-center justify-center">Yüklənir və ya giriş tələb olunur...</div>;
+  if (loading || ledOrgsLoading || !isOrgLeader) {
+      return <div className="flex h-screen items-center justify-center">Yüklənir və ya səlahiyyət yoxlanılır...</div>;
   }
   
   const isActive = (href: string, exact?: boolean) => {
@@ -57,8 +61,8 @@ export default function StudentOrganizationLayout({
                 href="/"
                 className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
             >
-                <ShieldCheck className="h-4 w-4 transition-all group-hover:scale-110" />
-                <span className="sr-only">İstedad Mərkəzi</span>
+                <Library className="h-4 w-4 transition-all group-hover:scale-110" />
+                <span className="sr-only">Tələbə Təşkilatı Paneli</span>
             </Link>
 
             {NAV_LINKS.map(link => (
@@ -82,14 +86,14 @@ export default function StudentOrganizationLayout({
             <Tooltip>
                 <TooltipTrigger asChild>
                 <Link
-                    href="#"
+                    href="/profile/edit"
                     className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
                 >
                     <Settings className="h-5 w-5" />
-                    <span className="sr-only">Ayarlar</span>
+                    <span className="sr-only">Profil Ayarları</span>
                 </Link>
                 </TooltipTrigger>
-                <TooltipContent side="right">Ayarlar</TooltipContent>
+                <TooltipContent side="right">Profil Ayarları</TooltipContent>
             </Tooltip>
             </nav>
         </TooltipProvider>
