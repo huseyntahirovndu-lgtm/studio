@@ -19,7 +19,6 @@ const navLinks = [
   { href: '/məqalələr', label: 'Xəbərlər' },
   { href: '/search', label: 'Axtarış' },
   { href: '/rankings', label: 'Reytinq' },
-  { href: '/telebe-teskilatlari', label: 'Tələbə Təşkilatları' },
 ];
 
 export function Header() {

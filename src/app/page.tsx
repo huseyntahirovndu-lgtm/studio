@@ -162,15 +162,13 @@ export default function HomePage() {
   const categoriesQuery = useMemoFirebase(() => collection(firestore, "categories"), [firestore]);
   const achievementsQuery = useMemoFirebase(() => collection(firestore, "achievements"), [firestore]);
   const newsQuery = useMemoFirebase(() => query(collection(firestore, 'news'), orderBy('createdAt', 'desc'), limit(3)), [firestore]);
-  const studentOrgsQuery = useMemoFirebase(() => query(collection(firestore, 'telebe-teskilatlari'), limit(3)), [firestore]);
-
+  
   const { data: students, isLoading: studentsLoading } = useCollection<Student>(studentsQuery);
   const { data: projects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
   const { data: organizations, isLoading: orgsLoading } = useCollection<Organization>(organizationsQuery);
   const { data: categories, isLoading: categoriesLoading } = useCollection<CategoryData>(categoriesQuery);
   const { data: achievements, isLoading: achievementsLoading } = useCollection<Achievement>(achievementsQuery);
   const { data: latestNews, isLoading: newsLoading } = useCollection<News>(newsQuery);
-  const { data: studentOrgs, isLoading: studentOrgsLoading } = useCollection<StudentOrganization>(studentOrgsQuery);
   
   const [topTalents, setTopTalents] = useState<Student[]>([]);
   const [newMembers, setNewMembers] = useState<Student[]>([]);
@@ -179,7 +177,7 @@ export default function HomePage() {
   const [popularSkills, setPopularSkills] = useState<string[]>([]);
   const [successStories, setSuccessStories] = useState<SuccessStory[]>([]);
   
-  const isLoading = studentsLoading || projectsLoading || orgsLoading || categoriesLoading || achievementsLoading || newsLoading || studentOrgsLoading;
+  const isLoading = studentsLoading || projectsLoading || orgsLoading || categoriesLoading || achievementsLoading || newsLoading;
 
   useEffect(() => {
     if (!students || students.length === 0) return;
@@ -375,49 +373,6 @@ export default function HomePage() {
                   ))}
                 </div>
              )}
-          </section>
-          
-           <section className="py-12 bg-muted -mx-4 px-4 rounded-lg">
-               <div className="text-center mb-12">
-                  <h2 className="text-3xl md:text-4xl font-bold">Tələbə Təşkilatları</h2>
-                  <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Universitetimizin aktiv tələbə təşkilatları ilə tanış olun və fəaliyyətlərinə qoşulun.</p>
-              </div>
-               {isLoading ? (
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                          <Skeleton className="h-48 w-full" />
-                          <Skeleton className="h-48 w-full" />
-                          <Skeleton className="h-48 w-full" />
-                      </div>
-                  ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                      {studentOrgs && studentOrgs.length > 0 ? studentOrgs.map(org => (
-                           <Card key={org.id} className="hover:shadow-lg transition-shadow">
-                             <Link href={`/telebe-teskilatlari/${org.id}`}>
-                                <CardHeader className="flex-row gap-4 items-center">
-                                    <Avatar className="w-16 h-16">
-                                        <AvatarImage src={org.logoUrl} alt={org.name} />
-                                        <AvatarFallback>{org.name.charAt(0)}</AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                        <CardTitle>{org.name}</CardTitle>
-                                        <CardDescription>{org.faculty}</CardDescription>
-                                    </div>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-sm text-muted-foreground line-clamp-2">{org.description}</p>
-                                </CardContent>
-                            </Link>
-                        </Card>
-                      )) : (
-                          <p className="text-center col-span-full text-muted-foreground">Heç bir tələbə təşkilatı tapılmadı.</p>
-                      )}
-                  </div>
-              )}
-                <div className="text-center mt-8">
-                    <Button asChild variant="outline">
-                        <Link href="/telebe-teskilatlari">Bütün Təşkilatlar <ArrowRight className="ml-2 h-4 w-4" /></Link>
-                    </Button>
-                </div>
           </section>
 
           <section className="py-12 bg-muted -mx-4 px-4 rounded-lg">

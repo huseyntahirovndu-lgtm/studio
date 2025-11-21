@@ -19,7 +19,6 @@ const NAV_LINKS = [
     { href: "/admin/dashboard", icon: Home, label: "Dashboard", exact: true },
     { href: "/admin/students", icon: Users2, label: "Tələbələr" },
     { href: "/admin/organizations", icon: Building, label: "Təşkilatlar" },
-    { href: "/admin/telebe-teskilatlari", icon: Library, label: "Tələbə Təşkilatları" },
     { href: "/admin/news", icon: Newspaper, label: "Xəbərlər" },
     { href: "/admin/categories", icon: ListTree, label: "Kateqoriyalar" },
 ];

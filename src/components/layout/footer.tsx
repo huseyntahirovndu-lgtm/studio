@@ -44,11 +44,6 @@ export function Footer() {
                   Reytinqlər
                 </Link>
               </li>
-               <li>
-                <Link href="/telebe-teskilatlari" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors text-base">
-                  Tələbə Təşkilatları
-                </Link>
-              </li>
             </ul>
           </div>
 
