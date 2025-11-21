@@ -37,7 +37,7 @@ export function Footer() {
               <ul className="space-y-2 text-primary-foreground/80">
                 <li>Azərbaycan Respublikası, Naxçıvan şəhəri, Universitet şəhərciyi, AZ7012, Naxçıvan Dövlət Universiteti</li>
                 <li>Tel: +994 36 544 08 61</li>
-                <li>(daxili: 1108)</li>
+                <li>Daxili telefon: 1108</li>
                 <li>Email: tedbir@ndu.edu.az</li>
               </ul>
             </div>
