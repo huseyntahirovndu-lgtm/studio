@@ -57,7 +57,7 @@ export function Footer() {
             </div>
           </div>
         </div>
-        <div className="mt-8 py-4 border-t border-primary-foreground/10 text-center text-sm text-primary-foreground/80">
+        <div className="mt-8 py-4 border-t border-primary-foreground/10 flex justify-center text-sm text-primary-foreground/80">
             <p>Designed by Hüseyn Tahirov</p>
         </div>
       </div>
