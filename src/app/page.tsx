@@ -13,7 +13,7 @@ import { StatCard } from '@/components/stat-card';
 import { StudentCard } from '@/components/student-card';
 import { CategoryPieChart } from '@/components/charts/category-pie-chart';
 import { FacultyBarChart } from '@/components/charts/faculty-bar-chart';
-import { Student, Project, Organization, FacultyData, CategoryData, Achievement } from '@/types';
+import { Student, Project, Organization, FacultyData, CategoryData, Achievement, News, StudentOrganization } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -22,8 +22,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { selectTopStories } from '@/ai/flows/story-selector';
+import { format } from 'date-fns';
 
 
 interface EnrichedProject extends Project {
@@ -119,12 +120,16 @@ export default function HomePage() {
   const organizationsQuery = useMemoFirebase(() => query(collection(firestore, "users"), where("role", "==", "organization")), [firestore]);
   const categoriesQuery = useMemoFirebase(() => collection(firestore, "categories"), [firestore]);
   const achievementsQuery = useMemoFirebase(() => collection(firestore, "achievements"), [firestore]);
+  const newsQuery = useMemoFirebase(() => query(collection(firestore, 'news'), orderBy('createdAt', 'desc'), limit(3)), [firestore]);
+  const studentOrgsQuery = useMemoFirebase(() => query(collection(firestore, 'student-organizations'), limit(3)), [firestore]);
 
   const { data: students, isLoading: studentsLoading } = useCollection<Student>(studentsQuery);
   const { data: projects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
   const { data: organizations, isLoading: orgsLoading } = useCollection<Organization>(organizationsQuery);
   const { data: categories, isLoading: categoriesLoading } = useCollection<CategoryData>(categoriesQuery);
   const { data: achievements, isLoading: achievementsLoading } = useCollection<Achievement>(achievementsQuery);
+  const { data: latestNews, isLoading: newsLoading } = useCollection<News>(newsQuery);
+  const { data: studentOrgs, isLoading: studentOrgsLoading } = useCollection<StudentOrganization>(studentOrgsQuery);
   
   const [topTalents, setTopTalents] = useState<Student[]>([]);
   const [newMembers, setNewMembers] = useState<Student[]>([]);
@@ -133,7 +138,7 @@ export default function HomePage() {
   const [popularSkills, setPopularSkills] = useState<string[]>([]);
   const [successStories, setSuccessStories] = useState<SuccessStory[]>([]);
   
-  const isLoading = studentsLoading || projectsLoading || orgsLoading || categoriesLoading || achievementsLoading;
+  const isLoading = studentsLoading || projectsLoading || orgsLoading || categoriesLoading || achievementsLoading || newsLoading || studentOrgsLoading;
 
   useEffect(() => {
     if (!students || students.length === 0) return;
@@ -233,7 +238,7 @@ export default function HomePage() {
                           <Link href="/search">İstedadları Kəşf Et <ArrowRight className="ml-2" /></Link>
                       </Button>
                       <Button asChild size="lg" variant="secondary">
-                          <Link href="/register">Platformaya Qoşul</Link>
+                          <Link href="/register-student">Platformaya Qoşul</Link>
                       </Button>
                   </div>
                 </div>
@@ -268,6 +273,46 @@ export default function HomePage() {
           </section>
 
           <section className="py-12">
+             <div className="text-center mb-12">
+                <h2 className="text-3xl md:text-4xl font-bold">Son Xəbərlər</h2>
+                <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Universitet və tələbə həyatı ilə bağlı ən son yeniliklər.</p>
+            </div>
+            {isLoading ? (
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <Skeleton className="h-96 w-full" />
+                    <Skeleton className="h-96 w-full" />
+                    <Skeleton className="h-96 w-full" />
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {latestNews && latestNews.length > 0 ? latestNews.map(news => (
+                        <Card key={news.id} className="overflow-hidden group">
+                           <Link href={`/news/${news.slug}`}>
+                                <div className="relative h-56 w-full">
+                                    <Image src={news.coverImageUrl || 'https://picsum.photos/seed/news/600/400'} alt={news.title} fill className="object-cover transition-transform duration-300 group-hover:scale-105"/>
+                                </div>
+                                <CardHeader>
+                                    <CardTitle className="line-clamp-2 group-hover:text-primary">{news.title}</CardTitle>
+                                    <CardDescription>{news.createdAt ? format(news.createdAt.toDate(), 'dd MMMM, yyyy') : ''}</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="line-clamp-3 text-sm text-muted-foreground">{news.content.replace(/<[^>]*>?/gm, '').substring(0, 100)}...</p>
+                                </CardContent>
+                           </Link>
+                        </Card>
+                    )) : (
+                         <p className="text-center col-span-full text-muted-foreground">Hazırda heç bir xəbər yoxdur.</p>
+                    )}
+                </div>
+            )}
+             <div className="text-center mt-8">
+                <Button asChild variant="outline">
+                    <Link href="/news">Bütün Xəbərlər <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                </Button>
+            </div>
+          </section>
+
+          <section className="py-12">
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-3xl md:text-4xl font-bold">
                 Top 10 İstedad
@@ -289,6 +334,49 @@ export default function HomePage() {
                   ))}
                 </div>
              )}
+          </section>
+          
+           <section className="py-12 bg-muted -mx-4 px-4 rounded-lg">
+               <div className="text-center mb-12">
+                  <h2 className="text-3xl md:text-4xl font-bold">Tələbə Təşkilatları</h2>
+                  <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Universitetimizin aktiv tələbə təşkilatları ilə tanış olun və fəaliyyətlərinə qoşulun.</p>
+              </div>
+               {isLoading ? (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                          <Skeleton className="h-48 w-full" />
+                          <Skeleton className="h-48 w-full" />
+                          <Skeleton className="h-48 w-full" />
+                      </div>
+                  ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                      {studentOrgs && studentOrgs.length > 0 ? studentOrgs.map(org => (
+                           <Card key={org.id} className="hover:shadow-lg transition-shadow">
+                             <Link href={`/student-organizations/${org.id}`}>
+                                <CardHeader className="flex-row gap-4 items-center">
+                                    <Avatar className="w-16 h-16">
+                                        <AvatarImage src={org.logoUrl} alt={org.name} />
+                                        <AvatarFallback>{org.name.charAt(0)}</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <CardTitle>{org.name}</CardTitle>
+                                        <CardDescription>{org.faculty}</CardDescription>
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-sm text-muted-foreground line-clamp-2">{org.description}</p>
+                                </CardContent>
+                            </Link>
+                        </Card>
+                      )) : (
+                          <p className="text-center col-span-full text-muted-foreground">Heç bir tələbə təşkilatı tapılmadı.</p>
+                      )}
+                  </div>
+              )}
+                <div className="text-center mt-8">
+                    <Button asChild variant="outline">
+                        <Link href="/student-organizations">Bütün Təşkilatlar <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                    </Button>
+                </div>
           </section>
 
           <section className="py-12 bg-muted -mx-4 px-4 rounded-lg">
