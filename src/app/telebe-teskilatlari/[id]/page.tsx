@@ -18,10 +18,10 @@ export default function StudentOrganizationDetailsPage() {
 
     const orgId = typeof id === 'string' ? id : '';
 
-    const orgDocRef = useMemoFirebase(() => orgId ? doc(firestore, 'student-organizations', orgId) : null, [firestore, orgId]);
+    const orgDocRef = useMemoFirebase(() => orgId ? doc(firestore, 'telebe-teskilatlari', orgId) : null, [firestore, orgId]);
     const { data: org, isLoading: orgLoading } = useDoc<StudentOrganization>(orgDocRef);
 
-    const updatesQuery = useMemoFirebase(() => orgId ? query(collection(firestore, `student-organizations/${orgId}/updates`), orderBy('createdAt', 'desc')) : null, [firestore, orgId]);
+    const updatesQuery = useMemoFirebase(() => orgId ? query(collection(firestore, `telebe-teskilatlari/${orgId}/updates`), orderBy('createdAt', 'desc')) : null, [firestore, orgId]);
     const { data: updates, isLoading: updatesLoading } = useCollection<StudentOrgUpdate>(updatesQuery);
 
     const membersQuery = useMemoFirebase(() => {

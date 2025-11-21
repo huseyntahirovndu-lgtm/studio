@@ -13,14 +13,14 @@ export default function EditOrgUpdatePage() {
   const { user } = useAuth();
   
   const ledOrgQuery = useMemoFirebase(() => 
-    user ? query(collection(firestore, 'student-organizations'), where('leaderId', '==', user.id), limit(1)) : null,
+    user ? query(collection(firestore, 'telebe-teskilatlari'), where('leaderId', '==', user.id), limit(1)) : null,
     [firestore, user]
   );
   const { data: ledOrgs, isLoading: orgsLoading } = useCollection<StudentOrganization>(ledOrgQuery);
   const organizationId = ledOrgs?.[0]?.id;
 
   const updateId = typeof id === 'string' ? id : '';
-  const updateDocRef = doc(firestore, `student-organizations/${organizationId}/updates`, updateId);
+  const updateDocRef = doc(firestore, `telebe-teskilatlari/${organizationId}/updates`, updateId);
   const { data: updateData, isLoading: updateLoading } = useDoc<StudentOrgUpdate>(updateDocRef);
   
   const isLoading = orgsLoading || updateLoading;

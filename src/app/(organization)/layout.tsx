@@ -31,7 +31,7 @@ export default function StudentOrganizationLayout({
   const firestore = useFirestore();
 
   const ledOrgQuery = useMemoFirebase(() => 
-    user ? query(collection(firestore, 'student-organizations'), where('leaderId', '==', user.id)) : null,
+    user ? query(collection(firestore, 'telebe-teskilatlari'), where('leaderId', '==', user.id)) : null,
     [firestore, user]
   );
   const { data: ledOrgs, isLoading: ledOrgsLoading } = useCollection<StudentOrganization>(ledOrgQuery);

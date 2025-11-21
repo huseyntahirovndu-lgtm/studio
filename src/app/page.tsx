@@ -162,7 +162,7 @@ export default function HomePage() {
   const categoriesQuery = useMemoFirebase(() => collection(firestore, "categories"), [firestore]);
   const achievementsQuery = useMemoFirebase(() => collection(firestore, "achievements"), [firestore]);
   const newsQuery = useMemoFirebase(() => query(collection(firestore, 'news'), orderBy('createdAt', 'desc'), limit(3)), [firestore]);
-  const studentOrgsQuery = useMemoFirebase(() => query(collection(firestore, 'student-organizations'), limit(3)), [firestore]);
+  const studentOrgsQuery = useMemoFirebase(() => query(collection(firestore, 'telebe-teskilatlari'), limit(3)), [firestore]);
 
   const { data: students, isLoading: studentsLoading } = useCollection<Student>(studentsQuery);
   const { data: projects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);

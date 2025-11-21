@@ -8,7 +8,7 @@ import Link from 'next/link';
 
 export default function AllStudentOrganizationsPage() {
     const firestore = useFirestore();
-    const studentOrgsQuery = useMemoFirebase(() => query(collection(firestore, 'student-organizations'), orderBy("name", "asc")), [firestore]);
+    const studentOrgsQuery = useMemoFirebase(() => query(collection(firestore, 'telebe-teskilatlari'), orderBy("name", "asc")), [firestore]);
     const { data: studentOrgs, isLoading } = useCollection<StudentOrganization>(studentOrgsQuery);
 
     return (

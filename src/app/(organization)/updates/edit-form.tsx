@@ -35,7 +35,7 @@ export default function OrgUpdateEditForm({ initialData, onSuccess }: EditOrgUpd
   const { user } = useAuth();
   
   const ledOrgQuery = useMemoFirebase(() => 
-    user ? query(collection(firestore, 'student-organizations'), where('leaderId', '==', user.id), limit(1)) : null,
+    user ? query(collection(firestore, 'telebe-teskilatlari'), where('leaderId', '==', user.id), limit(1)) : null,
     [firestore, user]
   );
   const { data: ledOrgs } = useCollection<StudentOrganization>(ledOrgQuery);
@@ -60,7 +60,7 @@ export default function OrgUpdateEditForm({ initialData, onSuccess }: EditOrgUpd
     setIsLoading(true);
 
     try {
-      const updatesCollectionRef = collection(firestore, `student-organizations/${organizationId}/updates`);
+      const updatesCollectionRef = collection(firestore, `telebe-teskilatlari/${organizationId}/updates`);
 
       if (isEditMode && initialData) {
         // Update existing update

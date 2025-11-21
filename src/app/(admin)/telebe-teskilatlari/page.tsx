@@ -1,17 +1,14 @@
 'use client';
-import {
-  MoreHorizontal,
-  PlusCircle,
-} from "lucide-react"
+import { MoreHorizontal, PlusCircle } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -19,14 +16,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,53 +35,39 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import type { StudentOrgUpdate, StudentOrganization } from "@/types";
+import type { StudentOrganization } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth, useCollection, useFirestore, useMemoFirebase, deleteDocumentNonBlocking } from "@/firebase";
-import { collection, query, orderBy, doc, where, limit } from "firebase/firestore";
-import { format } from 'date-fns';
+import { useCollection, useFirestore, useMemoFirebase, deleteDocumentNonBlocking } from "@/firebase";
+import { collection, query, orderBy, doc } from "firebase/firestore";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-export default function OrgUpdatesPage() {
+export default function AdminStudentOrganizationsPage() {
     const { toast } = useToast();
-    const { user } = useAuth();
     const firestore = useFirestore();
 
-    const ledOrgQuery = useMemoFirebase(() => 
-        user ? query(collection(firestore, 'telebe-teskilatlari'), where('leaderId', '==', user.id), limit(1)) : null,
-        [firestore, user]
-    );
-    const { data: ledOrgs } = useCollection<StudentOrganization>(ledOrgQuery);
-    const organizationId = ledOrgs?.[0]?.id;
+    const studentOrgsQuery = useMemoFirebase(() => query(collection(firestore, "telebe-teskilatlari"), orderBy("name", "asc")), [firestore]);
+    const { data: studentOrgs, isLoading } = useCollection<StudentOrganization>(studentOrgsQuery);
 
-    const updatesQuery = useMemoFirebase(() => 
-        organizationId ? query(collection(firestore, `telebe-teskilatlari/${organizationId}/updates`), orderBy("createdAt", "desc")) : null, 
-        [firestore, organizationId]
-    );
-    const { data: updates, isLoading } = useCollection<StudentOrgUpdate>(updatesQuery);
-
-    const handleDelete = (updateId: string) => {
-        if (!organizationId) return;
-        const updateDocRef = doc(firestore, `telebe-teskilatlari/${organizationId}/updates`, updateId);
-        deleteDocumentNonBlocking(updateDocRef);
-        toast({ title: "Yenilik uğurla silindi." });
+    const handleDelete = (orgId: string) => {
+        const orgDocRef = doc(firestore, 'telebe-teskilatlari', orgId);
+        deleteDocumentNonBlocking(orgDocRef);
+        toast({ title: "Tələbə təşkilatı uğurla silindi." });
     };
-    
-    const basePath = `/organization-panel`;
 
     return (
         <Card>
             <CardHeader>
                 <div className="flex justify-between items-start">
                     <div>
-                        <CardTitle>Təşkilat Yenilikləri</CardTitle>
+                        <CardTitle>Tələbə Təşkilatları</CardTitle>
                         <CardDescription>
-                            Təşkilatınızın fəaliyyəti haqqında yenilikləri və elanları idarə edin.
+                            Universitetdəki tələbə təşkilatlarını idarə edin.
                         </CardDescription>
                     </div>
                     <Button asChild>
-                        <Link href={`${basePath}/updates/add`}>
+                        <Link href="/admin/telebe-teskilatlari/add">
                             <PlusCircle className="mr-2 h-4 w-4" />
-                            Yeni Yenilik Yarat
+                            Yeni Təşkilat Yarat
                         </Link>
                     </Button>
                 </div>
@@ -93,22 +76,30 @@ export default function OrgUpdatesPage() {
                 <Table>
                 <TableHeader>
                     <TableRow>
-                    <TableHead>Başlıq</TableHead>
-                    <TableHead className="hidden md:table-cell">Yaradılma Tarixi</TableHead>
+                    <TableHead>Təşkilat</TableHead>
+                    <TableHead className="hidden md:table-cell">Fakültə</TableHead>
+                    <TableHead className="hidden md:table-cell">Üzv Sayı</TableHead>
                     <TableHead className="text-right">Əməliyyatlar</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {isLoading ? (
                          <TableRow>
-                            <TableCell colSpan={3} className="h-24 text-center">Yüklənir...</TableCell>
+                            <TableCell colSpan={4} className="h-24 text-center">Yüklənir...</TableCell>
                         </TableRow>
-                    ) : updates && updates.length > 0 ? (
-                        updates.map((item) => (
+                    ) : studentOrgs && studentOrgs.length > 0 ? (
+                        studentOrgs.map((item) => (
                         <TableRow key={item.id}>
-                            <TableCell className="font-medium">{item.title}</TableCell>
+                            <TableCell className="font-medium flex items-center gap-3">
+                                <Avatar>
+                                    <AvatarImage src={item.logoUrl} />
+                                    <AvatarFallback>{item.name.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                {item.name}
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell">{item.faculty}</TableCell>
                             <TableCell className="hidden md:table-cell">
-                               {item.createdAt ? format(item.createdAt.toDate(), 'dd.MM.yyyy') : '-'}
+                               {item.memberIds?.length || 0}
                             </TableCell>
                             <TableCell className="text-right">
                                <DropdownMenu>
@@ -121,7 +112,10 @@ export default function OrgUpdatesPage() {
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuLabel>Əməliyyatlar</DropdownMenuLabel>
                                         <DropdownMenuItem asChild>
-                                            <Link href={`${basePath}/updates/edit/${item.id}`}>Redaktə Et</Link>
+                                            <Link href={`/telebe-teskilatlari/${item.id}`} target="_blank">Təşkilata Bax</Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem asChild>
+                                            <Link href={`/admin/telebe-teskilatlari/edit/${item.id}`}>Redaktə Et</Link>
                                         </DropdownMenuItem>
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
@@ -131,7 +125,7 @@ export default function OrgUpdatesPage() {
                                                 <AlertDialogHeader>
                                                     <AlertDialogTitle>Silməni təsdiq edirsiniz?</AlertDialogTitle>
                                                     <AlertDialogDescription>
-                                                        Bu əməliyyat geri qaytarılmazdır. "{item.title}" başlıqlı yenilik sistemdən həmişəlik silinəcək.
+                                                        Bu əməliyyat geri qaytarılmazdır. "{item.name}" adlı təşkilat sistemdən həmişəlik silinəcək.
                                                     </AlertDialogDescription>
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
@@ -147,7 +141,7 @@ export default function OrgUpdatesPage() {
                         ))
                     ) : (
                         <TableRow>
-                            <TableCell colSpan={3} className="h-24 text-center">Heç bir yenilik tapılmadı.</TableCell>
+                            <TableCell colSpan={4} className="h-24 text-center">Heç bir tələbə təşkilatı tapılmadı.</TableCell>
                         </TableRow>
                     )}
                 </TableBody>
