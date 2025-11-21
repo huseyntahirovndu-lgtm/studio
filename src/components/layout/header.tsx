@@ -16,7 +16,7 @@ import { collection, query, where, limit } from 'firebase/firestore';
 
 const navLinks = [
   { href: '/', label: 'Ana Səhifə' },
-  { href: '/news', label: 'Xəbərlər' },
+  { href: '/məqalələr', label: 'Xəbərlər' },
   { href: '/search', label: 'Axtarış' },
   { href: '/rankings', label: 'Reytinq' },
   { href: '/student-organizations', label: 'Tələbə Təşkilatları' },

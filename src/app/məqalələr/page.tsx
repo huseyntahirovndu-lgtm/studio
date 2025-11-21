@@ -50,7 +50,7 @@ export default function AllNewsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {news.map((item) => (
                         <Card key={item.id} className="overflow-hidden group flex flex-col">
-                           <Link href={`/news/${item.slug}`} className="flex flex-col h-full">
+                           <Link href={`/məqalələr/${item.slug}`} className="flex flex-col h-full">
                                 <div className="relative h-56 w-full">
                                     <Image src={item.coverImageUrl || 'https://picsum.photos/seed/news/600/400'} alt={item.title} fill className="object-cover transition-transform duration-300 group-hover:scale-105"/>
                                 </div>

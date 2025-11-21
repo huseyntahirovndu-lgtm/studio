@@ -328,7 +328,7 @@ export default function HomePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {latestNews && latestNews.length > 0 ? latestNews.map(news => (
                         <Card key={news.id} className="overflow-hidden group">
-                           <Link href={`/news/${news.slug}`}>
+                           <Link href={`/məqalələr/${news.slug}`}>
                                 <div className="relative h-56 w-full">
                                     <Image src={news.coverImageUrl || 'https://picsum.photos/seed/news/600/400'} alt={news.title} fill className="object-cover transition-transform duration-300 group-hover:scale-105"/>
                                 </div>
@@ -348,7 +348,7 @@ export default function HomePage() {
             )}
              <div className="text-center mt-8">
                 <Button asChild variant="outline">
-                    <Link href="/news">Bütün Xəbərlər <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                    <Link href="/məqalələr">Bütün Xəbərlər <ArrowRight className="ml-2 h-4 w-4" /></Link>
                 </Button>
             </div>
           </section>

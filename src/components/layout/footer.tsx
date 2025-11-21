@@ -30,7 +30,7 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/news" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors text-base">
+                <Link href="/məqalələr" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors text-base">
                   Xəbərlər
                 </Link>
               </li>

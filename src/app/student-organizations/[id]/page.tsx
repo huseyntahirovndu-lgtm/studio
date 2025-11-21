@@ -26,7 +26,9 @@ export default function StudentOrganizationDetailsPage() {
 
     const membersQuery = useMemoFirebase(() => {
         if (!org?.memberIds || org.memberIds.length === 0) return null;
-        return query(collection(firestore, 'users'), where('id', 'in', org.memberIds));
+        // Firestore 'in' queries are limited to 30 elements. If you expect more members, you'll need pagination.
+        const memberIdsToQuery = org.memberIds.slice(0, 30);
+        return query(collection(firestore, 'users'), where('id', 'in', memberIdsToQuery));
     }, [firestore, org?.memberIds]);
     const { data: members, isLoading: membersLoading } = useCollection<Student>(membersQuery as any);
 
