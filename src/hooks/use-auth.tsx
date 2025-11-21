@@ -63,21 +63,12 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       
       const userDocRef = doc(firestore, 'users', user.uid);
       
-      let userWithId: AppUser;
-      if (newUser.role === 'student') {
-        userWithId = {
+      const userWithId = {
           ...newUser,
           id: user.uid,
           createdAt: new Date().toISOString(),
-          status: 'gözləyir',
-        } as Student;
-      } else {
-        userWithId = {
-          ...newUser,
-          id: user.uid,
-          createdAt: new Date().toISOString(),
-        } as Organization;
-      }
+          status: newUser.role === 'student' ? 'gözləyir' : undefined,
+      };
 
       await setDoc(userDocRef, userWithId);
       return true;
