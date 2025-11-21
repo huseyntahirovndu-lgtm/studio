@@ -8,21 +8,21 @@ export function Footer() {
   return (
     <footer className="border-t bg-primary text-primary-foreground">
       <div className="container py-12">
-        <div className="flex flex-col items-center text-center gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           
           {/* Logo and Title */}
-          <Link href="/" className="flex flex-col items-center gap-3">
-            <Logo className="h-20 w-auto" />
-            <div>
-              <p className="font-bold text-lg">İstedad Mərkəzi</p>
-              <p className="text-sm text-primary-foreground/90">Naxçıvan Dövlət Universiteti</p>
-            </div>
-          </Link>
+          <div className="md:col-span-1 flex flex-col items-start gap-3">
+            <Link href="/" className="flex items-center gap-3">
+              <Logo className="h-16 w-auto" />
+              <div>
+                <p className="font-bold text-base">İstedad Mərkəzi</p>
+                <p className="text-sm text-primary-foreground/90">Naxçıvan Dövlət Universiteti</p>
+              </div>
+            </Link>
+          </div>
 
-          {/* Links Section - 3 Columns */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 w-full max-w-5xl">
-            
-            {/* Platform */}
+          {/* Links Section */}
+          <div className="md:col-span-3 grid grid-cols-2 md:grid-cols-3 gap-8">
             <div>
               <h3 className="font-semibold mb-4 text-base">Platforma</h3>
               <ul className="space-y-2.5">
@@ -44,7 +44,6 @@ export function Footer() {
               </ul>
             </div>
 
-            {/* Əlaqə */}
             <div>
               <h3 className="font-semibold mb-4 text-base">Əlaqə</h3>
               <ul className="space-y-2.5 text-primary-foreground/90 text-sm">
@@ -55,56 +54,24 @@ export function Footer() {
               </ul>
             </div>
 
-            {/* Bizi İzləyin */}
-            <div>
-              <h3 className="font-semibold mb-4 text-base">Bizi İzləyin</h3>
-              <div className="flex space-x-4 justify-center">
-                <Link 
-                  href="https://www.facebook.com/ndu.edu.az/?locale=tr_TR"
-                  target="_blank"
-                  rel="noopener noreferrer" 
-                  className="text-primary-foreground/90 hover:text-primary-foreground transition-colors" 
-                  aria-label="Facebook"
-                >
-                  <Facebook size={22} />
-                </Link>
-                <Link 
-                  href="https://www.instagram.com/ndu.edu.az/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary-foreground/90 hover:text-primary-foreground transition-colors" 
-                  aria-label="Instagram"
-                >
-                  <Instagram size={22} />
-                </Link>
-                <Link 
-                  href="https://az.linkedin.com/school/nax%C3%A7%C4%B1van-d%C3%B6vl%C9%99t-universiteti/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary-foreground/90 hover:text-primary-foreground transition-colors" 
-                  aria-label="LinkedIn"
-                >
-                  <Linkedin size={22} />
-                </Link>
-                 <Link 
-                  href="https://www.youtube.com/channel/UCdebBI5bSkr4uQHFrTD2bNQ"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary-foreground/90 hover:text-primary-foreground transition-colors" 
-                  aria-label="YouTube"
-                >
-                  <Youtube size={22} />
-                </Link>
-              </div>
+             <div>
+                <h3 className="font-semibold mb-4 text-base">Bizi İzləyin</h3>
+                 <div className="flex space-x-4">
+                    <a href="https://www.facebook.com/ndu.edu.az/?locale=tr_TR" target="_blank" rel="noopener noreferrer" className="text-primary-foreground/90 hover:text-primary-foreground transition-colors" aria-label="Facebook"><Facebook size={22} /></a>
+                    <a href="https://www.instagram.com/ndu.edu.az/" target="_blank" rel="noopener noreferrer" className="text-primary-foreground/90 hover:text-primary-foreground transition-colors" aria-label="Instagram"><Instagram size={22} /></a>
+                    <a href="https://az.linkedin.com/school/nax%C3%A7%C4%B1van-d%C3%B6vl%C9%99t-universiteti/" target="_blank" rel="noopener noreferrer" className="text-primary-foreground/90 hover:text-primary-foreground transition-colors" aria-label="LinkedIn"><Linkedin size={22} /></a>
+                    <a href="https://www.youtube.com/channel/UCdebBI5bSkr4uQHFrTD2bNQ" target="_blank" rel="noopener noreferrer" className="text-primary-foreground/90 hover:text-primary-foreground transition-colors" aria-label="YouTube"><Youtube size={22} /></a>
+                </div>
             </div>
           </div>
-          
-          {/* Copyright and Designer */}
-          <div className="w-full pt-6 mt-6 border-t border-primary-foreground/20 text-sm text-primary-foreground/80 space-y-1">
-            <p>&copy; {currentYear} Naxçıvan Dövlət Universiteti | Bütün hüquqlar qorunur.</p>
-            <p>Naxçıvan Dövlət Universiteti | Tələbələrlə iş və tədbirlərin təşkili şöbəsi</p>
-            <p>Designed by Hüseyn Tahirov</p>
-          </div>
+        </div>
+        
+        <div className="w-full pt-6 mt-6 border-t border-primary-foreground/20 text-sm text-primary-foreground/80 flex flex-col md:flex-row justify-between items-center text-center md:text-left gap-4">
+           <div>
+             <p>&copy; {currentYear} Naxçıvan Dövlət Universiteti | Bütün hüquqlar qorunur.</p>
+             <p>Naxçıvan Dövlət Universiteti | Tələbələrlə iş və tədbirlərin təşkili şöbəsi</p>
+           </div>
+           <p>Designed by Hüseyn Tahirov</p>
         </div>
       </div>
     </footer>
