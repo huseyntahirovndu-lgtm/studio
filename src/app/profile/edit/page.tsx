@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Trash2, PlusCircle, Award, Briefcase, FileText, User as UserIcon, X, Book, Youtube, PenLine } from 'lucide-react';
+import { Trash2, PlusCircle, Award, Briefcase, FileText, User as UserIcon, X, Book, Youtube, PenLine, Link } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -29,8 +29,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from '@/components/ui/badge';
 import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, doc, writeBatch } from 'firebase/firestore';
+import { collection, doc, writeBatch, getDoc, getDocs } from 'firebase/firestore';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 
 const skillSchema = z.object({
@@ -42,6 +43,7 @@ const skillSchema = z.object({
 const profileSchema = z.object({
   firstName: z.string().min(2, "Ad ən azı 2 hərf olmalıdır."),
   lastName: z.string().min(2, "Soyad ən azı 2 hərf olmalıdır."),
+  profilePictureUrl: z.string().url("Etibarlı bir URL daxil edin.").or(z.literal('')).optional(),
   major: z.string().min(2, "İxtisas boş ola bilməz."),
   courseYear: z.coerce.number().min(1).max(4),
   educationForm: z.string().optional(),
@@ -125,6 +127,7 @@ function EditProfilePageComponent() {
   
   const { control: profileControl, watch: watchProfile, setValue: setProfileValue, trigger: triggerProfile } = profileForm;
   const skills = watchProfile('skills', []);
+  const profilePictureUrl = watchProfile('profilePictureUrl');
 
   const projectForm = useForm<z.infer<typeof projectSchema>>({
     resolver: zodResolver(projectSchema),
@@ -146,6 +149,7 @@ function EditProfilePageComponent() {
       profileForm.reset({
         firstName: targetUser.firstName || '',
         lastName: targetUser.lastName || '',
+        profilePictureUrl: targetUser.profilePictureUrl || '',
         major: targetUser.major || '',
         courseYear: targetUser.courseYear || 1,
         educationForm: targetUser.educationForm || '',
@@ -242,29 +246,19 @@ function EditProfilePageComponent() {
       
       const batch = writeBatch(firestore);
       let docRef;
-      let parentField: 'projectIds' | 'achievementIds' | 'certificateIds' | null = null;
-
+      
       switch (itemType) {
           case 'project': 
             docRef = doc(firestore, `users/${targetUser.id}/projects`, docId);
-            parentField = 'projectIds';
             break;
           case 'achievement': 
             docRef = doc(firestore, `users/${targetUser.id}/achievements`, docId);
-             parentField = 'achievementIds';
             break;
           case 'certificate': 
             docRef = doc(firestore, `users/${targetUser.id}/certificates`, docId);
-             parentField = 'certificateIds';
             break;
       }
       batch.delete(docRef);
-
-      if (parentField && targetUser[parentField]) {
-          const userDocRef = doc(firestore, 'users', targetUser.id);
-          const updatedIds = (targetUser[parentField] as string[]).filter(id => id !== docId);
-          batch.update(userDocRef, { [parentField]: updatedIds });
-      }
 
       await batch.commit();
 
@@ -301,6 +295,11 @@ function EditProfilePageComponent() {
     return <div className="container mx-auto py-8 text-center">İstifadəçi tapılmadı.</div>
   }
 
+  const getInitials = (firstName?: string, lastName?: string) => {
+    if (!firstName || !lastName) return '';
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`;
+  }
+
   return (
     <div className="container mx-auto max-w-4xl py-8 md:py-12 px-4">
       <div className="mb-8">
@@ -317,7 +316,7 @@ function EditProfilePageComponent() {
           <CardContent>
             <Form {...profileForm}>
               <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField name="firstName" control={profileForm.control} render={({ field }) => (
                     <FormItem><FormLabel>Ad</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                   )} />
@@ -325,6 +324,27 @@ function EditProfilePageComponent() {
                     <FormItem><FormLabel>Soyad</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                   )} />
                 </div>
+
+                <div className="flex items-center gap-4">
+                    <Avatar className="h-20 w-20">
+                        <AvatarImage src={profilePictureUrl} />
+                        <AvatarFallback>{getInitials(targetUser.firstName, targetUser.lastName)}</AvatarFallback>
+                    </Avatar>
+                    <FormField
+                        control={profileForm.control}
+                        name="profilePictureUrl"
+                        render={({ field }) => (
+                            <FormItem className="flex-grow">
+                                <FormLabel>Profil Şəkli URL</FormLabel>
+                                <FormControl>
+                                    <Input type="url" placeholder="https://example.com/image.png" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                      <FormField name="major" control={profileForm.control} render={({ field }) => (
                         <FormItem><FormLabel>İxtisas</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
