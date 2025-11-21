@@ -12,36 +12,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import type { News } from "@/types";
-import { useToast } from "@/hooks/use-toast";
-import { useCollection, useFirestore, useMemoFirebase, deleteDocumentNonBlocking, useAuth } from "@/firebase";
-import { collection, query, orderBy, doc } from "firebase/firestore";
+import { useCollection, useFirestore, useMemoFirebase, useAuth } from "@/firebase";
+import { collection, query, orderBy } from "firebase/firestore";
 import { format } from 'date-fns';
 import Image from "next/image";
 
