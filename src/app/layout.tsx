@@ -2,6 +2,7 @@
 import { usePathname } from 'next/navigation';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
+import 'react-quill/dist/quill.snow.css'; // Import react-quill styles
 import { SessionProvider } from '@/hooks/use-auth';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { Header } from '@/components/layout/header';
