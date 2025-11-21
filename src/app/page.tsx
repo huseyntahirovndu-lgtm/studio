@@ -13,16 +13,16 @@ import { StatCard } from '@/components/stat-card';
 import { StudentCard } from '@/components/student-card';
 import { CategoryPieChart } from '@/components/charts/category-pie-chart';
 import { FacultyBarChart } from '@/components/charts/faculty-bar-chart';
-import { Student, Project, Organization, FacultyData, CategoryData, Achievement, News, StudentOrganization } from '@/types';
+import { Student, Project, Organization, FacultyData, CategoryData, Achievement, News, StudentOrganization, Invitation } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, limit, writeBatch, doc } from 'firebase/firestore';
 import { selectTopStories } from '@/ai/flows/story-selector';
 import { format } from 'date-fns';
 
@@ -46,19 +46,19 @@ interface SuccessStory {
 const SuccessStoryCard = ({ story }: { story: SuccessStory }) => (
     <Card className="flex flex-col overflow-hidden">
          <CardHeader className="flex flex-row items-start gap-4">
-            <Avatar className="h-12 w-12 border">
-                <AvatarImage src={story.profilePictureUrl} alt={story.name} />
-                <AvatarFallback>{story.name.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <div>
-                <CardTitle>{story.name}</CardTitle>
-                <CardDescription>{story.faculty}</CardDescription>
-            </div>
+            <Link href={`/profile/${story.studentId}`} className="flex items-center gap-4 group">
+                <Avatar className="h-12 w-12 border">
+                    <AvatarImage src={story.profilePictureUrl} alt={story.name} />
+                    <AvatarFallback>{story.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <div>
+                    <CardTitle className="group-hover:underline">{story.name}</CardTitle>
+                    <CardDescription>{story.faculty}</CardDescription>
+                </div>
+            </Link>
         </CardHeader>
         <CardContent>
-             <Link href={`/profile/${story.studentId}`}>
-                <p className="text-sm text-muted-foreground hover:underline line-clamp-3">"{story.story}"</p>
-             </Link>
+            <p className="text-sm text-muted-foreground line-clamp-3">"{story.story}"</p>
         </CardContent>
     </Card>
 );
@@ -67,31 +67,67 @@ const OrganizationProjectCard = ({ project }: { project: OrgProject }) => {
     const { user } = useAuth();
     const { toast } = useToast();
     const firestore = useFirestore();
+    const student = user as Student;
 
-    const handleApply = () => {
+    const [isApplied, setIsApplied] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        if (student && project.applicantIds?.includes(student.id)) {
+            setIsApplied(true);
+        }
+    }, [student, project]);
+
+    const handleApply = async () => {
         if (!user || user.role !== 'student') {
             toast({ variant: 'destructive', title: "Xəta", description: "Müraciət etmək üçün tələbə kimi daxil olmalısınız." });
             return;
         }
 
         const isAlreadyMember = (project.teamMemberIds || []).includes(user.id);
-        const isAlreadyApplicant = (project.applicantIds || []).includes(user.id);
-
         if(isAlreadyMember) {
             toast({ variant: 'destructive', title: "Xəta", description: "Siz artıq bu layihənin üzvüsünüz." });
             return;
         }
 
-        if(isAlreadyApplicant) {
+        if(isApplied) {
             toast({ title: "Müraciətiniz Qeydə Alınıb", description: "Bu layihəyə artıq müraciət etmisiniz." });
             return;
         }
 
-        toast({ title: "Müraciət Göndərildi", description: `"${project.title}" layihəsinə müraciətiniz uğurla göndərildi.` });
+        setIsLoading(true);
+
+        const batch = writeBatch(firestore);
+
+        const projectRef = doc(firestore, 'projects', project.id);
+        const newApplicants = [...(project.applicantIds || []), student.id];
+        batch.update(projectRef, { applicantIds: newApplicants });
+        
+        const invitationRef = doc(collection(firestore, 'invitations'));
+        const newInvitation: Invitation = {
+            id: invitationRef.id,
+            organizationId: project.organization.id,
+            studentId: student.id,
+            projectId: project.id,
+            status: 'müraciət',
+            createdAt: new Date(),
+        };
+        batch.set(invitationRef, newInvitation);
+
+        try {
+            await batch.commit();
+            setIsApplied(true);
+            toast({ title: "Müraciət Göndərildi", description: `"${project.title}" layihəsinə müraciətiniz uğurla göndərildi.` });
+        } catch (error) {
+            console.error(error);
+            toast({ variant: 'destructive', title: "Xəta", description: "Müraciət göndərilərkən xəta baş verdi." });
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
-        <Card>
+        <Card className="flex flex-col">
             <CardHeader>
                  <div className="flex items-center gap-3 mb-2">
                     <Avatar className="h-10 w-10">
@@ -104,9 +140,14 @@ const OrganizationProjectCard = ({ project }: { project: OrgProject }) => {
                     </div>
                 </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-grow">
                 <p className="text-sm text-muted-foreground line-clamp-3 mb-4">{project.description}</p>
             </CardContent>
+            <CardFooter>
+                <Button onClick={handleApply} disabled={isApplied || isLoading} className="w-full">
+                    {isLoading ? 'Göndərilir...' : (isApplied ? 'Müraciət Edilib' : 'Müraciət Et')}
+                </Button>
+            </CardFooter>
         </Card>
     );
 };

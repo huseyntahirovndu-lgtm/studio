@@ -11,8 +11,8 @@ import { StudentCard } from '@/components/student-card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
-import { collection, doc, query, where, documentId, updateDoc, getDoc } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, doc, query, where, documentId, updateDoc, getDoc, writeBatch } from 'firebase/firestore';
 
 
 interface EnrichedInvitation extends Invitation {
@@ -21,7 +21,7 @@ interface EnrichedInvitation extends Invitation {
 }
 
 export default function OrganizationDashboard() {
-    const { user, loading, updateUser } = useAuth();
+    const { user, loading } = useAuth();
     const router = useRouter();
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -34,30 +34,28 @@ export default function OrganizationDashboard() {
         }
     }, [user, loading, router]);
     
-    // Fetch saved students
     const savedStudentsQuery = useMemoFirebase(() => {
         if (!orgProfile?.savedStudentIds || orgProfile.savedStudentIds.length === 0) return null;
         return query(collection(firestore, 'users'), where(documentId(), 'in', orgProfile.savedStudentIds));
     }, [firestore, orgProfile?.savedStudentIds]);
     const { data: savedStudents, isLoading: savedStudentsLoading } = useCollection<Student>(savedStudentsQuery);
 
-    // Fetch organization projects
     const orgProjectsQuery = useMemoFirebase(() => {
         if (!orgProfile?.projectIds || orgProfile.projectIds.length === 0) return null;
         return query(collection(firestore, 'projects'), where(documentId(), 'in', orgProfile.projectIds));
     }, [firestore, orgProfile?.projectIds]);
     const { data: organizationProjects, isLoading: orgProjectsLoading } = useCollection<Project>(orgProjectsQuery);
     
-    // Fetch applications (invitations with status 'müraciət')
     const applicationsQuery = useMemoFirebase(() => {
         if (!orgProfile) return null;
-        return query(collection(firestore, `users/${orgProfile.id}/invitations`), where('status', '==', 'müraciət'));
-    }, [firestore, orgProfile?.id]);
-    const { data: applications, isLoading: applicationsLoading } = useCollection<Invitation>(applicationsQuery);
+        const projectIds = orgProfile.projectIds || [];
+        if (projectIds.length === 0) return null;
+        return query(collection(firestore, `invitations`), where('projectId', 'in', projectIds), where('status', '==', 'müraciət'));
+    }, [firestore, orgProfile?.id, orgProfile?.projectIds]);
+    const { data: applications, isLoading: applicationsLoading } = useCollection<Invitation>(applicationsQuery as any);
 
     const [enrichedApplications, setEnrichedApplications] = useState<EnrichedInvitation[]>([]);
 
-    // Enrich applications with student and project data
     useEffect(() => {
         if (applications) {
             const enrich = async () => {
@@ -79,23 +77,21 @@ export default function OrganizationDashboard() {
     const handleApplication = async (application: EnrichedInvitation, status: 'qəbul edildi' | 'rədd edildi') => {
         if(!application.student || !application.project || !orgProfile) return;
         
-        const invitationDocRef = doc(firestore, `users/${orgProfile.id}/invitations`, application.id);
-        const studentInvitationDocRef = doc(firestore, `users/${application.studentId}/invitations`, application.id);
+        const invitationDocRef = doc(firestore, `invitations`, application.id);
         const projectDocRef = doc(firestore, 'projects', application.projectId);
 
         try {
-            // Update org-side invitation
-            await updateDoc(invitationDocRef, { status });
-            // Update student-side invitation
-            await updateDoc(studentInvitationDocRef, { status });
+            const batch = writeBatch(firestore);
+
+            batch.update(invitationDocRef, { status });
 
             if (status === 'qəbul edildi') {
-                // Add student to project's team members
                 const updatedTeam = [...(application.project.teamMemberIds || []), application.student.id];
-                await updateDoc(projectDocRef, { teamMemberIds: updatedTeam });
+                batch.update(projectDocRef, { teamMemberIds: updatedTeam });
             }
             
-            // Remove application from local state
+            await batch.commit();
+
             setEnrichedApplications(prev => prev.filter(app => app.id !== application.id));
 
             toast({

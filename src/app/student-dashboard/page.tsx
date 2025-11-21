@@ -11,8 +11,8 @@ import type { LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getProfileRecommendations } from '@/ai/flows/profile-optimizer';
-import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, query, where, doc, getDoc, getDocs, updateDoc } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, where, doc, getDoc, getDocs, updateDoc, writeBatch } from 'firebase/firestore';
 
 
 interface EnrichedInvitation extends Invitation {
@@ -95,8 +95,8 @@ export default function StudentDashboard() {
         }
     }, [user, loading, router]);
     
-    const invitationsQuery = useMemoFirebase(() => studentProfile ? query(collection(firestore, `users/${studentProfile.id}/invitations`), where('status', '==', 'gözləyir')) : null, [firestore, studentProfile]);
-    const { data: invitations, isLoading: invitationsLoading } = useCollection<Invitation>(invitationsQuery);
+    const invitationsQuery = useMemoFirebase(() => studentProfile ? query(collection(firestore, `invitations`), where('studentId', '==', studentProfile.id), where('status', '==', 'gözləyir')) : null, [firestore, studentProfile]);
+    const { data: invitations, isLoading: invitationsLoading } = useCollection<Invitation>(invitationsQuery as any);
     const [enrichedInvitations, setEnrichedInvitations] = useState<EnrichedInvitation[]>([]);
 
     useEffect(() => {
@@ -120,18 +120,20 @@ export default function StudentDashboard() {
     const handleInvitation = async (invitation: EnrichedInvitation, status: 'qəbul edildi' | 'rədd edildi') => {
         if (!invitation.project || !studentProfile) return;
         
-        const studentInvitationDocRef = doc(firestore, `users/${studentProfile.id}/invitations`, invitation.id);
-        const orgInvitationDocRef = doc(firestore, `users/${invitation.organizationId}/invitations`, invitation.id);
+        const invitationDocRef = doc(firestore, `invitations`, invitation.id);
         
         try {
-            await updateDoc(studentInvitationDocRef, { status });
-            await updateDoc(orgInvitationDocRef, { status });
+             const batch = writeBatch(firestore);
+
+            batch.update(invitationDocRef, { status });
 
             if (status === 'qəbul edildi') {
                 const projectDocRef = doc(firestore, 'projects', invitation.projectId);
                 const updatedTeam = [...(invitation.project.teamMemberIds || []), studentProfile.id];
-                await updateDoc(projectDocRef, { teamMemberIds: updatedTeam });
+                batch.update(projectDocRef, { teamMemberIds: updatedTeam });
             }
+
+            await batch.commit();
 
             setEnrichedInvitations(prev => prev.filter(i => i.id !== invitation.id));
 
@@ -168,7 +170,10 @@ export default function StudentDashboard() {
 
         const totalWeight = fields.reduce((sum, field) => sum + field.weight, 0);
         const completedWeight = fields.reduce((sum, field) => {
-            if (field.value) {
+            const fieldValue = field.value;
+            const hasValue = typeof fieldValue === 'boolean' ? fieldValue : (fieldValue !== null && fieldValue !== undefined && fieldValue !== '');
+
+            if (hasValue) {
                 return sum + field.weight;
             }
             return sum;
