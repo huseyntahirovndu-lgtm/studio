@@ -1,6 +1,5 @@
 'use client';
 
-import { useAuth } from '@/hooks/use-auth';
 import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState, Suspense } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
@@ -12,8 +11,10 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { getOrganizationById } from '@/lib/data';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth, useDoc, useFirestore, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
+
 
 const orgProfileSchema = z.object({
   name: z.string().min(2, { message: 'Təşkilat adı ən azı 2 hərfdən ibarət olmalıdır.' }),
@@ -23,20 +24,24 @@ const orgProfileSchema = z.object({
 
 function EditOrganizationPageComponent() {
   const { id } = useParams();
-  const { user: adminUser, loading: authLoading, updateUser } = useAuth();
+  const { user: adminUser, loading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const firestore = useFirestore();
 
   const organizationId = typeof id === 'string' ? id : '';
+  
+  const orgDocRef = useMemoFirebase(() => organizationId ? doc(firestore, 'users', organizationId) : null, [firestore, organizationId]);
+  const { data: organization, isLoading: orgLoading } = useDoc<Organization>(orgDocRef);
 
-  const [organization, setOrganization] = useState<Organization | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
   const form = useForm<z.infer<typeof orgProfileSchema>>({
     resolver: zodResolver(orgProfileSchema),
     mode: 'onChange',
   });
+  
+  const isLoading = authLoading || orgLoading;
 
   useEffect(() => {
     if (!authLoading) {
@@ -44,40 +49,33 @@ function EditOrganizationPageComponent() {
         router.push('/login');
         return;
       }
-      if (organizationId) {
-        const orgData = getOrganizationById(organizationId);
-        if (orgData) {
-          setOrganization(orgData);
-          form.reset({
-            name: orgData.name || '',
-            companyName: orgData.companyName || '',
-            sector: orgData.sector || '',
-          });
-        } else {
-          toast({ variant: "destructive", title: "Xəta", description: "Təşkilat tapılmadı." });
-          router.push('/admin/organizations');
-        }
-        setIsLoading(false);
-      }
     }
-  }, [adminUser, authLoading, organizationId, router, toast, form]);
+  }, [adminUser, authLoading, router]);
+
+  useEffect(() => {
+     if (organization) {
+        form.reset({
+            name: organization.name || '',
+            companyName: organization.companyName || '',
+            sector: organization.sector || '',
+        });
+     }
+  }, [organization, form]);
+
 
   const onSubmit: SubmitHandler<z.infer<typeof orgProfileSchema>> = async (data) => {
     if (!organization) return;
     setIsSaving(true);
-    const updatedOrg = { ...organization, ...data };
-    const success = updateUser(updatedOrg);
     
-    if (success) {
-      toast({ title: "Təşkilat məlumatları uğurla yeniləndi!" });
-      router.push('/admin/organizations');
-    } else {
-      toast({ variant: "destructive", title: "Xəta", description: "Məlumatlar yenilənərkən xəta baş verdi." });
-    }
+    updateDocumentNonBlocking(orgDocRef!, data);
+    
+    toast({ title: "Təşkilat məlumatları uğurla yeniləndi!" });
+    router.push('/admin/organizations');
+    
     setIsSaving(false);
   };
 
-  if (isLoading || authLoading) {
+  if (isLoading) {
     return (
         <Card>
             <CardHeader>
@@ -103,14 +101,16 @@ function EditOrganizationPageComponent() {
     );
   }
   
-  if (!organization) {
-    return null; // or a not found component
+  if (!organization && !isLoading) {
+     toast({ variant: "destructive", title: "Xəta", description: "Təşkilat tapılmadı." });
+     router.push('/admin/organizations');
+     return null;
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>"{organization.name}" Redaktə Et</CardTitle>
+        <CardTitle>"{organization?.name}" Redaktə Et</CardTitle>
         <CardDescription>
           Təşkilatın məlumatlarını buradan dəyişdirə bilərsiniz.
         </CardDescription>

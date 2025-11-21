@@ -8,10 +8,12 @@ import { Organization, Student, Project, Invitation } from '@/types';
 import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
 import { StudentCard } from '@/components/student-card';
-import { getStudentById, getProjectsByIds, getInvitationsByOrganizationId, getProjectById, updateInvitationStatus } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking, useDoc } from '@/firebase';
+import { collection, doc, query, where, documentId, deleteDoc } from 'firebase/firestore';
+
 
 interface EnrichedInvitation extends Invitation {
     project?: Project;
@@ -21,10 +23,7 @@ interface EnrichedInvitation extends Invitation {
 export default function OrganizationDashboard() {
     const { user, loading } = useAuth();
     const router = useRouter();
-    const [savedStudents, setSavedStudents] = useState<Student[]>([]);
-    const [organizationProjects, setOrganizationProjects] = useState<Project[]>([]);
-    const [applications, setApplications] = useState<EnrichedInvitation[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const firestore = useFirestore();
     const { toast } = useToast();
 
     const orgProfile = user as Organization;
@@ -35,52 +34,91 @@ export default function OrganizationDashboard() {
         }
     }, [user, loading, router]);
     
-    const fetchData = () => {
-        if (orgProfile) {
-            setIsLoading(true);
-            const studentResults = (orgProfile.savedStudentIds || []).map(id => getStudentById(id)).filter((s): s is Student => s !== undefined);
-            const projectResults = getProjectsByIds(orgProfile.projectIds || []);
+    // Fetch saved students
+    const savedStudentsQuery = useMemoFirebase(() => {
+        if (!orgProfile?.savedStudentIds || orgProfile.savedStudentIds.length === 0) return null;
+        return query(collection(firestore, 'users'), where(documentId(), 'in', orgProfile.savedStudentIds));
+    }, [firestore, orgProfile?.savedStudentIds]);
+    const { data: savedStudents, isLoading: savedStudentsLoading } = useCollection<Student>(savedStudentsQuery);
 
-            setSavedStudents(studentResults);
-            
-            const orgApplications = getInvitationsByOrganizationId(orgProfile.id)
-                .filter(inv => inv.status === 'müraciət')
-                .map(inv => {
-                    const student = getStudentById(inv.studentId);
-                    const project = getProjectById(inv.projectId);
-                    return { ...inv, student, project }
-                })
-                .filter(inv => inv.student && inv.project);
-
-            setApplications(orgApplications as EnrichedInvitation[]);
-            setOrganizationProjects(projectResults);
-            setIsLoading(false);
-        } else {
-            setIsLoading(false);
-        }
-    }
-
-    useEffect(() => {
-      fetchData();
-    }, [orgProfile]);
+    // Fetch organization projects
+    const orgProjectsQuery = useMemoFirebase(() => {
+        if (!orgProfile?.projectIds || orgProfile.projectIds.length === 0) return null;
+        return query(collection(firestore, 'projects'), where(documentId(), 'in', orgProfile.projectIds));
+    }, [firestore, orgProfile?.projectIds]);
+    const { data: organizationProjects, isLoading: orgProjectsLoading } = useCollection<Project>(orgProjectsQuery);
     
-    const handleApplication = (application: EnrichedInvitation, status: 'qəbul edildi' | 'rədd edildi') => {
-        if(!application.student) return;
-        updateInvitationStatus(application.id, status, application.student.id, application.projectId);
+    // Fetch applications (invitations with status 'müraciət')
+    const applicationsQuery = useMemoFirebase(() => {
+        if (!orgProfile) return null;
+        return query(collection(firestore, `users/${orgProfile.id}/invitations`), where('status', '==', 'müraciət'));
+    }, [firestore, orgProfile?.id]);
+    const { data: applications, isLoading: applicationsLoading } = useCollection<Invitation>(applicationsQuery);
+
+    const [enrichedApplications, setEnrichedApplications] = useState<EnrichedInvitation[]>([]);
+
+    // Enrich applications with student and project data
+    useEffect(() => {
+        if (applications) {
+            const enrich = async () => {
+                const enriched = await Promise.all(applications.map(async (app) => {
+                    const studentDoc = await getDoc(doc(firestore, 'users', app.studentId));
+                    const projectDoc = await getDoc(doc(firestore, 'projects', app.projectId));
+                    return {
+                        ...app,
+                        student: studentDoc.exists() ? { id: studentDoc.id, ...studentDoc.data() } as Student : undefined,
+                        project: projectDoc.exists() ? { id: projectDoc.id, ...projectDoc.data() } as Project : undefined,
+                    }
+                }));
+                setEnrichedApplications(enriched.filter(e => e.student && e.project) as EnrichedInvitation[]);
+            }
+            enrich();
+        }
+    }, [applications, firestore]);
+    
+    const handleApplication = async (application: EnrichedInvitation, status: 'qəbul edildi' | 'rədd edildi') => {
+        if(!application.student || !application.project) return;
         
-        toast({
-            title: `Müraciət ${status === 'qəbul edildi' ? 'qəbul edildi' : 'rədd edildi'}`,
-            description: `${application.student.firstName} adlı tələbənin "${application.project?.title}" layihəsinə olan müraciəti ${status}.`
-        });
-        
-        // Refresh data
-        fetchData();
+        const invitationDocRef = doc(firestore, `users/${orgProfile.id}/invitations`, application.id);
+        const studentInvitationDocRef = doc(firestore, `users/${application.studentId}/invitations`, application.id);
+        const projectDocRef = doc(firestore, 'projects', application.projectId);
+
+        try {
+            // Update org-side invitation
+            await updateDoc(invitationDocRef, { status });
+            // Update student-side invitation
+            await updateDoc(studentInvitationDocRef, { status });
+
+            if (status === 'qəbul edildi') {
+                // Add student to project's team members
+                const updatedTeam = [...(application.project.teamMemberIds || []), application.student.id];
+                await updateDoc(projectDocRef, { teamMemberIds: updatedTeam });
+            }
+            
+            // Remove application from local state
+            setEnrichedApplications(prev => prev.filter(app => app.id !== application.id));
+
+            toast({
+                title: `Müraciət ${status === 'qəbul edildi' ? 'qəbul edildi' : 'rədd edildi'}`,
+                description: `${application.student.firstName} adlı tələbənin "${application.project.title}" layihəsinə olan müraciəti ${status}.`
+            });
+
+        } catch (error) {
+             toast({
+                variant: 'destructive',
+                title: "Xəta",
+                description: "Müraciət statusu yenilənərkən xəta baş verdi."
+            });
+            console.error(error);
+        }
     };
 
 
     if (loading || !user || !orgProfile) {
         return <div className="container mx-auto py-8 text-center">Yüklənir...</div>;
     }
+    
+    const isLoading = savedStudentsLoading || orgProjectsLoading || applicationsLoading;
 
     return (
         <div className="container mx-auto py-8 md:py-12 px-4">
@@ -125,9 +163,9 @@ export default function OrganizationDashboard() {
                         <CardContent>
                            {isLoading ? (
                                 <p>Yüklənir...</p>
-                            ) : applications.length > 0 ? (
+                            ) : enrichedApplications.length > 0 ? (
                                <div className="space-y-4">
-                                    {applications.map((app) => (
+                                    {enrichedApplications.map((app) => (
                                         <div key={app.id} className="border p-3 rounded-lg flex items-center justify-between gap-4">
                                             <Link href={`/profile/${app.student?.id}`} className="flex items-center gap-3 hover:underline">
                                                 <Avatar className="h-10 w-10">

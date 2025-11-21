@@ -12,10 +12,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { Building, Briefcase, PlusCircle, Trash2 } from 'lucide-react';
-import { getProjectsByIds, addProject as addProjectToData, deleteProject as deleteProjectFromData } from '@/lib/data';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { v4 as uuidv4 } from 'uuid';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,6 +26,9 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { collection, doc, query, where, writeBatch, documentId } from 'firebase/firestore';
+
 
 const orgProfileSchema = z.object({
   name: z.string().min(2, { message: 'Təşkilat adı ən azı 2 hərfdən ibarət olmalıdır.' }),
@@ -44,12 +45,18 @@ const projectSchema = z.object({
 export default function EditOrganizationProfilePage() {
   const { user, loading, updateUser } = useAuth();
   const router = useRouter();
+  const firestore = useFirestore();
   const { toast } = useToast();
   
-
   const [isSaving, setIsSaving] = useState(false);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [organization, setOrganization] = useState<Organization | null>(null);
+  
+  const organization = user as Organization;
+
+  const projectsQuery = useMemoFirebase(() => {
+    if (!organization?.projectIds || organization.projectIds.length === 0) return null;
+    return query(collection(firestore, 'projects'), where(documentId(), 'in', organization.projectIds));
+  }, [firestore, organization?.projectIds]);
+  const { data: projects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
 
   const orgForm = useForm<z.infer<typeof orgProfileSchema>>({
     resolver: zodResolver(orgProfileSchema),
@@ -63,9 +70,7 @@ export default function EditOrganizationProfilePage() {
 
   useEffect(() => {
     if (!loading) {
-        if (user && user.role === 'organization') {
-            setOrganization(user as Organization);
-        } else {
+        if (!user || user.role !== 'organization') {
             router.push('/login');
         }
     }
@@ -80,34 +85,17 @@ export default function EditOrganizationProfilePage() {
         sector: organization.sector || '',
         logoUrl: organization.logoUrl || '',
       });
-      if(organization.projectIds) {
-        setProjects(getProjectsByIds(organization.projectIds));
-      }
     }
   }, [organization, orgForm]);
 
   const onProfileSubmit: SubmitHandler<z.infer<typeof orgProfileSchema>> = async (data) => {
     if (!organization) return;
     setIsSaving(true);
+    
+    const orgDocRef = doc(firestore, 'users', organization.id);
+    updateDocumentNonBlocking(orgDocRef, data);
 
-    try {
-        const updatedUser = { 
-            ...organization, 
-            ...data
-        };
-        
-        const success = updateUser(updatedUser);
-        
-        if (success) {
-            toast({ title: "Profil məlumatları uğurla yeniləndi!" });
-            orgForm.reset(updatedUser); // Formu yeni datalarla yeniləyirik
-        } else {
-            toast({ variant: "destructive", title: "Xəta", description: "Profil yenilənərkən xəta baş verdi." });
-        }
-
-    } catch (error) {
-        toast({ variant: "destructive", title: "Xəta", description: "Profil yenilənərkən xəta baş verdi." });
-    }
+    toast({ title: "Profil məlumatları uğurla yeniləndi!" });
     
     setIsSaving(false);
   };
@@ -115,8 +103,12 @@ export default function EditOrganizationProfilePage() {
   const onProjectSubmit: SubmitHandler<z.infer<typeof projectSchema>> = async (data) => {
       if (!organization) return;
       setIsSaving(true);
+
+      const projectsCollectionRef = collection(firestore, 'projects');
+      const newProjectRef = doc(projectsCollectionRef);
+
       const newProject: Project = { 
-          id: uuidv4(),
+          id: newProjectRef.id,
           studentId: organization.id, // Using studentId field for owner id
           ...data, 
           role: 'Təşkilat Layihəsi', // Default role
@@ -125,45 +117,42 @@ export default function EditOrganizationProfilePage() {
           invitedStudentIds: [],
           applicantIds: []
         };
+      
+      const batch = writeBatch(firestore);
+      batch.set(newProjectRef, newProject);
 
-      addProjectToData(newProject);
-      
-      const updatedOrg = {
-          ...organization,
-          projectIds: [...(organization.projectIds || []), newProject.id]
-      };
-      
-      const success = updateUser(updatedOrg);
-      if (success) {
-          setProjects(prev => [...prev, newProject]);
-          toast({ title: "Layihə uğurla əlavə edildi." });
-          projectForm.reset();
-      } else {
-          toast({ variant: "destructive", title: "Xəta", description: "Layihə əlavə edilərkən xəta baş verdi." });
-          deleteProjectFromData(newProject.id, organization.id);
-      }
+      const orgDocRef = doc(firestore, 'users', organization.id);
+      const updatedProjectIds = [...(organization.projectIds || []), newProject.id];
+      batch.update(orgDocRef, { projectIds: updatedProjectIds });
+
+      await batch.commit();
+
+      toast({ title: "Layihə uğurla əlavə edildi." });
+      projectForm.reset();
       
       setIsSaving(false);
   };
 
-  const handleDeleteProject = (projectId: string) => {
+  const handleDeleteProject = async (projectId: string) => {
       if (!organization) return;
       setIsSaving(true);
       
-      deleteProjectFromData(projectId, organization.id);
+      const batch = writeBatch(firestore);
+      
+      const projectDocRef = doc(firestore, 'projects', projectId);
+      batch.delete(projectDocRef);
 
-      const updatedOrg = {
-          ...organization,
-          projectIds: organization.projectIds?.filter(id => id !== projectId)
-      };
+      const orgDocRef = doc(firestore, 'users', organization.id);
+      const updatedProjectIds = organization.projectIds?.filter(id => id !== projectId);
+      batch.update(orgDocRef, { projectIds: updatedProjectIds });
 
-      const success = updateUser(updatedOrg);
-       if (success) {
-          setProjects(prev => prev.filter(p => p.id !== projectId));
-          toast({ title: "Layihə silindi." });
-      } else {
-          toast({ variant: "destructive", title: "Xəta", description: "Layihə silinərkən xəta baş verdi." });
+      try {
+        await batch.commit();
+        toast({ title: "Layihə silindi." });
+      } catch (error) {
+         toast({ variant: "destructive", title: "Xəta", description: "Layihə silinərkən xəta baş verdi." });
       }
+      
       setIsSaving(false);
   };
 
@@ -257,7 +246,7 @@ export default function EditOrganizationProfilePage() {
            <Separator className="my-6" />
           <h4 className="text-md font-medium mb-4">Mövcud Layihələr</h4>
           <div className="space-y-4">
-              {projects.length > 0 ? projects.map(p => (
+              {projectsLoading ? <p>Yüklənir...</p> : projects && projects.length > 0 ? projects.map(p => (
                   <div key={p.id} className="flex justify-between items-center p-2 border rounded-md">
                       <span>{p.title}</span>
                        <AlertDialog>

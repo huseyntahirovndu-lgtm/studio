@@ -45,31 +45,29 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { getOrganizations, deleteUser } from "@/lib/data";
 import { Organization } from "@/types";
 import { useToast } from "@/hooks/use-toast";
+import { useCollection, useFirestore, useMemoFirebase, deleteDocumentNonBlocking } from "@/firebase";
+import { collection, query, where, doc } from "firebase/firestore";
 
 
 export default function AdminOrganizationsPage() {
-    const [organizations, setOrganizations] = useState<Organization[]>([]);
-    const [searchTerm, setSearchTerm] = useState("");
     const { toast } = useToast();
+    const firestore = useFirestore();
 
-    useEffect(() => {
-        setOrganizations(getOrganizations());
-    }, []);
+    const organizationsQuery = useMemoFirebase(() => query(collection(firestore, "users"), where("role", "==", "organization")), [firestore]);
+    const { data: organizations, isLoading } = useCollection<Organization>(organizationsQuery);
+    
+    const [searchTerm, setSearchTerm] = useState("");
 
     const handleDeleteOrganization = (orgId: string) => {
-        const success = deleteUser(orgId);
-        if (success) {
-            setOrganizations(prev => prev.filter(o => o.id !== orgId));
-            toast({ title: "Təşkilat uğurla silindi." });
-        } else {
-            toast({ variant: 'destructive', title: "Xəta", description: "Təşkilat silinərkən xəta baş verdi." });
-        }
+        const orgDocRef = doc(firestore, 'users', orgId);
+        deleteDocumentNonBlocking(orgDocRef);
+        toast({ title: "Təşkilat uğurla silindi." });
     };
 
     const filteredOrganizations = useMemo(() => {
+        if (!organizations) return [];
         return organizations.filter(org => 
             org.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             org.sector.toLowerCase().includes(searchTerm.toLowerCase())
@@ -111,61 +109,75 @@ export default function AdminOrganizationsPage() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {filteredOrganizations.map((org) => (
-                    <TableRow key={org.id}>
-                        <TableCell className="font-medium">{org.name}</TableCell>
-                        <TableCell className="hidden md:table-cell">
-                            {org.sector}
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                            {new Date(org.createdAt).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell className="text-right">
-                           <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button
-                                    aria-haspopup="true"
-                                    size="icon"
-                                    variant="ghost"
-                                    >
-                                     <MoreHorizontal className="h-4 w-4" />
-                                     <span className="sr-only">Menyunu aç</span>
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuLabel>Əməliyyatlar</DropdownMenuLabel>
-                                    <DropdownMenuItem asChild>
-                                        <Link href={`/admin/organizations/edit/${org.id}`}>Redaktə et</Link>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                     <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">Sil</DropdownMenuItem>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>Təsdiq edirsiniz?</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                    Bu əməliyyat geri qaytarılmazdır. "{org.name}" təşkilatı sistemdən həmişəlik silinəcək.
-                                                </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel>Ləğv et</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => handleDeleteOrganization(org.id)} className="bg-destructive hover:bg-destructive/90">Bəli, sil</AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
-                                </DropdownMenuContent>
-                                </DropdownMenu>
-                        </TableCell>
-                    </TableRow>
-                    ))}
+                    {isLoading ? (
+                         <TableRow>
+                            <TableCell colSpan={4} className="h-24 text-center">
+                                Yüklənir...
+                            </TableCell>
+                        </TableRow>
+                    ) : filteredOrganizations.length > 0 ? (
+                        filteredOrganizations.map((org) => (
+                        <TableRow key={org.id}>
+                            <TableCell className="font-medium">{org.name}</TableCell>
+                            <TableCell className="hidden md:table-cell">
+                                {org.sector}
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell">
+                                {org.createdAt ? new Date(org.createdAt).toLocaleDateString() : '-'}
+                            </TableCell>
+                            <TableCell className="text-right">
+                               <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button
+                                        aria-haspopup="true"
+                                        size="icon"
+                                        variant="ghost"
+                                        >
+                                         <MoreHorizontal className="h-4 w-4" />
+                                         <span className="sr-only">Menyunu aç</span>
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Əməliyyatlar</DropdownMenuLabel>
+                                        <DropdownMenuItem asChild>
+                                            <Link href={`/organization-profile/edit`}>Redaktə et</Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                         <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">Sil</DropdownMenuItem>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Təsdiq edirsiniz?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Bu əməliyyat geri qaytarılmazdır. "{org.name}" təşkilatı sistemdən həmişəlik silinəcək.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Ləğv et</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDeleteOrganization(org.id)} className="bg-destructive hover:bg-destructive/90">Bəli, sil</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </DropdownMenuContent>
+                                    </DropdownMenu>
+                            </TableCell>
+                        </TableRow>
+                        ))
+                    ) : (
+                        <TableRow>
+                            <TableCell colSpan={4} className="h-24 text-center">
+                                Təşkilat tapılmadı.
+                            </TableCell>
+                        </TableRow>
+                    )}
                 </TableBody>
                 </Table>
             </CardContent>
             <CardFooter>
                 <div className="text-xs text-muted-foreground">
-                Göstərilir <strong>{filteredOrganizations.length}</strong> / <strong>{organizations.length}</strong>{" "}
+                Göstərilir <strong>{filteredOrganizations.length}</strong> / <strong>{organizations?.length || 0}</strong>{" "}
                 təşkilat
                 </div>
             </CardFooter>

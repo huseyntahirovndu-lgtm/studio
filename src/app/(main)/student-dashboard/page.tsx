@@ -8,10 +8,12 @@ import { Student, Invitation, Project, Organization as OrgType } from '@/types';
 import { Progress } from '@/components/ui/progress';
 import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
-import { getInvitationsByStudentId, getProjectById, getOrganizationById, updateInvitationStatus, getProjectsByStudentId, getAchievementsByStudentId, getCertificatesByStudentId } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getProfileRecommendations } from '@/ai/flows/profile-optimizer';
+import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { collection, query, where, doc, getDoc, updateDoc } from 'firebase/firestore';
+
 
 interface EnrichedInvitation extends Invitation {
     project?: Project;
@@ -22,16 +24,22 @@ function AIProfileOptimizer({ student }: { student: Student }) {
     const [recommendations, setRecommendations] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
+    const firestore = useFirestore();
 
     const handleGetRecommendations = async () => {
         setIsLoading(true);
         setRecommendations([]);
         try {
+            // Fetch related data for a complete profile
+            const projectsCol = await getDocs(collection(firestore, `users/${student.id}/projects`));
+            const achievementsCol = await getDocs(collection(firestore, `users/${student.id}/achievements`));
+            const certificatesCol = await getDocs(collection(firestore, `users/${student.id}/certificates`));
+
             const fullProfile = {
                 ...student,
-                projects: getProjectsByStudentId(student.id),
-                achievements: getAchievementsByStudentId(student.id),
-                certificates: getCertificatesByStudentId(student.id),
+                projects: projectsCol.docs.map(d => d.data()),
+                achievements: achievementsCol.docs.map(d => d.data()),
+                certificates: certificatesCol.docs.map(d => d.data()),
             };
             const result = await getProfileRecommendations({ profileData: JSON.stringify(fullProfile) });
             setRecommendations(result.recommendations);
@@ -72,8 +80,9 @@ export default function StudentDashboard() {
     const { user, loading } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
+    const firestore = useFirestore();
     
-    const [invitations, setInvitations] = useState<EnrichedInvitation[]>([]);
+    const studentProfile = user as Student;
 
     useEffect(() => {
         if (!loading && (!user || (user as Student)?.role !== 'student')) {
@@ -81,30 +90,54 @@ export default function StudentDashboard() {
         }
     }, [user, loading, router]);
     
-    const studentProfile = user as Student;
+    const invitationsQuery = useMemoFirebase(() => studentProfile ? query(collection(firestore, `users/${studentProfile.id}/invitations`), where('status', '==', 'gözləyir')) : null, [firestore, studentProfile]);
+    const { data: invitations, isLoading: invitationsLoading } = useCollection<Invitation>(invitationsQuery);
+    const [enrichedInvitations, setEnrichedInvitations] = useState<EnrichedInvitation[]>([]);
 
     useEffect(() => {
-        if (studentProfile) {
-            const fetchInvitations = () => {
-                const studentInvitations = getInvitationsByStudentId(studentProfile.id);
-                const enrichedInvitations = studentInvitations.map((inv) => {
-                    const project = getProjectById(inv.projectId);
-                    const organization = getOrganizationById(inv.organizationId);
-                    return { ...inv, project, organization };
-                });
-                setInvitations(enrichedInvitations);
-            };
-            fetchInvitations();
+        if (invitations) {
+            const enrich = async () => {
+                const enriched = await Promise.all(invitations.map(async (inv) => {
+                    const projectDoc = await getDoc(doc(firestore, 'projects', inv.projectId));
+                    const orgDoc = await getDoc(doc(firestore, 'users', inv.organizationId));
+                    return {
+                        ...inv,
+                        project: projectDoc.exists() ? { id: projectDoc.id, ...projectDoc.data() } as Project : undefined,
+                        organization: orgDoc.exists() ? { id: orgDoc.id, ...orgDoc.data() } as OrgType : undefined,
+                    }
+                }));
+                setEnrichedInvitations(enriched.filter(e => e.project && e.organization) as EnrichedInvitation[]);
+            }
+            enrich();
         }
-    }, [studentProfile]);
+    }, [invitations, firestore]);
     
-    const handleInvitation = (invitation: EnrichedInvitation, status: 'qəbul edildi' | 'rədd edildi') => {
-        updateInvitationStatus(invitation.id, status, studentProfile.id, invitation.projectId);
-        setInvitations(prev => prev.filter(i => i.id !== invitation.id));
-        toast({
-            title: `Dəvət ${status === 'qəbul edildi' ? 'qəbul edildi' : 'rədd edildi'}`,
-            description: `"${invitation.project?.title}" layihəsinə olan dəvətinizə cavab verdiniz.`
-        });
+    const handleInvitation = async (invitation: EnrichedInvitation, status: 'qəbul edildi' | 'rədd edildi') => {
+        if (!invitation.project) return;
+        
+        const studentInvitationDocRef = doc(firestore, `users/${studentProfile.id}/invitations`, invitation.id);
+        const orgInvitationDocRef = doc(firestore, `users/${invitation.organizationId}/invitations`, invitation.id);
+        
+        try {
+            await updateDoc(studentInvitationDocRef, { status });
+            await updateDoc(orgInvitationDocRef, { status });
+
+            if (status === 'qəbul edildi') {
+                const projectDocRef = doc(firestore, 'projects', invitation.projectId);
+                const updatedTeam = [...(invitation.project.teamMemberIds || []), studentProfile.id];
+                await updateDoc(projectDocRef, { teamMemberIds: updatedTeam });
+            }
+
+            setEnrichedInvitations(prev => prev.filter(i => i.id !== invitation.id));
+
+            toast({
+                title: `Dəvət ${status === 'qəbul edildi' ? 'qəbul edildi' : 'rədd edildi'}`,
+                description: `"${invitation.project.title}" layihəsinə olan dəvətinizə cavab verdiniz.`
+            });
+        } catch (error) {
+            console.error("Error handling invitation:", error);
+            toast({ variant: 'destructive', title: 'Xəta', description: 'Dəvətə cavab verilərkən xəta baş verdi.' });
+        }
     }
 
     const profileCompletion = useMemo(() => {
@@ -145,8 +178,6 @@ export default function StudentDashboard() {
         return <div className="container mx-auto py-8 text-center">Yüklənir...</div>;
     }
     
-    const pendingInvitations = invitations.filter(inv => inv.status === 'gözləyir');
-
     return (
         <div className="container mx-auto py-8 md:py-12 px-4">
             <div className="mb-8">
@@ -199,9 +230,9 @@ export default function StudentDashboard() {
                         <CardDescription>Təşkilatlardan gələn layihə təkliflərinə buradan baxa bilərsiniz.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        {pendingInvitations.length > 0 ? (
+                        {invitationsLoading ? <p>Yüklənir...</p> : enrichedInvitations.length > 0 ? (
                             <div className="space-y-4">
-                                {pendingInvitations.map(inv => (
+                                {enrichedInvitations.map(inv => (
                                     <div key={inv.id} className="border p-4 rounded-lg flex items-center justify-between">
                                         <div>
                                             <p className="font-semibold">{inv.project?.title}</p>

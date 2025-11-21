@@ -8,15 +8,15 @@ import {
   signOut,
   User as FirebaseUser,
 } from 'firebase/auth';
-import { doc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useDoc, useFirestore, useAuth as useFirebaseAuth } from '@/firebase';
 import type { AppUser, Student, Organization } from '@/types';
-import { setDocumentNonBlocking, initiateEmailSignUp, initiateEmailSignIn } from '@/firebase';
+import { setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 
 interface AuthContextType {
   user: AppUser | null;
   loading: boolean;
-  login: (email: string, pass: string) => void;
+  login: (email: string, pass: string) => Promise<boolean>;
   logout: () => void;
   register: (
     user: Omit<Student, 'id' | 'createdAt' | 'status'> | Omit<Organization, 'id' | 'createdAt'>,
@@ -36,10 +36,15 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   const userDocRef = firebaseUser ? doc(firestore, 'users', firebaseUser.uid) : null;
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<AppUser>(userDocRef);
 
-  const login = (email: string, pass: string) => {
-    return signInWithEmailAndPassword(auth, email, pass)
-      .then(() => true)
-      .catch(() => false);
+  const login = async (email: string, pass: string): Promise<boolean> => {
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+      // onAuthStateChanged and useDoc will handle the rest
+      return true;
+    } catch (error) {
+      console.error("Login failed:", error);
+      return false;
+    }
   };
 
   const logout = () => {
@@ -85,7 +90,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   const updateUser = (updatedUser: AppUser): boolean => {
     try {
         const userDocRef = doc(firestore, 'users', updatedUser.id);
-        setDocumentNonBlocking(userDocRef, updatedUser, { merge: true });
+        updateDocumentNonBlocking(userDocRef, updatedUser);
         return true;
     } catch (error) {
         console.error("Failed to update user:", error);

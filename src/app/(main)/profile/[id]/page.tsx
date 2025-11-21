@@ -10,7 +10,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Star, Linkedin, Github, Dribbble, Instagram, Link as LinkIcon, Award, Briefcase, FileText, Bookmark, MailPlus, Book, Youtube } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { getStudentById, getProjectsByStudentId, getAchievementsByStudentId, getCertificatesByStudentId, getProjectsByIds, addInvitation, getOrganizationById } from '@/lib/data';
 import {
   Dialog,
   DialogContent,
@@ -24,90 +23,65 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { v4 as uuidv4 } from 'uuid';
 import NextImage from 'next/image';
+import { useDoc, useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { collection, doc, query, where } from 'firebase/firestore';
 
-export default function ProfilePage() {
+
+function ProfilePageContent() {
   const { id } = useParams();
   const { user: currentUser, updateUser } = useAuth();
+  const firestore = useFirestore();
   const { toast } = useToast();
 
   const studentId = typeof id === 'string' ? id : '';
   const organization = currentUser?.role === 'organization' ? currentUser as Organization : null;
 
-  const [student, setStudent] = useState<Student | null>(null);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
-  const [certificates, setCertificates] = useState<Certificate[]>([]);
-  const [organizationProjects, setOrganizationProjects] = useState<Project[]>([]);
+  const studentDocRef = useMemoFirebase(() => studentId ? doc(firestore, 'users', studentId) : null, [firestore, studentId]);
+  const projectsQuery = useMemoFirebase(() => studentId ? collection(firestore, `users/${studentId}/projects`) : null, [firestore, studentId]);
+  const achievementsQuery = useMemoFirebase(() => studentId ? collection(firestore, `users/${studentId}/achievements`) : null, [firestore, studentId]);
+  const certificatesQuery = useMemoFirebase(() => studentId ? collection(firestore, `users/${studentId}/certificates`) : null, [firestore, studentId]);
+  
+  const orgProjectsQuery = useMemoFirebase(() => organization?.id ? query(collection(firestore, 'projects'), where('studentId', '==', organization.id)) : null, [firestore, organization?.id]);
+
+  const { data: student, isLoading: studentLoading } = useDoc<Student>(studentDocRef);
+  const { data: projects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
+  const { data: achievements, isLoading: achievementsLoading } = useCollection<Achievement>(achievementsQuery);
+  const { data: certificates, isLoading: certificatesLoading } = useCollection<Certificate>(certificatesQuery);
+  const { data: organizationProjects } = useCollection<Project>(orgProjectsQuery);
+
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [isInviteDialogOpen, setInviteDialogOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAllowedToView, setIsAllowedToView] = useState(false);
-
-  useEffect(() => {
-    if (!studentId) return;
-    
-    const studentData = getStudentById(studentId);
-    if (studentData) {
-      // Check if user is allowed to view the profile
-      const isApproved = studentData.status === 'təsdiqlənmiş';
-      const isAdmin = currentUser?.role === 'admin';
-      const isOwner = currentUser?.id === studentId;
-
-      if (isApproved || isAdmin || isOwner) {
-        setIsAllowedToView(true);
-        const studentProjects = getProjectsByStudentId(studentId);
-        const studentAchievements = getAchievementsByStudentId(studentId);
-        const studentCertificates = getCertificatesByStudentId(studentId);
-        
-        setStudent(studentData);
-        setProjects(studentProjects);
-        setAchievements(studentAchievements);
-        setCertificates(studentCertificates);
-      } else {
-        setIsAllowedToView(false);
-      }
-    } else {
-        setIsAllowedToView(false);
-    }
-    setIsLoading(false);
-
-  }, [studentId, currentUser]);
-
-  useEffect(() => {
-    if (organization?.projectIds) {
-      setOrganizationProjects(getProjectsByIds(organization.projectIds));
-    }
-  }, [organization]);
   
+  const isLoading = studentLoading || projectsLoading || achievementsLoading || certificatesLoading;
+
+  const isAllowedToView = useMemo(() => {
+    if (!student && !studentLoading) return false;
+    if (!student) return true; // Still loading
+    return student.status === 'təsdiqlənmiş' || currentUser?.role === 'admin' || currentUser?.id === student.id;
+  }, [student, studentLoading, currentUser]);
+
+
   const isSaved = organization?.savedStudentIds?.includes(studentId);
 
   const handleBookmark = () => {
     if (!organization || !student) return;
 
+    const orgDocRef = doc(firestore, 'users', organization.id);
     const currentSavedIds = organization.savedStudentIds || [];
     const newSavedStudentIds = isSaved
       ? currentSavedIds.filter(id => id !== student.id)
       : [...currentSavedIds, student.id];
 
-    const updatedOrg = { ...organization, savedStudentIds: newSavedStudentIds };
-    const success = updateUser(updatedOrg);
+    updateDocumentNonBlocking(orgDocRef, { savedStudentIds: newSavedStudentIds });
 
-    if (success) {
-      toast({
-        title: isSaved ? "Siyahıdan çıxarıldı" : "Yadda saxlanıldı",
-        description: `${student.firstName} ${student.lastName} ${isSaved ? 'yaddaş siyahısından çıxarıldı.' : 'yaddaş siyahısına əlavə edildi.'}`,
-      });
-    } else {
-        toast({
-            variant: 'destructive',
-            title: 'Xəta',
-            description: 'Əməliyyat zamanı xəta baş verdi.'
-        })
-    }
+    toast({
+      title: isSaved ? "Siyahıdan çıxarıldı" : "Yadda saxlanıldı",
+      description: `${student.firstName} ${student.lastName} ${isSaved ? 'yaddaş siyahısından çıxarıldı.' : 'yaddaş siyahısına əlavə edildi.'}`,
+    });
   };
   
   const handleInvite = () => {
-    if (!organization || !student || !selectedProject) {
+    if (!organization || !student || !selectedProject || !organizationProjects) {
         toast({ variant: 'destructive', title: 'Xəta', description: 'Dəvət üçün layihə seçilməlidir.' });
         return;
     }
@@ -118,6 +92,7 @@ export default function ProfilePage() {
         return;
     }
 
+    // This logic should be handled by security rules, but for client-side feedback:
     const isAlreadyMember = project.teamMemberIds?.includes(student.id);
     const isAlreadyInvited = project.invitedStudentIds?.includes(student.id);
 
@@ -129,17 +104,22 @@ export default function ProfilePage() {
         toast({ variant: 'destructive', title: 'Xəta', description: 'Bu tələbə bu layihəyə artıq dəvət edilib.' });
         return;
     }
+    
+    const invitationCollectionRef = collection(firestore, `users/${student.id}/invitations`);
 
-    const invitation: Invitation = {
-      id: uuidv4(),
+    addDocumentNonBlocking(invitationCollectionRef, {
       organizationId: organization.id,
       studentId: student.id,
       projectId: selectedProject,
       status: 'gözləyir',
       createdAt: new Date(),
-    };
-
-    addInvitation(invitation, selectedProject);
+    });
+    
+    // Also update project's invited list
+    const projectDocRef = doc(firestore, 'projects', selectedProject);
+    updateDocumentNonBlocking(projectDocRef, {
+      invitedStudentIds: [...(project.invitedStudentIds || []), student.id]
+    });
 
     toast({
         title: 'Dəvət Göndərildi',
@@ -180,11 +160,14 @@ export default function ProfilePage() {
   };
 
   const getProjectOwner = (project: Project): { name: string; logoUrl?: string; profilePictureUrl?: string } => {
+    // This part is tricky as we don't fetch all users.
+    // Assuming for now if studentId is not the current student's, it's an org.
+    // This should be improved by fetching the owner's data if needed.
     if (project.studentId === student.id) {
         return { name: `${student.firstName} ${student.lastName}`, profilePictureUrl: student.profilePictureUrl };
     }
-    const org = getOrganizationById(project.studentId);
-    return org ? { name: org.name, logoUrl: org.logoUrl } : { name: 'Naməlum' };
+    // A better approach would be to have ownerInfo denormalized on the project doc.
+    return { name: 'Təşkilat Layihəsi' };
   };
 
   return (
@@ -244,7 +227,7 @@ export default function ProfilePage() {
                                         <SelectValue placeholder="Layihə seçin" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {organizationProjects.map(proj => (
+                                        {organizationProjects?.map(proj => (
                                             <SelectItem key={proj.id} value={proj.id}>{proj.title}</SelectItem>
                                         ))}
                                     </SelectContent>
@@ -372,6 +355,13 @@ export default function ProfilePage() {
       </div>
     </div>
   );
+}
+
+
+export default function ProfilePage() {
+    return (
+        <ProfilePageContent />
+    )
 }
 
 function SocialLink({ href, icon: Icon, text }: { href: string; icon: React.ElementType; text: string }) {

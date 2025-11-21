@@ -30,16 +30,26 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import Link from "next/link";
-import { getStudents, getOrganizations } from "@/lib/data";
-import { Student } from "@/types";
+import { Student, Organization } from "@/types";
+import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { collection, query, orderBy, limit } from "firebase/firestore";
+import { useMemo } from "react";
 
 export default function AdminDashboard() {
-  const students = getStudents();
-  const organizations = getOrganizations();
-  const totalStudents = students.length;
-  const totalOrganizations = organizations.length;
-  const recentStudents = students.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
+  const firestore = useFirestore();
 
+  const studentsQuery = useMemoFirebase(() => query(collection(firestore, "users"), where => where("role", "==", "student")), [firestore]);
+  const organizationsQuery = useMemoFirebase(() => query(collection(firestore, "users"), where => where("role", "==", "organization")), [firestore]);
+  const recentStudentsQuery = useMemoFirebase(() => query(collection(firestore, "users"), where("role", "==", "student"), orderBy("createdAt", "desc"), limit(5)), [firestore]);
+
+  const { data: students, isLoading: studentsLoading } = useCollection<Student>(studentsQuery);
+  const { data: organizations, isLoading: orgsLoading } = useCollection<Organization>(organizationsQuery);
+  const { data: recentStudents, isLoading: recentStudentsLoading } = useCollection<Student>(recentStudentsQuery);
+
+  const totalStudents = students?.length ?? 0;
+  const totalOrganizations = organizations?.length ?? 0;
+  
+  const isLoading = studentsLoading || orgsLoading || recentStudentsLoading;
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -53,7 +63,7 @@ export default function AdminDashboard() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalStudents}</div>
+              <div className="text-2xl font-bold">{isLoading ? '...' : totalStudents}</div>
               <p className="text-xs text-muted-foreground">
                 Sistemdə qeydiyyatdan keçmiş tələbə sayı
               </p>
@@ -67,7 +77,7 @@ export default function AdminDashboard() {
               <Building className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalOrganizations}</div>
+              <div className="text-2xl font-bold">{isLoading ? '...' : totalOrganizations}</div>
               <p className="text-xs text-muted-foreground">
                 Platformadakı partnyor təşkilat sayı
               </p>
@@ -105,23 +115,27 @@ export default function AdminDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {recentStudents.map((student: Student) => (
-                     <TableRow key={student.id}>
-                        <TableCell>
-                          <div className="font-medium">{student.firstName} {student.lastName}</div>
-                          <div className="hidden text-sm text-muted-foreground md:inline">
-                            {student.email}
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden xl:table-column">
-                          {student.faculty}
-                        </TableCell>
-                        <TableCell className="hidden xl:table-column">
-                           <Badge variant={student.status === 'təsdiqlənmiş' ? 'default' : 'secondary'}>{student.status}</Badge>
-                        </TableCell>
-                        <TableCell className="text-right">{new Date(student.createdAt).toLocaleDateString()}</TableCell>
-                   </TableRow>
-                  ))}
+                  {isLoading ? (
+                    <TableRow><TableCell colSpan={4} className="text-center">Yüklənir...</TableCell></TableRow>
+                  ) : (
+                    recentStudents?.map((student: Student) => (
+                       <TableRow key={student.id}>
+                          <TableCell>
+                            <div className="font-medium">{student.firstName} {student.lastName}</div>
+                            <div className="hidden text-sm text-muted-foreground md:inline">
+                              {student.email}
+                            </div>
+                          </TableCell>
+                          <TableCell className="hidden xl:table-column">
+                            {student.faculty}
+                          </TableCell>
+                          <TableCell className="hidden xl:table-column">
+                             <Badge variant={student.status === 'təsdiqlənmiş' ? 'default' : 'secondary'}>{student.status}</Badge>
+                          </TableCell>
+                          <TableCell className="text-right">{student.createdAt ? new Date(student.createdAt).toLocaleDateString() : '-'}</TableCell>
+                     </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>

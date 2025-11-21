@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { MoreHorizontal, PlusCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,29 +41,23 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CategoryData } from '@/types';
-import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '@/hooks/use-toast';
-import { getCategories, addCategory, deleteCategory } from '@/lib/data';
+import { useCollection, useFirestore, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 
 
 export default function AdminCategoriesPage() {
-  const [categories, setCategories] = useState<CategoryData[]>([]);
+  const firestore = useFirestore();
+  const categoriesCollectionRef = collection(firestore, 'categories');
+  const { data: categories, isLoading } = useCollection<CategoryData>(categoriesCollectionRef);
+  
   const [newCategoryName, setNewCategoryName] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    setCategories(getCategories());
-  }, []);
-
   const handleAddCategory = () => {
     if (newCategoryName.trim()) {
-      const newCategory: CategoryData = {
-        id: uuidv4(),
-        name: newCategoryName.trim(),
-      };
-      addCategory(newCategory);
-      setCategories(getCategories()); // Refresh from the source
+      addDocumentNonBlocking(categoriesCollectionRef, { name: newCategoryName.trim() });
       setNewCategoryName('');
       setIsDialogOpen(false);
       toast({ title: "Kateqoriya uğurla əlavə edildi." });
@@ -73,10 +67,14 @@ export default function AdminCategoriesPage() {
   };
 
   const handleDeleteCategory = (categoryId: string) => {
-    deleteCategory(categoryId);
-    setCategories(getCategories()); // Refresh from the source
+    const categoryDoc = doc(firestore, 'categories', categoryId);
+    deleteDocumentNonBlocking(categoryDoc);
     toast({ title: "Kateqoriya uğurla silindi.", variant: "destructive" });
   };
+
+  if(isLoading) {
+    return <div>Yüklənir...</div>
+  }
 
   return (
     <div>
@@ -135,7 +133,7 @@ export default function AdminCategoriesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {categories.map((category) => (
+              {categories?.map((category) => (
                 <TableRow key={category.id}>
                   <TableCell className="font-medium">{category.name}</TableCell>
                   <TableCell className="text-right">

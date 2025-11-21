@@ -1,8 +1,7 @@
 'use client';
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { getStudents, getFaculties, getCategories } from '@/lib/data';
-import { Student } from '@/types';
+import { Student, CategoryData, FacultyData } from '@/types';
 import {
   Select,
   SelectContent,
@@ -16,26 +15,30 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
+
 
 export default function RankingsPage() {
+  const firestore = useFirestore();
+
   const [facultyFilter, setFacultyFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [isLoading, setIsLoading] = useState(true);
-  const [students, setStudents] = useState<Student[]>([]);
 
-  const faculties = getFaculties();
-  const categories = getCategories();
+  const studentsQuery = useMemoFirebase(() => query(collection(firestore, "users"), where("status", "==", "təsdiqlənmiş"), where("role", "==", "student")), [firestore]);
+  const facultiesQuery = useMemoFirebase(() => collection(firestore, "faculties"), [firestore]);
+  const categoriesQuery = useMemoFirebase(() => collection(firestore, "categories"), [firestore]);
 
-  useEffect(() => {
-    // Fetch only approved students
-    const allStudents = getStudents().filter(s => s.status === 'təsdiqlənmiş');
-    setStudents(allStudents);
-    setIsLoading(false);
-  }, []);
+  const { data: students, isLoading: studentsLoading } = useCollection<Student>(studentsQuery);
+  const { data: faculties, isLoading: facultiesLoading } = useCollection<FacultyData>(facultiesQuery);
+  const { data: categories, isLoading: categoriesLoading } = useCollection<CategoryData>(categoriesQuery);
+
+  const isLoading = studentsLoading || facultiesLoading || categoriesLoading;
 
   const rankedStudents = useMemo(() => {
+    if (!students) return [];
     return students
-      ?.filter(student => {
+      .filter(student => {
         const facultyMatch = facultyFilter === 'all' || student.faculty === facultyFilter;
         const categoryMatch = categoryFilter === 'all' || student.category.includes(categoryFilter);
         return facultyMatch && categoryMatch;
