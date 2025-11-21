@@ -200,7 +200,7 @@ service cloud.firestore {
      * @principle Secures global reference data by making it publicly readable but restricting writes to admins.
      */
     match /skills/{skillId} {
-      allow get, list: if isSignedIn();
+      allow get, list: if true;
       allow create: if isAdmin();
       allow update, delete: if isAdmin() && resource != null;
     }
@@ -215,7 +215,7 @@ service cloud.firestore {
      * @principle Secures global reference data by making it publicly readable but restricting writes to admins.
      */
     match /categories/{categoryId} {
-      allow get, list: if isSignedIn();
+      allow get, list: if true;
       allow create: if isAdmin();
       allow update, delete: if isAdmin() && resource != null;
     }
@@ -241,3 +241,4 @@ service cloud.firestore {
     }
   }
 }
+    
