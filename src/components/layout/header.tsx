@@ -16,6 +16,7 @@ const navLinks = [
   { href: '/', label: 'Ana Səhifə' },
   { href: '/search', label: 'Axtarış' },
   { href: '/rankings', label: 'Reytinq' },
+  { href: '/student-organizations', label: 'Tələbə Təşkilatları' },
 ];
 
 export function Header() {

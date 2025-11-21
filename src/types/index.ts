@@ -119,6 +119,16 @@ export interface Admin extends BaseUser {
     lastName: string;
 }
 
+export interface StudentOrganization {
+  id: string;
+  name: string;
+  description: string;
+  logoUrl?: string;
+  faculty: string;
+  leaderId: string; // student id
+  memberIds: string[]; // array of student ids
+}
+
 export interface FacultyData {
     id: string;
     name: string;
@@ -140,5 +150,3 @@ export interface Invitation {
 }
 
 export type AppUser = Student | Organization | Admin;
-
-    
