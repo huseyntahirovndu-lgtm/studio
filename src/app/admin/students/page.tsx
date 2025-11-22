@@ -110,12 +110,8 @@ export default function AdminStudentsPage() {
 
     const isLoading = studentsLoading || facultiesLoading || adminLoading;
 
-    if (adminLoading) {
+    if (isLoading) {
       return <div className="text-center py-10">Yüklənir...</div>
-    }
-
-    if (!adminUser || adminUser.role !== 'admin') {
-      return <div className="text-center py-10 text-red-500">Bu səhifəyə giriş üçün icazəniz yoxdur.</div>
     }
 
     return (
