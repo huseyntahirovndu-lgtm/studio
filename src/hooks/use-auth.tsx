@@ -147,7 +147,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       const userWithId = {
           ...newUser,
           id: newUserId,
-          role: newUser.role, // Explicitly set role
+          role: newUser.role,
           createdAt: new Date().toISOString(),
           status: newUser.role === 'student' ? 'gözləyir' : undefined,
       };
