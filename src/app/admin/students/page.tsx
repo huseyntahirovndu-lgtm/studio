@@ -50,21 +50,18 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
-import type { Student, StudentStatus, FacultyData } from "@/types";
+import type { Student, StudentStatus, FacultyData, AppUser } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking, useAuth } from "@/firebase";
+import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase";
 import { collection, query, where, doc } from "firebase/firestore";
 
 export default function AdminStudentsPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
-  const { user: adminUser, loading: adminLoading } = useAuth();
 
-  const studentsQuery = useMemoFirebase(
-    () => (firestore && adminUser?.role === 'admin') 
-      ? query(collection(firestore, "users"), where("role", "==", "student")) 
-      : null,
-    [firestore, adminUser]
+  const allUsersQuery = useMemoFirebase(
+    () => (firestore) ? collection(firestore, "users") : null,
+    [firestore]
   );
   
   const facultiesQuery = useMemoFirebase(
@@ -72,8 +69,15 @@ export default function AdminStudentsPage() {
     [firestore]
   );
 
-  const { data: students, isLoading: studentsLoading } = useCollection<Student>(studentsQuery);
+  const { data: allUsers, isLoading: usersLoading } = useCollection<AppUser>(allUsersQuery);
   const { data: faculties, isLoading: facultiesLoading } = useCollection<FacultyData>(facultiesQuery);
+  
+  const students = useMemo(() => {
+    if (!allUsers) return [];
+    // Filter for users who are explicitly students or have student-like fields but no role
+    return allUsers.filter(user => user.role === 'student' || (!user.role && 'firstName' in user)) as Student[];
+  }, [allUsers]);
+
 
   const [activeTab, setActiveTab] = useState<StudentStatus | 'all'>('all');
   const [selectedFaculties, setSelectedFaculties] = useState<string[]>([]);
@@ -117,7 +121,7 @@ export default function AdminStudentsPage() {
         })
     }, [students, activeTab, selectedFaculties, searchTerm]);
 
-    const isLoading = studentsLoading || facultiesLoading || adminLoading;
+    const isLoading = usersLoading || facultiesLoading;
 
     if (isLoading) {
       return <div className="text-center py-10">Yüklənir...</div>
@@ -212,7 +216,7 @@ export default function AdminStudentsPage() {
                           </TableCell>
                           <TableCell>
                               <Badge variant={student.status === 'təsdiqlənmiş' ? 'default' : student.status === 'gözləyir' ? 'secondary' : 'outline'}>
-                                  {statusMap[student.status]}
+                                  {student.status ? statusMap[student.status] : 'Naməlum'}
                               </Badge>
                           </TableCell>
                           <TableCell className="hidden md:table-cell">

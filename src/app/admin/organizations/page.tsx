@@ -39,24 +39,29 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Organization } from "@/types";
+import { Organization, AppUser } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { useCollection, useFirestore, useMemoFirebase, deleteDocumentNonBlocking, useAuth } from "@/firebase";
+import { useCollection, useFirestore, useMemoFirebase, deleteDocumentNonBlocking } from "@/firebase";
 import { collection, query, where, doc } from "firebase/firestore";
+import { useMemo } from "react";
 
 export default function AdminOrganizationsPage() {
     const { toast } = useToast();
     const firestore = useFirestore();
-    const { user: adminUser, loading: adminLoading } = useAuth();
 
-    const organizationsQuery = useMemoFirebase(
-      () => (firestore && adminUser?.role === 'admin') 
-        ? query(collection(firestore, "users"), where("role", "==", "organization")) 
+    const allUsersQuery = useMemoFirebase(
+      () => (firestore) 
+        ? collection(firestore, "users")
         : null, 
-      [firestore, adminUser]
+      [firestore]
     );
 
-    const { data: organizations, isLoading } = useCollection<Organization>(organizationsQuery);
+    const { data: allUsers, isLoading } = useCollection<AppUser>(allUsersQuery);
+
+    const organizations = useMemo(() => {
+        if (!allUsers) return [];
+        return allUsers.filter(user => user.role === 'organization') as Organization[];
+    }, [allUsers]);
 
     const handleDelete = (orgId: string) => {
         if (!firestore) return;
@@ -65,7 +70,7 @@ export default function AdminOrganizationsPage() {
         toast({ title: "Təşkilat uğurla silindi." });
     };
 
-    if (adminLoading || isLoading) {
+    if (isLoading) {
       return <div className="text-center py-10">Yüklənir...</div>
     }
 
