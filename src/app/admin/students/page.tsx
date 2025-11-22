@@ -52,15 +52,17 @@ import {
 import { Input } from "@/components/ui/input";
 import type { Student, StudentStatus, FacultyData } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase";
+import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking, deleteDocumentNonBlocking, useAuth } from "@/firebase";
 import { collection, query, where, doc } from "firebase/firestore";
 
 export default function AdminStudentsPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
+  const { user: adminUser, loading: adminLoading } = useAuth();
 
-  const studentsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, "users"), where("role", "==", "student")) : null, [firestore]);
-  const facultiesQuery = useMemoFirebase(() => firestore ? collection(firestore, "faculties") : null, [firestore]);
+  // Only fetch data if an admin is logged in
+  const studentsQuery = useMemoFirebase(() => (firestore && adminUser?.role === 'admin') ? query(collection(firestore, "users"), where("role", "==", "student")) : null, [firestore, adminUser]);
+  const facultiesQuery = useMemoFirebase(() => (firestore && adminUser?.role === 'admin') ? collection(firestore, "faculties") : null, [firestore, adminUser]);
 
   const { data: students, isLoading: studentsLoading } = useCollection<Student>(studentsQuery);
   const { data: faculties, isLoading: facultiesLoading } = useCollection<FacultyData>(facultiesQuery);
@@ -106,7 +108,15 @@ export default function AdminStudentsPage() {
         })
     }, [students, activeTab, selectedFaculties, searchTerm]);
 
-    const isLoading = studentsLoading || facultiesLoading;
+    const isLoading = studentsLoading || facultiesLoading || adminLoading;
+
+    if (adminLoading) {
+      return <div className="text-center py-10">Yüklənir...</div>
+    }
+
+    if (!adminUser || adminUser.role !== 'admin') {
+      return <div className="text-center py-10 text-red-500">Bu səhifəyə giriş üçün icazəniz yoxdur.</div>
+    }
 
     return (
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>

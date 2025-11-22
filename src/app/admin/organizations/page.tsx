@@ -41,14 +41,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Organization } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { useCollection, useFirestore, useMemoFirebase, deleteDocumentNonBlocking } from "@/firebase";
+import { useCollection, useFirestore, useMemoFirebase, deleteDocumentNonBlocking, useAuth } from "@/firebase";
 import { collection, query, where, doc } from "firebase/firestore";
 
 export default function AdminOrganizationsPage() {
     const { toast } = useToast();
     const firestore = useFirestore();
+    const { user: adminUser, loading: adminLoading } = useAuth();
 
-    const organizationsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, "users"), where("role", "==", "organization")) : null, [firestore]);
+    const organizationsQuery = useMemoFirebase(() => (firestore && adminUser?.role === 'admin') ? query(collection(firestore, "users"), where("role", "==", "organization")) : null, [firestore, adminUser]);
     const { data: organizations, isLoading } = useCollection<Organization>(organizationsQuery);
 
     const handleDelete = (orgId: string) => {
@@ -58,6 +59,15 @@ export default function AdminOrganizationsPage() {
         deleteDocumentNonBlocking(orgDocRef);
         toast({ title: "Təşkilat uğurla silindi." });
     };
+
+    if (adminLoading) {
+      return <div className="text-center py-10">Yüklənir...</div>
+    }
+
+    if (!adminUser || adminUser.role !== 'admin') {
+      return <div className="text-center py-10 text-red-500">Bu səhifəyə giriş üçün icazəniz yoxdur.</div>
+    }
+
 
     return (
         <Card>
