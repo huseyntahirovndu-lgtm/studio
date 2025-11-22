@@ -17,6 +17,7 @@ import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
+import { categories, faculties } from '@/lib/data';
 
 
 type QuickFilter = 'none' | 'high-potential' | 'startup' | 'newcomer';
@@ -33,14 +34,10 @@ export default function SearchClient() {
   const [quickFilter, setQuickFilter] = useState<QuickFilter>('none');
   
   const studentsQuery = useMemoFirebase(() => query(collection(firestore, "users"), where("status", "==", "təsdiqlənmiş"), where("role", "==", "student")), [firestore]);
-  const facultiesQuery = useMemoFirebase(() => collection(firestore, "faculties"), [firestore]);
-  const categoriesQuery = useMemoFirebase(() => collection(firestore, "categories"), [firestore]);
   
   const { data: students, isLoading: studentsLoading } = useCollection<Student>(studentsQuery);
-  const { data: faculties, isLoading: facultiesLoading } = useCollection<FacultyData>(facultiesQuery);
-  const { data: categories, isLoading: categoriesLoading } = useCollection<CategoryData>(categoriesQuery);
   
-  const isLoading = studentsLoading || facultiesLoading || categoriesLoading;
+  const isLoading = studentsLoading;
 
   useEffect(() => {
     const sortParam = searchParams.get('sort');

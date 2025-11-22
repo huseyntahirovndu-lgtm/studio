@@ -39,6 +39,7 @@ import type { Student, FacultyData, CategoryData } from '@/types';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
+import { categories, faculties } from '@/lib/data';
 
 
 const formSchema = z.object({
@@ -71,13 +72,6 @@ export default function RegisterStudentPage() {
   const { register } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const firestore = useFirestore();
-
-  const facultiesQuery = useMemoFirebase(() => collection(firestore, 'faculties'), [firestore]);
-  const categoriesQuery = useMemoFirebase(() => collection(firestore, 'categories'), [firestore]);
-
-  const { data: faculties } = useCollection<FacultyData>(facultiesQuery);
-  const { data: categories } = useCollection<CategoryData>(categoriesQuery);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
