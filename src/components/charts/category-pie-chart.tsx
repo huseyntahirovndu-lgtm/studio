@@ -18,13 +18,14 @@ import {
 } from '@/components/ui/chart';
 import { Student, CategoryData } from '@/types';
 
-const categoryColors: Record<string, string> = {
-    STEM: 'hsl(var(--category-stem))',
-    Humanitar: 'hsl(var(--category-humanitarian))',
-    İncəsənət: 'hsl(var(--category-art))',
-    İdman: 'hsl(var(--category-sport))',
-    Sahibkarlıq: 'hsl(var(--category-entrepreneurship))',
-    Texnologiya: 'hsl(var(--category-technology))',
+// Helper to generate a consistent color from a string
+const stringToHslColor = (str: string, s: number, l: number): string => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const h = hash % 360;
+    return `hsl(${h}, ${s}%, ${l}%)`;
 };
 
 interface CategoryPieChartProps {
@@ -34,20 +35,24 @@ interface CategoryPieChartProps {
 
 export function CategoryPieChart({ students, categoriesData }: CategoryPieChartProps) {
     
-  const categories = categoriesData.map(c => c.name);
-
-  const chartData = categories.map((category) => ({
-    name: category,
-    value: students.filter((student) => student.category.includes(category)).length,
-    fill: categoryColors[category] || 'hsl(var(--muted))',
+  const chartData = (categoriesData || []).map((category) => ({
+    name: category.name,
+    value: students.filter((student) => student.category.includes(category.name)).length,
+    fill: stringToHslColor(category.name, 70, 50),
   })).filter(d => d.value > 0);
 
   const chartConfig = {
     value: {
       label: 'Tələbələr',
     },
-    ...Object.fromEntries(categories.map(cat => [cat, {label: cat}]))
+    ...Object.fromEntries(
+        (categoriesData || []).map(cat => [cat.name, {label: cat.name}])
+    )
   };
+  
+  const mostPopulousCategory = chartData.length > 0 
+    ? chartData.reduce((prev, current) => (prev.value > current.value) ? prev : current)
+    : null;
 
   return (
     <Card className="flex flex-col h-full">
@@ -80,9 +85,11 @@ export function CategoryPieChart({ students, categoriesData }: CategoryPieChartP
         </ChartContainer>
       </CardContent>
       <CardFooter className="flex-col gap-2 text-sm pt-4">
-        <div className="flex items-center justify-center gap-2 font-medium leading-none">
-          Ən çox tələbə Texnologiya sahəsindədir <TrendingUp className="h-4 w-4" />
-        </div>
+        {mostPopulousCategory && (
+            <div className="flex items-center justify-center gap-2 font-medium leading-none">
+              Ən çox tələbə {mostPopulousCategory.name} sahəsindədir <TrendingUp className="h-4 w-4" />
+            </div>
+        )}
         <div className="leading-none text-muted-foreground">
           Cari tələbə məlumatlarına əsasən.
         </div>

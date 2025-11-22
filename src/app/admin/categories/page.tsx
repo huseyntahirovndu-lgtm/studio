@@ -79,7 +79,7 @@ export default function AdminCategoriesPage() {
       <Card>
         <CardHeader>
             <CardTitle>Kateqoriyaları İdarə Et</CardTitle>
-            <CardDescription>Yeni istedad kateqoriyaları əlavə edin və ya mövcud olanları silin.</CardDescription>
+            <CardDescription>Yeni istedad kateqoriyaları əlavə edin və ya mövcud olanları silin. Bu dəyişikliklər bütün saytda (qeydiyyat, axtarış və s.) dərhal tətbiq olunacaq.</CardDescription>
         </CardHeader>
         <CardContent className="mt-6">
           <div className="flex items-center gap-2 mb-6">

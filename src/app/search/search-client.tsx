@@ -133,6 +133,8 @@ export default function SearchClient() {
                 <SelectItem value="2">2-ci kurs</SelectItem>
                 <SelectItem value="3">3-cü kurs</SelectItem>
                 <SelectItem value="4">4-cü kurs</SelectItem>
+                <SelectItem value="5">5-ci kurs</SelectItem>
+                <SelectItem value="6">6-cı kurs</SelectItem>
               </SelectContent>
             </Select>
             {isLoading ? <Skeleton className="h-10 w-full" /> : (

@@ -59,7 +59,7 @@ const formSchema = z.object({
   major: z.string().min(2, {
     message: 'İxtisas ən azı 2 hərfdən ibarət olmalıdır.'
   }),
-  courseYear: z.coerce.number().min(1).max(4),
+  courseYear: z.coerce.number().min(1).max(6),
   category: z.array(z.string()).refine((value) => value.some((item) => item), {
     message: "Ən azı bir kateqoriya seçməlisiniz.",
   }),
@@ -261,7 +261,7 @@ export default function RegisterStudentPage() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {[1, 2, 3, 4].map(year => (
+                      {[1, 2, 3, 4, 5, 6].map(year => (
                         <SelectItem key={year} value={String(year)}>
                           {year}-ci kurs
                         </SelectItem>

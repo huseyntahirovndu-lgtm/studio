@@ -45,7 +45,7 @@ const profileSchema = z.object({
   lastName: z.string().min(2, "Soyad ən azı 2 hərf olmalıdır."),
   profilePictureUrl: z.string().url("Etibarlı bir URL daxil edin.").or(z.literal('')).optional(),
   major: z.string().min(2, "İxtisas boş ola bilməz."),
-  courseYear: z.coerce.number().min(1).max(4),
+  courseYear: z.coerce.number().min(1).max(6),
   educationForm: z.string().optional(),
   gpa: z.coerce.number().optional(),
   skills: z.array(skillSchema).min(1, "Ən azı bir bacarıq daxil edin."),
@@ -423,7 +423,7 @@ function EditProfilePageComponent() {
                         <Select onValueChange={(value) => field.onChange(parseInt(value))} value={String(field.value)}>
                             <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                             <SelectContent>
-                                {[1,2,3,4].map(y => <SelectItem key={y} value={String(y)}>{y}-ci kurs</SelectItem>)}
+                                {[1,2,3,4,5,6].map(y => <SelectItem key={y} value={String(y)}>{y}-ci kurs</SelectItem>)}
                             </SelectContent>
                         </Select>
                         <FormMessage /></FormItem>
