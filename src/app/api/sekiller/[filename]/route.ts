@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs';
-import { getType } from 'mime-types';
+import { lookup } from 'mime-types';
 
 export async function GET(req: NextRequest, { params }: { params: { filename: string } }) {
   const { filename } = params;
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest, { params }: { params: { filename: st
     const fileBuffer = fs.readFileSync(filePath);
 
     // Mime növünü təyin et
-    const mimeType = getType(filePath) || 'application/octet-stream';
+    const mimeType = lookup(filePath) || 'application/octet-stream';
 
     // Faylı düzgün header ilə qaytar
     return new NextResponse(fileBuffer, {
