@@ -18,7 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import type { CategoryData } from '@/types';
 import { PlusCircle, Trash2 } from 'lucide-react';
@@ -40,7 +40,7 @@ export default function AdminCategoriesPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
 
-  const categoriesQuery = firestore ? collection(firestore, 'categories') : null;
+  const categoriesQuery = useMemoFirebase(() => firestore ? collection(firestore, 'categories') : null, [firestore]);
   const { data: categories, isLoading: categoriesLoading } = useCollection<CategoryData>(categoriesQuery);
 
   const handleAddCategory = async () => {
