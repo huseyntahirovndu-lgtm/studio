@@ -1,17 +1,10 @@
 'use client';
 import {
-  Activity,
   ArrowUpRight,
   Building,
-  DollarSign,
   Users,
 } from "lucide-react"
 
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -31,25 +24,27 @@ import {
 } from "@/components/ui/table"
 import Link from "next/link";
 import { Student, Organization } from "@/types";
-import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { useCollection, useFirestore, useMemoFirebase, useAuth } from "@/firebase";
 import { collection, query, where, orderBy, limit } from "firebase/firestore";
-import { useMemo } from "react";
 
 export default function AdminDashboard() {
   const firestore = useFirestore();
+  const { user: adminUser, loading: adminLoading } = useAuth();
 
-  const studentsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, "users"), where("role", "==", "student")) : null, [firestore]);
-  const organizationsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, "users"), where("role", "==", "organization")) : null, [firestore]);
-  const recentStudentsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, "users"), where("role", "==", "student"), orderBy("createdAt", "desc"), limit(5)) : null, [firestore]);
 
+  // Only fetch data if an admin is logged in
+  const studentsQuery = useMemoFirebase(() => (firestore && adminUser?.role === 'admin') ? query(collection(firestore, "users"), where("role", "==", "student")) : null, [firestore, adminUser]);
+  const organizationsQuery = useMemoFirebase(() => (firestore && adminUser?.role === 'admin') ? query(collection(firestore, "users"), where("role", "==", "organization")) : null, [firestore, adminUser]);
+  const recentStudentsQuery = useMemoFirebase(() => (firestore && adminUser?.role === 'admin') ? query(collection(firestore, "users"), where("role", "==", "student"), orderBy("createdAt", "desc"), limit(5)) : null, [firestore, adminUser]);
+  
   const { data: students, isLoading: studentsLoading } = useCollection<Student>(studentsQuery);
   const { data: organizations, isLoading: orgsLoading } = useCollection<Organization>(organizationsQuery);
   const { data: recentStudents, isLoading: recentStudentsLoading } = useCollection<Student>(recentStudentsQuery);
 
+  const isLoading = studentsLoading || orgsLoading || recentStudentsLoading || adminLoading;
+  
   const totalStudents = students?.length ?? 0;
   const totalOrganizations = organizations?.length ?? 0;
-  
-  const isLoading = studentsLoading || orgsLoading || recentStudentsLoading;
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -72,7 +67,7 @@ export default function AdminDashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                 <Link href="/admin/organizations">Ümumi Təşkilat</Link>
+                <Link href="/admin/organizations">Ümumi Təşkilat</Link>
               </CardTitle>
               <Building className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
@@ -116,24 +111,34 @@ export default function AdminDashboard() {
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
-                    <TableRow><TableCell colSpan={4} className="text-center">Yüklənir...</TableCell></TableRow>
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center">Yüklənir...</TableCell>
+                    </TableRow>
+                  ) : recentStudents?.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center">Heç bir tələbə tapılmadı</TableCell>
+                    </TableRow>
                   ) : (
                     recentStudents?.map((student: Student) => (
-                       <TableRow key={student.id}>
-                          <TableCell>
-                            <div className="font-medium">{student.firstName} {student.lastName}</div>
-                            <div className="hidden text-sm text-muted-foreground md:inline">
-                              {student.email}
-                            </div>
-                          </TableCell>
-                          <TableCell className="hidden xl:table-column">
-                            {student.faculty}
-                          </TableCell>
-                          <TableCell className="hidden xl:table-column">
-                             <Badge variant={student.status === 'təsdiqlənmiş' ? 'default' : 'secondary'}>{student.status}</Badge>
-                          </TableCell>
-                          <TableCell className="text-right">{student.createdAt ? new Date(student.createdAt).toLocaleDateString() : '-'}</TableCell>
-                     </TableRow>
+                      <TableRow key={student.id}>
+                        <TableCell>
+                          <div className="font-medium">{student.firstName} {student.lastName}</div>
+                          <div className="hidden text-sm text-muted-foreground md:inline">
+                            {student.email}
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden xl:table-column">
+                          {student.faculty}
+                        </TableCell>
+                        <TableCell className="hidden xl:table-column">
+                          <Badge variant={student.status === 'təsdiqlənmiş' ? 'default' : 'secondary'}>
+                            {student.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {student.createdAt ? new Date(student.createdAt).toLocaleDateString() : '-'}
+                        </TableCell>
+                      </TableRow>
                     ))
                   )}
                 </TableBody>
