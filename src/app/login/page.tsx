@@ -26,7 +26,6 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import type { AppUser } from '@/types';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Etibarlı bir e-poçt ünvanı daxil edin.' }),
@@ -34,7 +33,7 @@ const formSchema = z.object({
 });
 
 export default function LoginPage() {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { user, loading, login } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
@@ -50,21 +49,15 @@ export default function LoginPage() {
   // Redirect if user is already logged in
   useEffect(() => {
     if (!loading && user) {
-      const appUser = user as AppUser;
-      if (appUser.role === 'student') {
-        router.push('/student-dashboard');
-      } else if (appUser.role === 'organization') {
-        router.push('/organization-dashboard');
-      } else if (appUser.role === 'admin') {
-        router.push('/admin/dashboard');
-      } else {
-        router.push('/');
-      }
+        if (user.role === 'student') router.push('/student-dashboard');
+        else if (user.role === 'organization') router.push('/organization-dashboard');
+        else if (user.role === 'admin') router.push('/admin/dashboard');
+        else router.push('/');
     }
   }, [user, loading, router]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsLoading(true);
+    setIsSubmitting(true);
     const success = await login(values.email, values.password);
 
     if (success) {
@@ -72,7 +65,7 @@ export default function LoginPage() {
         title: 'Uğurlu Giriş',
         description: 'İstedad Mərkəzinə xoş gəlmisiniz!',
       });
-      // The useEffect above will handle the redirection
+      // The useEffect hook will handle the redirection after the user state is updated.
     } else {
       toast({
         variant: 'destructive',
@@ -80,7 +73,7 @@ export default function LoginPage() {
         description: 'E-poçt və ya şifrə yanlışdır.',
       });
     }
-    setIsLoading(false);
+    setIsSubmitting(false);
   }
   
   if (loading || user) {
@@ -124,8 +117,8 @@ export default function LoginPage() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Giriş edilir...' : 'Daxil ol'}
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? 'Giriş edilir...' : 'Daxil ol'}
             </Button>
           </form>
         </Form>

@@ -26,9 +26,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import type { Organization } from '@/types';
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore"; 
-import { useFirestore } from '@/firebase';
 
 
 const formSchema = z.object({
@@ -44,7 +41,8 @@ export default function AddOrganizationPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
-  const firestore = useFirestore();
+  const { register } = useAuth();
+
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -61,39 +59,33 @@ export default function AddOrganizationPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
 
-    try {
-        const auth = getAuth();
-        const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-        const user = userCredential.user;
+    const newOrganization: Omit<Organization, 'id' | 'createdAt'> = {
+        role: 'organization',
+        email: values.email,
+        name: values.name,
+        companyName: values.companyName,
+        sector: values.sector,
+        logoUrl: values.logoUrl,
+        savedStudentIds: [],
+        projectIds: [],
+    };
+    
+    const success = await register(newOrganization, values.password);
 
-        const newOrganization: Organization = {
-            id: user.uid,
-            role: 'organization',
-            email: values.email,
-            name: values.name,
-            companyName: values.companyName,
-            sector: values.sector,
-            logoUrl: values.logoUrl,
-            savedStudentIds: [],
-            projectIds: [],
-            createdAt: new Date().toISOString(),
-        };
-
-        await setDoc(doc(firestore, "users", user.uid), newOrganization);
-
+    if (success) {
         toast({
             title: 'Uğurlu',
             description: 'Təşkilat uğurla yaradıldı.',
         });
         router.push('/admin/organizations');
-    } catch (error: any) {
-        console.error("Təşkilat yaradılarkən xəta:", error);
+    } else {
         toast({
             variant: 'destructive',
             title: 'Xəta',
-            description: error.message || 'Təşkilat yaradılarkən xəta baş verdi.',
+            description: 'Təşkilat yaradılarkən xəta baş verdi (e-poçt artıq mövcud ola bilər).',
         });
     }
+
 
     setIsLoading(false);
   }

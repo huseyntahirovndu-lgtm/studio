@@ -7,7 +7,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useAuth } from '@/hooks/use-auth';
-import { calculateTalentScore } from '@/ai/flows/talent-scoring';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -35,10 +34,8 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import type { Student, FacultyData, CategoryData } from '@/types';
+import type { Student } from '@/types';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
 import { categories, faculties } from '@/lib/data';
 
 
@@ -109,22 +106,10 @@ export default function RegisterStudentPage() {
       behanceURL: '',
       instagramURL: '',
       portfolioURL: '',
-      talentScore: 0,
+      talentScore: Math.floor(Math.random() * 30) + 10, // Assign a random initial score
     };
     
-    let finalProfile = { ...newUserProfile, status: 'gözləyir' as const};
-
-    try {
-      const scoreResult = await calculateTalentScore({
-        profileData: JSON.stringify(finalProfile)
-      });
-      finalProfile.talentScore = scoreResult.talentScore;
-    } catch (aiError) {
-      console.error("AI talent score calculation failed:", aiError);
-      finalProfile.talentScore = Math.floor(Math.random() * 30) + 10;
-    }
-
-    const success = await register(finalProfile, values.password);
+    const success = await register(newUserProfile, values.password);
 
     if (success) {
       toast({

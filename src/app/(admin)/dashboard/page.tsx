@@ -32,15 +32,15 @@ import {
 import Link from "next/link";
 import { Student, Organization } from "@/types";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, query, orderBy, limit } from "firebase/firestore";
+import { collection, query, where, orderBy, limit } from "firebase/firestore";
 import { useMemo } from "react";
 
 export default function AdminDashboard() {
   const firestore = useFirestore();
 
-  const studentsQuery = useMemoFirebase(() => query(collection(firestore, "users"), where => where("role", "==", "student")), [firestore]);
-  const organizationsQuery = useMemoFirebase(() => query(collection(firestore, "users"), where => where("role", "==", "organization")), [firestore]);
-  const recentStudentsQuery = useMemoFirebase(() => query(collection(firestore, "users"), where("role", "==", "student"), orderBy("createdAt", "desc"), limit(5)), [firestore]);
+  const studentsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, "users"), where("role", "==", "student")) : null, [firestore]);
+  const organizationsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, "users"), where("role", "==", "organization")) : null, [firestore]);
+  const recentStudentsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, "users"), where("role", "==", "student"), orderBy("createdAt", "desc"), limit(5)) : null, [firestore]);
 
   const { data: students, isLoading: studentsLoading } = useCollection<Student>(studentsQuery);
   const { data: organizations, isLoading: orgsLoading } = useCollection<Organization>(organizationsQuery);
