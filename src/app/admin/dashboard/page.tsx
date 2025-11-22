@@ -28,20 +28,45 @@ import { useCollection, useFirestore, useMemoFirebase, useAuth } from "@/firebas
 import { collection, query, where, orderBy, limit } from "firebase/firestore";
 
 export default function AdminDashboard() {
-  const firestore = useFirestore();
   const { user: adminUser, loading: adminLoading } = useAuth();
-
-
-  // Only fetch data if an admin is logged in
-  const studentsQuery = useMemoFirebase(() => (firestore && adminUser?.role === 'admin') ? query(collection(firestore, "users"), where("role", "==", "student")) : null, [firestore, adminUser]);
-  const organizationsQuery = useMemoFirebase(() => (firestore && adminUser?.role === 'admin') ? query(collection(firestore, "users"), where("role", "==", "organization")) : null, [firestore, adminUser]);
-  const recentStudentsQuery = useMemoFirebase(() => (firestore && adminUser?.role === 'admin') ? query(collection(firestore, "users"), where("role", "==", "student"), orderBy("createdAt", "desc"), limit(5)) : null, [firestore, adminUser]);
+  const firestore = useFirestore();
   
+  const studentsQuery = useMemoFirebase(
+    () => (firestore && adminUser?.role === 'admin') ? query(collection(firestore, "users"), where("role", "==", "student")) : null,
+    [firestore, adminUser]
+  );
+  
+  const organizationsQuery = useMemoFirebase(
+    () => (firestore && adminUser?.role === 'admin') ? query(collection(firestore, "users"), where("role", "==", "organization")) : null,
+    [firestore, adminUser]
+  );
+  
+  const recentStudentsQuery = useMemoFirebase(
+    () => (firestore && adminUser?.role === 'admin') ? query(
+      collection(firestore, "users"),
+      where("role", "==", "student"),
+      orderBy("createdAt", "desc"),
+      limit(5)
+    ) : null,
+    [firestore, adminUser]
+  );
+
   const { data: students, isLoading: studentsLoading } = useCollection<Student>(studentsQuery);
   const { data: organizations, isLoading: orgsLoading } = useCollection<Organization>(organizationsQuery);
   const { data: recentStudents, isLoading: recentStudentsLoading } = useCollection<Student>(recentStudentsQuery);
 
   const isLoading = studentsLoading || orgsLoading || recentStudentsLoading || adminLoading;
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen w-full items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p>Yüklənir...</p>
+        </div>
+      </div>
+    );
+  }
   
   const totalStudents = students?.length ?? 0;
   const totalOrganizations = organizations?.length ?? 0;
@@ -58,7 +83,7 @@ export default function AdminDashboard() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{isLoading ? '...' : totalStudents}</div>
+              <div className="text-2xl font-bold">{totalStudents}</div>
               <p className="text-xs text-muted-foreground">
                 Sistemdə qeydiyyatdan keçmiş tələbə sayı
               </p>
@@ -72,7 +97,7 @@ export default function AdminDashboard() {
               <Building className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{isLoading ? '...' : totalOrganizations}</div>
+              <div className="text-2xl font-bold">{totalOrganizations}</div>
               <p className="text-xs text-muted-foreground">
                 Platformadakı partnyor təşkilat sayı
               </p>
@@ -110,11 +135,7 @@ export default function AdminDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {isLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center">Yüklənir...</TableCell>
-                    </TableRow>
-                  ) : recentStudents?.length === 0 ? (
+                  {recentStudents?.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={4} className="text-center">Heç bir tələbə tapılmadı</TableCell>
                     </TableRow>

@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, ReactNode, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { collection, query, where, getDocs, doc, setDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, setDoc, getDoc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { AppUser, Student, Organization } from '@/types';
 import { setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
