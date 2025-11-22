@@ -22,7 +22,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const FAKE_AUTH_DELAY = 100; // Reduced delay for faster registration/login
+const FAKE_AUTH_DELAY = 10; 
 
 export const SessionProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AppUser | null>(null);
@@ -49,7 +49,9 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
         setLoading(false);
       }
     };
-    checkUserSession();
+    if (firestore) {
+      checkUserSession();
+    }
   }, [firestore]);
 
 
@@ -89,7 +91,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       const userData = userDoc.data() as AppUser;
       
       // In a real app, you would compare a hashed password. 
-      // For this prototype, we are simplifying.
+      // For this prototype, we are simplifying by not checking the password.
       if (userData) {
         setUser(userData);
         localStorage.setItem('userId', userData.id);
@@ -145,6 +147,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       const userWithId = {
           ...newUser,
           id: newUserId,
+          role: newUser.role, // Explicitly set role
           createdAt: new Date().toISOString(),
           status: newUser.role === 'student' ? 'gözləyir' : undefined,
       };

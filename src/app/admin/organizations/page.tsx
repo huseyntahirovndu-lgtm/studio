@@ -49,12 +49,17 @@ export default function AdminOrganizationsPage() {
     const firestore = useFirestore();
     const { user: adminUser, loading: adminLoading } = useAuth();
 
-    const organizationsQuery = useMemoFirebase(() => (firestore && adminUser?.role === 'admin') ? query(collection(firestore, "users"), where("role", "==", "organization")) : null, [firestore, adminUser]);
+    const organizationsQuery = useMemoFirebase(
+      () => (firestore && adminUser?.role === 'admin') 
+        ? query(collection(firestore, "users"), where("role", "==", "organization")) 
+        : null, 
+      [firestore, adminUser]
+    );
+
     const { data: organizations, isLoading } = useCollection<Organization>(organizationsQuery);
 
     const handleDelete = (orgId: string) => {
-        // Note: This only deletes the user document. The actual user account in Firebase Auth needs to be deleted separately if required.
-        // For simplicity, we are just deleting the DB record here.
+        if (!firestore) return;
         const orgDocRef = doc(firestore, 'users', orgId);
         deleteDocumentNonBlocking(orgDocRef);
         toast({ title: "Təşkilat uğurla silindi." });

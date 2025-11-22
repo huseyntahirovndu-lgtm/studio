@@ -60,9 +60,17 @@ export default function AdminStudentsPage() {
   const firestore = useFirestore();
   const { user: adminUser, loading: adminLoading } = useAuth();
 
-  // Only fetch data if an admin is logged in
-  const studentsQuery = useMemoFirebase(() => (firestore && adminUser?.role === 'admin') ? query(collection(firestore, "users"), where("role", "==", "student")) : null, [firestore, adminUser]);
-  const facultiesQuery = useMemoFirebase(() => (firestore && adminUser?.role === 'admin') ? collection(firestore, "faculties") : null, [firestore, adminUser]);
+  const studentsQuery = useMemoFirebase(
+    () => (firestore && adminUser?.role === 'admin') 
+      ? query(collection(firestore, "users"), where("role", "==", "student")) 
+      : null,
+    [firestore, adminUser]
+  );
+  
+  const facultiesQuery = useMemoFirebase(
+    () => (firestore) ? collection(firestore, "faculties") : null, 
+    [firestore]
+  );
 
   const { data: students, isLoading: studentsLoading } = useCollection<Student>(studentsQuery);
   const { data: faculties, isLoading: facultiesLoading } = useCollection<FacultyData>(facultiesQuery);
@@ -72,15 +80,16 @@ export default function AdminStudentsPage() {
   const [searchTerm, setSearchTerm] = useState('');
 
   const handleStatusChange = (studentId: string, newStatus: StudentStatus) => {
+    if (!firestore) return;
     const studentDocRef = doc(firestore, 'users', studentId);
     updateDocumentNonBlocking(studentDocRef, { status: newStatus });
     toast({ title: "Status uğurla dəyişdirildi."});
   };
 
   const handleDeleteStudent = (studentId: string) => {
+    if (!firestore) return;
     const studentDocRef = doc(firestore, 'users', studentId);
     deleteDocumentNonBlocking(studentDocRef);
-    // Note: The UI will update automatically due to useCollection hook
     toast({ title: "Tələbə uğurla silindi."});
   }
 
