@@ -59,8 +59,8 @@ export default function AdminStudentsPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
 
-  const studentsQuery = useMemoFirebase(() => query(collection(firestore, "users"), where("role", "==", "student")), [firestore]);
-  const facultiesQuery = useMemoFirebase(() => collection(firestore, "faculties"), [firestore]);
+  const studentsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, "users"), where("role", "==", "student")) : null, [firestore]);
+  const facultiesQuery = useMemoFirebase(() => firestore ? collection(firestore, "faculties") : null, [firestore]);
 
   const { data: students, isLoading: studentsLoading } = useCollection<Student>(studentsQuery);
   const { data: faculties, isLoading: facultiesLoading } = useCollection<FacultyData>(facultiesQuery);

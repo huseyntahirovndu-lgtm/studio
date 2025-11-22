@@ -58,7 +58,7 @@ export default function EditOrganizationPage() {
   });
 
   useEffect(() => {
-    if (!orgId) return;
+    if (!orgId || !firestore) return;
 
     const fetchOrganization = async () => {
       setIsPageLoading(true);

@@ -38,8 +38,8 @@ export default function OrgForm({ initialData, onSave }: OrgFormProps) {
 
   const isEditMode = !!initialData;
   
-  const studentsQuery = useMemoFirebase(() => query(collection(firestore, "users"), where("role", "==", "student")), [firestore]);
-  const facultiesQuery = useMemoFirebase(() => collection(firestore, "faculties"), [firestore]);
+  const studentsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, "users"), where("role", "==", "student")) : null, [firestore]);
+  const facultiesQuery = useMemoFirebase(() => firestore ? collection(firestore, "faculties") : null, [firestore]);
   
   const { data: students } = useCollection<Student>(studentsQuery);
   const { data: faculties } = useCollection<FacultyData>(facultiesQuery);

@@ -9,7 +9,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -39,22 +38,21 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Organization } from "@/types";
+import type { StudentOrganization } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useCollection, useFirestore, useMemoFirebase, deleteDocumentNonBlocking } from "@/firebase";
-import { collection, query, where, doc } from "firebase/firestore";
+import { collection, query, doc } from "firebase/firestore";
 
-export default function AdminOrganizationsPage() {
+export default function AdminStudentOrgsPage() {
     const { toast } = useToast();
     const firestore = useFirestore();
 
-    const organizationsQuery = useMemoFirebase(() => query(collection(firestore, "users"), where("role", "==", "organization")), [firestore]);
-    const { data: organizations, isLoading } = useCollection<Organization>(organizationsQuery);
+    const orgsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, "telebe-teskilatlari")) : null, [firestore]);
+    const { data: organizations, isLoading } = useCollection<StudentOrganization>(orgsQuery);
 
     const handleDelete = (orgId: string) => {
-        // Note: This only deletes the user document. The actual user account in Firebase Auth needs to be deleted separately if required.
-        // For simplicity, we are just deleting the DB record here.
-        const orgDocRef = doc(firestore, 'users', orgId);
+        if (!firestore) return;
+        const orgDocRef = doc(firestore, 'telebe-teskilatlari', orgId);
         deleteDocumentNonBlocking(orgDocRef);
         toast({ title: "Təşkilat uğurla silindi." });
     };
@@ -64,13 +62,13 @@ export default function AdminOrganizationsPage() {
             <CardHeader>
                 <div className="flex justify-between items-start">
                     <div>
-                        <CardTitle>Təşkilatlar</CardTitle>
+                        <CardTitle>Tələbə Təşkilatları</CardTitle>
                         <CardDescription>
-                            Platformadakı partnyor təşkilatları idarə edin.
+                            Universitet daxilindəki tələbə təşkilatlarını idarə edin.
                         </CardDescription>
                     </div>
                      <Button asChild>
-                        <Link href="/admin/organizations/add">
+                        <Link href="/admin/telebe-teskilatlari/add">
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Yeni Təşkilat Yarat
                         </Link>
@@ -83,10 +81,7 @@ export default function AdminOrganizationsPage() {
                     <TableRow>
                     <TableHead>Təşkilat Adı</TableHead>
                     <TableHead className="hidden md:table-cell">
-                        Sektor
-                    </TableHead>
-                    <TableHead className="hidden md:table-cell">
-                        Qoşulma Tarixi
+                        Fakültə
                     </TableHead>
                     <TableHead className="text-right">Əməliyyatlar</TableHead>
                     </TableRow>
@@ -94,17 +89,14 @@ export default function AdminOrganizationsPage() {
                 <TableBody>
                      {isLoading ? (
                          <TableRow>
-                            <TableCell colSpan={4} className="h-24 text-center">Yüklənir...</TableCell>
+                            <TableCell colSpan={3} className="h-24 text-center">Yüklənir...</TableCell>
                         </TableRow>
                     ) : organizations && organizations.length > 0 ? (
                         organizations.map((org) => (
                         <TableRow key={org.id}>
                             <TableCell className="font-medium">{org.name}</TableCell>
                             <TableCell className="hidden md:table-cell">
-                                {org.sector}
-                            </TableCell>
-                            <TableCell className="hidden md:table-cell">
-                                {org.createdAt ? new Date(org.createdAt).toLocaleDateString() : '-'}
+                                {org.faculty}
                             </TableCell>
                             <TableCell className="text-right">
                                <DropdownMenu>
@@ -117,7 +109,7 @@ export default function AdminOrganizationsPage() {
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuLabel>Əməliyyatlar</DropdownMenuLabel>
                                          <DropdownMenuItem asChild>
-                                            <Link href={`/admin/organizations/edit/${org.id}`}>Redaktə Et</Link>
+                                            <Link href={`/admin/telebe-teskilatlari/edit/${org.id}`}>Redaktə Et</Link>
                                         </DropdownMenuItem>
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
@@ -143,18 +135,12 @@ export default function AdminOrganizationsPage() {
                         ))
                     ) : (
                          <TableRow>
-                            <TableCell colSpan={4} className="h-24 text-center">Heç bir təşkilat tapılmadı.</TableCell>
+                            <TableCell colSpan={3} className="h-24 text-center">Heç bir təşkilat tapılmadı.</TableCell>
                         </TableRow>
                     )}
                 </TableBody>
                 </Table>
             </CardContent>
-            <CardFooter>
-                <div className="text-xs text-muted-foreground">
-                Göstərilir <strong>1-{organizations?.length ?? 0}</strong> / <strong>{organizations?.length ?? 0}</strong>{" "}
-                təşkilat
-                </div>
-            </CardFooter>
         </Card>
     )
 }

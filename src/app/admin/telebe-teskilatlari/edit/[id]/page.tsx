@@ -14,10 +14,11 @@ export default function EditStudentOrgPage() {
     const { toast } = useToast();
     
     const orgId = typeof id === 'string' ? id : '';
-    const orgDocRef = doc(firestore, 'telebe-teskilatlari', orgId);
+    const orgDocRef = firestore ? doc(firestore, 'telebe-teskilatlari', orgId) : null;
     const { data: org, isLoading } = useDoc<StudentOrganization>(orgDocRef);
 
     const handleSave = async (data: any) => {
+        if (!orgDocRef) return false;
         await updateDocumentNonBlocking(orgDocRef, data);
         toast({ title: 'Uğurlu', description: 'Məlumatlar yeniləndi.' });
         router.push('/admin/telebe-teskilatlari');
