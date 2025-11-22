@@ -1,6 +1,6 @@
 'use client';
 import { useParams, useRouter } from 'next/navigation';
-import OrgForm from '../form';
+import OrgForm from '../../form';
 import { useDoc, useFirestore, updateDocumentNonBlocking } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';

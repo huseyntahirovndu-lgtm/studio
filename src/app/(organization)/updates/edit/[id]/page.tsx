@@ -3,7 +3,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useDoc, useFirestore, useAuth, useCollection, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, where, limit } from 'firebase/firestore';
 import { StudentOrgUpdate, StudentOrganization } from '@/types';
-import OrgUpdateEditForm from '../edit-form';
+import OrgUpdateEditForm from '../../edit-form';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function EditOrgUpdatePage() {
@@ -20,7 +20,7 @@ export default function EditOrgUpdatePage() {
   const organizationId = ledOrgs?.[0]?.id;
 
   const updateId = typeof id === 'string' ? id : '';
-  const updateDocRef = doc(firestore, `telebe-teskilatlari/${organizationId}/updates`, updateId);
+  const updateDocRef = organizationId ? doc(firestore, `telebe-teskilatlari/${organizationId}/updates`, updateId) : null;
   const { data: updateData, isLoading: updateLoading } = useDoc<StudentOrgUpdate>(updateDocRef);
   
   const isLoading = orgsLoading || updateLoading;
