@@ -5,9 +5,8 @@ import { useRouter } from 'next/navigation';
 import { collection, query, where, getDocs, doc, setDoc, getDoc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { AppUser, Student, Organization } from '@/types';
-import { setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { updateDocumentNonBlocking } from '@/firebase';
 import { v4 as uuidv4 } from 'uuid';
-
 
 interface AuthContextType {
   user: AppUser | null;
@@ -23,7 +22,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const FAKE_AUTH_DELAY = 500;
+const FAKE_AUTH_DELAY = 100; // Reduced delay for faster registration/login
 
 export const SessionProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AppUser | null>(null);
@@ -35,7 +34,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     const checkUserSession = async () => {
       try {
         const userId = localStorage.getItem('userId');
-        if (userId) {
+        if (userId && firestore) {
           const userDocRef = doc(firestore, 'users', userId);
           const userSnap = await getDoc(userDocRef);
           if (userSnap.exists()) {
@@ -56,10 +55,8 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (email: string, pass: string): Promise<boolean> => {
     setLoading(true);
-    // Simulate network delay
     await new Promise(res => setTimeout(res, FAKE_AUTH_DELAY));
 
-    // Admin hardcoded check
     if (email === 'admin@ndu.edu.az' && pass === 'adminpassword') {
         const adminUser: AppUser = {
             id: 'admin_user',
@@ -75,6 +72,8 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
         return true;
     }
 
+    if (!firestore) return false;
+
     try {
       const usersRef = collection(firestore, "users");
       const q = query(usersRef, where("email", "==", email));
@@ -87,11 +86,10 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       }
       
       const userDoc = querySnapshot.docs[0];
-      const userData = userDoc.data() as AppUser & { passwordHash?: string };
+      const userData = userDoc.data() as AppUser;
       
       // In a real app, you would compare a hashed password. 
-      // For this prototype, we are simplifying. Let's assume the password is correct if the user exists.
-      // IMPORTANT: THIS IS NOT SECURE FOR PRODUCTION.
+      // For this prototype, we are simplifying.
       if (userData) {
         setUser(userData);
         localStorage.setItem('userId', userData.id);
@@ -119,14 +117,18 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
 
   const register = async (
     newUser: Omit<Student, 'id' | 'createdAt' | 'status'> | Omit<Organization, 'id' | 'createdAt'>,
-    pass: string // Password is not used, but kept for function signature consistency
+    pass: string
   ): Promise<boolean> => {
      setLoading(true);
-     // Simulate network delay
      await new Promise(res => setTimeout(res, FAKE_AUTH_DELAY));
 
+    if (!firestore) {
+      console.error("Firestore is not initialized");
+      setLoading(false);
+      return false;
+    }
+
     try {
-      // Check if user already exists
       const usersRef = collection(firestore, "users");
       const q = query(usersRef, where("email", "==", newUser.email));
       const querySnapshot = await getDocs(q);
@@ -144,8 +146,6 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
           ...newUser,
           id: newUserId,
           createdAt: new Date().toISOString(),
-          // NOTE: Password is not stored for this prototype for simplicity.
-          // In a real app, you'd store a salted hash.
           status: newUser.role === 'student' ? 'gözləyir' : undefined,
       };
 
@@ -160,10 +160,10 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateUser = (updatedUserData: AppUser): boolean => {
+    if(!firestore) return false;
     try {
         const userDocRef = doc(firestore, 'users', updatedUserData.id);
         updateDocumentNonBlocking(userDocRef, updatedUserData);
-        // Also update local state if the current user is being updated
         if(user?.id === updatedUserData.id) {
             setUser(updatedUserData);
         }

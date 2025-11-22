@@ -34,9 +34,10 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import type { Student } from '@/types';
+import type { Student, FacultyData, CategoryData } from '@/types';
 import { Checkbox } from '@/components/ui/checkbox';
-import { categories, faculties } from '@/lib/data';
+import { useCollection, useFirestore } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
 
 const formSchema = z.object({
@@ -69,6 +70,14 @@ export default function RegisterStudentPage() {
   const { register } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const firestore = useFirestore();
+
+  const { data: faculties, isLoading: facultiesLoading } = useCollection<FacultyData>(
+    firestore ? collection(firestore, 'faculties') : null
+  );
+  const { data: categories, isLoading: categoriesLoading } = useCollection<CategoryData>(
+    firestore ? collection(firestore, 'categories') : null
+  );
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -106,7 +115,7 @@ export default function RegisterStudentPage() {
       behanceURL: '',
       instagramURL: '',
       portfolioURL: '',
-      talentScore: Math.floor(Math.random() * 30) + 10, // Assign a random initial score
+      talentScore: 10,
     };
     
     const success = await register(newUserProfile, values.password);
@@ -211,7 +220,7 @@ export default function RegisterStudentPage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {faculties?.map(faculty => (
+                        {facultiesLoading ? <SelectItem value="loading" disabled>Yüklənir...</SelectItem> : faculties?.map(faculty => (
                           <SelectItem key={faculty.id} value={faculty.name}>
                             {faculty.name}
                           </SelectItem>
@@ -274,6 +283,7 @@ export default function RegisterStudentPage() {
                    <FormDescription>
                     Aid olduğunuz bir və ya bir neçə kateqoriyanı seçin.
                   </FormDescription>
+                  {categoriesLoading ? <p>Yüklənir...</p> : (
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4 py-2">
                   {categories?.map((item) => (
                     <FormField
@@ -309,13 +319,14 @@ export default function RegisterStudentPage() {
                     />
                   ))}
                   </div>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
             />
 
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full" disabled={isLoading || facultiesLoading || categoriesLoading}>
               {isLoading ? 'Hesab yaradılır...' : 'Hesab yarat'}
             </Button>
           </form>
