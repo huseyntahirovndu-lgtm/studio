@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from '@/components/ui/badge';
 import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, doc, writeBatch, getDoc, getDocs, query } from 'firebase/firestore';
+import { collection, doc, writeBatch, getDoc, getDocs, query, deleteField } from 'firebase/firestore';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
@@ -47,7 +47,7 @@ const profileSchema = z.object({
   major: z.string().min(2, "İxtisas boş ola bilməz."),
   courseYear: z.coerce.number().min(1).max(6),
   educationForm: z.string().optional(),
-  gpa: z.coerce.number().optional(),
+  gpa: z.coerce.number().optional().or(z.literal('')),
   skills: z.array(skillSchema).min(1, "Ən azı bir bacarıq daxil edin."),
   successStory: z.string().optional(),
   linkedInURL: z.string().url().or(z.literal('')).optional(),
@@ -126,6 +126,24 @@ function EditProfilePageComponent() {
   const profileForm = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     mode: 'onChange',
+    defaultValues: {
+        firstName: '',
+        lastName: '',
+        profilePictureUrl: '',
+        major: '',
+        courseYear: 1,
+        educationForm: '',
+        gpa: '',
+        skills: [],
+        successStory: '',
+        linkedInURL: '',
+        githubURL: '',
+        behanceURL: '',
+        instagramURL: '',
+        portfolioURL: '',
+        googleScholarURL: '',
+        youtubeURL: '',
+    }
   });
   
   const { control: profileControl, watch: watchProfile, setValue: setProfileValue, trigger: triggerProfile } = profileForm;
@@ -156,7 +174,7 @@ function EditProfilePageComponent() {
         major: targetUser.major || '',
         courseYear: targetUser.courseYear || 1,
         educationForm: targetUser.educationForm || '',
-        gpa: targetUser.gpa || undefined,
+        gpa: targetUser.gpa || '',
         skills: targetUser.skills || [],
         successStory: targetUser.successStory || '',
         linkedInURL: targetUser.linkedInURL || '',
@@ -261,7 +279,14 @@ function EditProfilePageComponent() {
     const onProfileSubmit: SubmitHandler<z.infer<typeof profileSchema>> = (data) => {
       if (!targetUser || !userDocRef) return;
       
-      updateDocumentNonBlocking(userDocRef, data);
+      const updateData: { [key: string]: any } = { ...data };
+      if (updateData.gpa === '' || updateData.gpa === null || isNaN(Number(updateData.gpa))) {
+          updateData.gpa = deleteField();
+      } else {
+          updateData.gpa = Number(updateData.gpa);
+      }
+
+      updateDocumentNonBlocking(userDocRef, updateData);
       triggerTalentScoreUpdate(targetUser.id);
       toast({ title: "Profil məlumatları yeniləndi" });
     };
