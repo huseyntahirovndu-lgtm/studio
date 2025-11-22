@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from '@/components/ui/badge';
 import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, doc, writeBatch, getDoc, getDocs } from 'firebase/firestore';
+import { collection, doc, writeBatch, getDoc, getDocs, query } from 'firebase/firestore';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
@@ -172,42 +172,57 @@ function EditProfilePageComponent() {
 
   const triggerTalentScoreUpdate = useCallback(async (userId: string) => {
     setIsSaving(true);
-    toast({ title: "İstedad Balı Hesablanır...", description: "Profil yenilənir, bu bir az vaxt ala bilər." });
+    toast({ title: "İstedad Balı Hesablanır...", description: "Profiliniz yenilənir, bu proses digər tələbələrlə müqayisə apardığı üçün bir az vaxt ala bilər." });
 
-    const userDoc = doc(firestore, 'users', userId);
-    const projectsCol = collection(firestore, `users/${userId}/projects`);
-    const achievementsCol = collection(firestore, `users/${userId}/achievements`);
-    const certificatesCol = collection(firestore, `users/${userId}/certificates`);
-    
     try {
-        const [userSnap, projectsSnap, achievementsSnap, certificatesSnap] = await Promise.all([
-             getDoc(userDoc),
-             getDocs(projectsCol),
-             getDocs(achievementsCol),
-             getDocs(certificatesCol),
-        ]);
-
-        if (!userSnap.exists()) return;
-
-        const fullProfile = {
-            ...userSnap.data(),
-            projects: projectsSnap.docs.map(d => d.data()),
-            achievements: achievementsSnap.docs.map(d => d.data()),
-            certificates: certificatesSnap.docs.map(d => d.data()),
-        };
-
-        const scoreResult = await calculateTalentScore({ profileData: JSON.stringify(fullProfile) });
+        // 1. Fetch all students' data for context
+        const allUsersSnapshot = await getDocs(query(collection(firestore, 'users')));
         
-        updateDocumentNonBlocking(userDoc, { talentScore: scoreResult.talentScore });
+        const allStudentsPromises = allUsersSnapshot.docs.map(async (userDoc) => {
+            const userData = userDoc.data() as Student;
+            if (userData.role !== 'student') return null;
 
-        toast({ title: "Profil Yeniləndi!", description: `Yeni istedad balınız: ${scoreResult.talentScore}.` });
-    } catch (error) {
+            const projectsSnap = await getDocs(collection(firestore, `users/${userDoc.id}/projects`));
+            const achievementsSnap = await getDocs(collection(firestore, `users/${userDoc.id}/achievements`));
+            const certificatesSnap = await getDocs(collection(firestore, `users/${userDoc.id}/certificates`));
+
+            return {
+                id: userDoc.id,
+                talentScore: userData.talentScore,
+                skills: userData.skills,
+                gpa: userData.gpa,
+                courseYear: userData.courseYear,
+                projects: projectsSnap.docs.map(d => d.data()),
+                achievements: achievementsSnap.docs.map(d => d.data()),
+                certificates: certificatesSnap.docs.map(d => d.data()),
+            };
+        });
+
+        const allStudentsRaw = await Promise.all(allStudentsPromises);
+        const allStudents = allStudentsRaw.filter(s => s !== null) as any[];
+
+        if (allStudents.length === 0) {
+            throw new Error("No students found to compare against.");
+        }
+        
+        // 2. Call the AI flow with the full context
+        const scoreResult = await calculateTalentScore({
+            targetStudentId: userId,
+            allStudents: allStudents,
+        });
+        
+        // 3. Update the target student's score
+        const targetUserDoc = doc(firestore, 'users', userId);
+        await updateDocumentNonBlocking(targetUserDoc, { talentScore: scoreResult.talentScore });
+
+        toast({ title: "Profil Yeniləndi!", description: `Yeni istedad balınız: ${scoreResult.talentScore}. Səbəb: ${scoreResult.reasoning}` });
+    } catch (error: any) {
         console.error("Error updating talent score:", error);
-        toast({ variant: "destructive", title: "Xəta", description: "İstedad balını yeniləyərkən xəta baş verdi." });
+        toast({ variant: "destructive", title: "Xəta", description: `İstedad balını yeniləyərkən xəta baş verdi: ${error.message}` });
     } finally {
         setIsSaving(false);
     }
-  }, [firestore, toast]);
+}, [firestore, toast]);
   
   const handleFileUpload = async (file: File, type: 'sekil' | 'sened'): Promise<string | null> => {
     setIsUploading(true);

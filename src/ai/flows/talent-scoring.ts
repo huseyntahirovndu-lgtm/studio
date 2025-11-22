@@ -11,10 +11,21 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
+const StudentProfileForScoringSchema = z.object({
+  id: z.string(),
+  talentScore: z.number().optional(),
+  skills: z.array(z.any()).optional(),
+  projects: z.array(z.any()).optional(),
+  achievements: z.array(z.any()).optional(),
+  certificates: z.array(z.any()).optional(),
+  gpa: z.number().optional(),
+  courseYear: z.number().optional(),
+});
+
+
 const CalculateTalentScoreInputSchema = z.object({
-  profileData: z
-    .string()
-    .describe('The complete profile data of the student as a JSON string.'),
+  targetStudentId: z.string().describe("The ID of the student whose score needs to be calculated."),
+  allStudents: z.array(StudentProfileForScoringSchema).describe("An array of all student profiles to be used for context and comparison."),
 });
 
 export type CalculateTalentScoreInput = z.infer<typeof CalculateTalentScoreInputSchema>;
@@ -28,7 +39,7 @@ const CalculateTalentScoreOutputSchema = z.object({
   reasoning: z
     .string()
     .describe(
-      'Explanation of the factors that influenced the talent score, with specific examples from the profile data.'
+      'Explanation of the factors that influenced the talent score, with specific examples from the profile data and comparison to other students.'
     ),
 });
 
@@ -44,25 +55,26 @@ const prompt = ai.definePrompt({
   name: 'calculateTalentScorePrompt',
   input: {schema: CalculateTalentScoreInputSchema},
   output: {schema: CalculateTalentScoreOutputSchema},
-  prompt: `You are an expert talent evaluator for Naxçıvan Dövlət Universiteti. Your task is to assess student profiles and assign a talent score based on the information provided.
+  prompt: `You are an expert talent evaluator for Naxçıvan Dövlət Universiteti. Your task is to assess a specific student's profile (the target student) and assign a talent score based on the information provided, comparing them to the entire pool of students.
 
 Instructions:
+1.  Identify the target student using 'targetStudentId' from the 'allStudents' array.
+2.  Analyze the target student's profile data, including skills, projects, achievements, certificates, GPA, and course year.
+3.  **Crucially, compare the target student's profile against the profiles of all other students in the 'allStudents' array.**
+4.  Assign a talent score between 0 and 100 to the target student. This score should be relative. For example, if the target student has won a 'Regional' award, but many other students have 'International' awards, their score should reflect this context.
+5.  Provide a clear and concise explanation for the score. Justify your assessment by citing specific examples from the target student's profile and explaining how they stack up against the broader student population.
 
-1.  Analyze the student's profile data, paying close attention to their skills, projects, achievements, and social links.
-2.  Assign a talent score between 0 and 100, where 0 indicates minimal talent and 100 indicates exceptional talent.
-3.  Provide a clear and concise explanation of the factors that influenced the talent score. Include specific examples from the profile data to justify your assessment.
-4.  Consider the following factors when assigning the talent score:
-    *   Skills: The number and relevance of skills listed.
-    *   Projects: The quality, complexity, and completeness of projects undertaken. Consider the student's role and the team members involved.
-    *   Achievements: The level (International > Republic > Regional > University) and significance of awards and certifications received. A link to verify the achievement is a plus.
-    *   Social Links: The completeness and professional quality of social media profiles (LinkedIn, GitHub, etc.).
+Consider these factors in your relative assessment:
+*   **Skills:** Are the target student's skills common or rare? How do they compare in number and level ('İrəli', 'Orta') to the average student?
+*   **Projects:** Is the complexity and quality of their projects above or below average?
+*   **Achievements:** What is the significance of their achievements compared to others? (International > Republic > Regional > University).
+*   **Certificates:** How do their certificates compare in level and prestige?
+*   **GPA/Course Year:** A high GPA for a 4th-year student might be weighted more than for a 1st-year student.
 
-Profile Data:
-{{{profileData}}}
+Student Pool Data:
+{{{json allStudents}}}
 
-Output:
-Talent Score: (0-100)
-Reasoning: (Explanation of the talent score)`,
+Calculate the talent score for the student with ID '{{targetStudentId}}' based on this data.`,
 });
 
 const calculateTalentScoreFlow = ai.defineFlow(
