@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { collection, query, where, getDocs, doc, setDoc, getDoc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { AppUser, Student, Organization } from '@/types';
-import { updateDocumentNonBlocking } from '@/firebase';
 import { v4 as uuidv4 } from 'uuid';
 
 interface AuthContextType {
@@ -17,7 +16,7 @@ interface AuthContextType {
     user: Omit<Student, 'id' | 'createdAt' | 'status'> | Omit<Organization, 'id' | 'createdAt'>,
     pass: string
   ) => Promise<boolean>;
-  updateUser: (user: AppUser) => boolean;
+  updateUser: (updatedData: Partial<AppUser>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -162,19 +161,22 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateUser = (updatedUserData: AppUser): boolean => {
-    if(!firestore) return false;
-    try {
-        const userDocRef = doc(firestore, 'users', updatedUserData.id);
-        updateDocumentNonBlocking(userDocRef, updatedUserData);
-        if(user?.id === updatedUserData.id) {
-            setUser(updatedUserData);
-        }
-        return true;
-    } catch (error) {
-        console.error("Failed to update user:", error);
-        return false;
-    }
+  const updateUser = (updatedData: Partial<AppUser>) => {
+    if (!user) return;
+    setUser(prevUser => {
+      if (!prevUser) return null;
+      const newUserData = { ...prevUser, ...updatedData } as AppUser;
+      
+      // Update in Firestore non-blockingly
+      if (firestore) {
+        const userDocRef = doc(firestore, 'users', newUserData.id);
+        setDoc(userDocRef, newUserData, { merge: true }).catch(err => {
+            console.error("Failed to update user in Firestore:", err);
+            // Optionally, revert local state or show an error toast
+        });
+      }
+      return newUserData;
+    });
   };
 
   return (

@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Trash2, PlusCircle, Award, Briefcase, FileText, User as UserIcon, X, Book, Youtube, PenLine, Link, Upload } from 'lucide-react';
@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from '@/components/ui/badge';
 import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, doc, writeBatch, getDoc, getDocs, query, deleteField } from 'firebase/firestore';
+import { collection, doc, writeBatch, getDoc, getDocs, query, deleteField, setDoc } from 'firebase/firestore';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -51,7 +51,7 @@ const profileSchema = z.object({
   major: z.string().min(2, "İxtisas boş ola bilməz."),
   courseYear: z.coerce.number().min(1).max(6),
   educationForm: z.string().optional(),
-  gpa: z.coerce.number().optional().or(z.literal('')),
+  gpa: z.coerce.number({invalid_type_error: "ÜOMG mütləq qeyd edilməlidir."}).min(0, "ÜOMG 0-dan az ola bilməz.").max(100, "ÜOMG 100-dən çox ola bilməz."),
   skills: z.array(skillSchema).min(1, "Ən azı bir bacarıq daxil edin."),
   successStory: z.string().optional(),
   linkedInURL: z.string().url().or(z.literal('')).optional(),
@@ -141,7 +141,7 @@ function EditProfilePageComponent() {
         major: '',
         courseYear: 1,
         educationForm: '',
-        gpa: '',
+        gpa: 0,
         skills: [],
         successStory: '',
         linkedInURL: '',
@@ -182,7 +182,7 @@ function EditProfilePageComponent() {
         major: targetUser.major || '',
         courseYear: targetUser.courseYear || 1,
         educationForm: targetUser.educationForm || '',
-        gpa: targetUser.gpa || '',
+        gpa: targetUser.gpa || 0,
         skills: targetUser.skills || [],
         successStory: targetUser.successStory || '',
         linkedInURL: targetUser.linkedInURL || '',
@@ -292,6 +292,9 @@ function EditProfilePageComponent() {
           const url = await handleFileUpload(file, 'sekil');
           if (url) {
             setProfileValue('profilePictureUrl', url, { shouldValidate: true, shouldDirty: true });
+            if (currentUser) {
+              updateUser({ ...currentUser, profilePictureUrl: url });
+            }
             setEditorOpen(false);
             setImageSrc(null);
           }
@@ -305,12 +308,16 @@ function EditProfilePageComponent() {
       
       const updateData: { [key: string]: any } = { ...data };
       if (updateData.gpa === '' || updateData.gpa === null || isNaN(Number(updateData.gpa))) {
-          updateData.gpa = deleteField();
+          updateData.gpa = 0; // Set to 0 if invalid
       } else {
           updateData.gpa = Number(updateData.gpa);
       }
 
-      updateDocumentNonBlocking(userDocRef, updateData);
+      setDoc(userDocRef, updateData, { merge: true });
+      if (currentUser && currentUser.id === targetUser.id) {
+        updateUser(updateData);
+      }
+      
       triggerTalentScoreUpdate(targetUser.id);
       toast({ title: "Profil məlumatları yeniləndi" });
     };
@@ -534,7 +541,11 @@ function EditProfilePageComponent() {
                       <FormItem><FormLabel>Təhsil Forması</FormLabel><FormControl><Input {...field} placeholder="Əyani / Qiyabi" /></FormControl><FormMessage /></FormItem>
                     )} />
                     <FormField name="gpa" control={profileForm.control} render={({ field }) => (
-                      <FormItem><FormLabel>ÜOMG (GPA)</FormLabel><FormControl><Input type="number" step="0.1" {...field} placeholder="Məs: 85.5" /></FormControl><FormMessage /></FormItem>
+                      <FormItem>
+                        <FormLabel>Keçən ilki ÜOMG (GPA)</FormLabel>
+                        <FormControl><Input type="number" step="0.1" {...field} placeholder="Məs: 85.5" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
                     )} />
                   </div>
                  <FormField name="skills" control={profileControl} render={() => (
@@ -781,6 +792,9 @@ function EditProfilePageComponent() {
                     <FormControl>
                          <Input type="file" ref={certificateFileInputRef} accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" disabled={isUploading} />
                     </FormControl>
+                    <FormDescription>
+                        Fayl yükləyə və ya aşağıya birbaşa link əlavə edə bilərsiniz.
+                    </FormDescription>
                     <FormMessage />
                 </FormItem>
 
