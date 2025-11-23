@@ -58,11 +58,11 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     await new Promise(res => setTimeout(res, FAKE_AUTH_DELAY));
 
-    if (email === 'huseynimanov2009@ndu.edu.az' && pass === 'adminpassword') {
+    if (email === 'huseynimanov@ndu.edu.az' && pass === 'huseynimanov2009@thikndu') {
         const adminUser: AppUser = {
             id: 'admin_user',
             role: 'admin',
-            email: 'huseynimanov2009@ndu.edu.az',
+            email: 'huseynimanov@ndu.edu.az',
             firstName: 'Admin',
             lastName: 'User',
         };
