@@ -291,6 +291,26 @@
         "name"
       ]
     },
+     "Faculty": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Faculty",
+      "type": "object",
+      "description": "Represents a faculty within the university.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Faculty entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the faculty."
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
+    },
     "StudentOrganization": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "StudentOrganization",
@@ -508,8 +528,24 @@
           ]
         }
       },
+       {
+        "path": "/faculties/{facultyId}",
+        "definition": {
+          "entityName": "Faculty",
+          "schema": {
+            "$ref": "#/backend/entities/Faculty"
+          },
+          "description": "Stores information about faculties.",
+          "params": [
+            {
+              "name": "facultyId",
+              "description": "The unique identifier for the faculty."
+            }
+          ]
+        }
+      },
       {
-        "path": "/telebe-teskilatlari/{orgId}",
+        "path": "/student-organizations/{orgId}",
         "definition": {
           "entityName": "StudentOrganization",
           "schema": {
@@ -525,7 +561,7 @@
         }
       },
       {
-        "path": "/telebe-teskilatlari/{orgId}/updates/{updateId}",
+        "path": "/student-organizations/{orgId}/updates/{updateId}",
         "definition": {
           "entityName": "StudentOrgUpdate",
           "schema": { "$ref": "#/backend/entities/StudentOrgUpdate" },
