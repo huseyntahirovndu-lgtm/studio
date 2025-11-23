@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     fs.writeFileSync(filePath, buffer);
     
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
-    const url = `${baseUrl}/uploads/senedler/${newFilename}`;
+    const url = `${baseUrl}/api/senedler/${newFilename}`;
 
     return NextResponse.json({ success: true, url });
   } catch (error: any) {
