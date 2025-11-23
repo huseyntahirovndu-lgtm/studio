@@ -6,6 +6,7 @@ export default function AddNewsPage() {
   const router = useRouter();
 
   const handleSuccess = (id: string) => {
+    // Navigate back to the news list after successful creation
     router.push('/admin/news');
   };
 

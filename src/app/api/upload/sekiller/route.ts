@@ -49,7 +49,8 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer());
     fs.writeFileSync(filePath, buffer);
 
-    const url = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://istedadmerkezi.net'}/api/sekiller/${newFilename}`;
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:9002' : 'https://istedadmerkezi.net');
+    const url = `${baseUrl}/api/sekiller/${newFilename}`;
 
     return NextResponse.json({ success: true, url });
   } catch (error: any) {

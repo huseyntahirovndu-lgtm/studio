@@ -23,6 +23,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const FAKE_AUTH_DELAY = 10; 
 
+const adminUserObject: Admin = {
+    id: 'admin_user',
+    role: 'admin',
+    email: 'huseynimanov@ndu.edu.az',
+    firstName: 'Admin',
+    lastName: 'User',
+};
+
 export const SessionProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,24 +41,18 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     const checkUserSession = async () => {
       try {
         const userId = localStorage.getItem('userId');
-        if (userId && firestore) {
-          const userDocRef = doc(firestore, 'users', userId);
-          const userSnap = await getDoc(userDocRef);
-          if (userSnap.exists()) {
-            setUser(userSnap.data() as AppUser);
-          } else if (userId === 'admin_user') {
-             const adminUser: Admin = {
-                id: 'admin_user',
-                role: 'admin',
-                email: 'huseynimanov@ndu.edu.az',
-                firstName: 'Admin',
-                lastName: 'User',
-            };
-            setUser(adminUser);
-          }
-           else {
-            localStorage.removeItem('userId');
-          }
+        if (userId) {
+            if (userId === adminUserObject.id) {
+                setUser(adminUserObject);
+            } else if (firestore) {
+                const userDocRef = doc(firestore, 'users', userId);
+                const userSnap = await getDoc(userDocRef);
+                if (userSnap.exists()) {
+                    setUser(userSnap.data() as AppUser);
+                } else {
+                    localStorage.removeItem('userId');
+                }
+            }
         }
       } catch (e) {
         console.error("Failed to restore session", e);
@@ -60,24 +62,24 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     };
     if (firestore) {
       checkUserSession();
+    } else if (!loading) {
+      // If firestore isn't ready, try to check for admin session at least
+      const userId = localStorage.getItem('userId');
+      if (userId === adminUserObject.id) {
+          setUser(adminUserObject);
+      }
+      setLoading(false);
     }
-  }, [firestore]);
+  }, [firestore, loading]);
 
 
   const login = async (email: string, pass: string): Promise<boolean> => {
     setLoading(true);
     await new Promise(res => setTimeout(res, FAKE_AUTH_DELAY));
 
-    if (email === 'huseynimanov@ndu.edu.az' && pass === 'huseynimanov2009@thikndu') {
-        const adminUser: Admin = {
-            id: 'admin_user',
-            role: 'admin',
-            email: 'huseynimanov@ndu.edu.az',
-            firstName: 'Admin',
-            lastName: 'User',
-        };
-        setUser(adminUser);
-        localStorage.setItem('userId', adminUser.id);
+    if (email === adminUserObject.email && pass === 'huseynimanov2009@thikndu') {
+        setUser(adminUserObject);
+        localStorage.setItem('userId', adminUserObject.id);
         setLoading(false);
         router.push('/admin/dashboard');
         return true;
@@ -176,7 +178,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     const newUserData = { ...user, ...updatedData };
     setUser(newUserData);
     
-    if (firestore) {
+    if (firestore && user.id !== 'admin_user') {
         const userDocRef = doc(firestore, 'users', newUserData.id);
         setDoc(userDocRef, updatedData, { merge: true }).catch(err => {
             console.error("Failed to update user in Firestore:", err);

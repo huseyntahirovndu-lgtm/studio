@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useAuth, useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, doc, serverTimestamp } from 'firebase/firestore';
-import type { News } from '@/types';
+import type { News, Admin } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Upload } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
 
 const formSchema = z.object({
   title: z.string().min(5, "Başlıq ən azı 5 hərf olmalıdır."),
@@ -67,13 +68,14 @@ export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormPro
     try {
       const response = await fetch('/api/upload/sekiller', { method: 'POST', body: formData });
       const result = await response.json();
-      if (result.success) {
+      if (response.ok && result.success) {
         form.setValue('coverImageUrl', result.url, { shouldValidate: true, shouldDirty: true });
         toast({ title: "Şəkil uğurla yükləndi." });
       } else {
         throw new Error(result.error || 'Şəkil yüklənərkən xəta baş verdi.');
       }
     } catch (err: any) {
+      console.error("Upload error details:", err);
       toast({ variant: 'destructive', title: "Yükləmə Xətası", description: err.message });
     } finally {
       setIsUploading(false);
@@ -91,12 +93,15 @@ export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormPro
 
     try {
       const newsCollectionRef = collection(firestore, 'news');
+      const adminUser = user as Admin;
 
       if (isEditMode && initialData) {
         // Update existing news
         const newsDocRef = doc(newsCollectionRef, initialData.id);
+        const newDocId = uuidv4();
         await updateDocumentNonBlocking(newsDocRef, {
           ...values,
+          id: newDocId,
           slug: generateSlug(values.title),
           updatedAt: serverTimestamp(),
         });
@@ -104,18 +109,19 @@ export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormPro
         onSuccess(initialData.id);
       } else {
         // Create new news
+        const newDocId = uuidv4();
         const newNewsData = {
           ...values,
+          id: newDocId,
           slug: generateSlug(values.title),
           authorId: user.id,
-          authorName: `${user.firstName} ${user.lastName}`,
+          authorName: `${adminUser.firstName} ${adminUser.lastName}`,
           createdAt: serverTimestamp(),
         };
-        const newDocRef = await addDocumentNonBlocking(newsCollectionRef, newNewsData);
+        const newDocRef = doc(newsCollectionRef, newDocId);
+        await addDocumentNonBlocking(newDocRef, newNewsData);
         toast({ title: 'Uğurlu', description: 'Xəbər uğurla yaradıldı.' });
-        if (newDocRef) {
-          onSuccess(newDocRef.id);
-        }
+        onSuccess(newDocRef.id);
       }
     } catch (error: any) {
       console.error("Xəbər yaradılarkən/yenilənərkən xəta:", error);

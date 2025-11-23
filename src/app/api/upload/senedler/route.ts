@@ -48,8 +48,9 @@ export async function POST(req: NextRequest) {
     // Faylı buffer-ə çevir və yadda saxla
     const buffer = Buffer.from(await file.arrayBuffer());
     fs.writeFileSync(filePath, buffer);
-
-    const url = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://istedadmerkezi.net'}/api/senedler/${newFilename}`;
+    
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:9002' : 'https://istedadmerkezi.net');
+    const url = `${baseUrl}/api/senedler/${newFilename}`;
 
     return NextResponse.json({ success: true, url });
   } catch (error: any) {
