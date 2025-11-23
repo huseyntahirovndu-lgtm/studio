@@ -35,16 +35,16 @@ export default function AdminLayout({
   const { user, loading } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
-    if (!loading && (!user || (user as Admin)?.role !== 'admin')) {
-        router.push('/login');
-    }
-  }, [user, loading, router]);
+  // useEffect(() => {
+  //   if (!loading && (!user || (user as Admin)?.role !== 'admin')) {
+  //       router.push('/login');
+  //   }
+  // }, [user, loading, router]);
 
 
-  if (loading || !user || (user as Admin).role !== 'admin') {
-      return <div className="flex h-screen items-center justify-center">Yüklənir...</div>;
-  }
+  // if (loading || !user || (user as Admin).role !== 'admin') {
+  //     return <div className="flex h-screen items-center justify-center">Yüklənir...</div>;
+  // }
   
   const isActive = (href: string, exact?: boolean) => {
     return exact ? pathname === href : pathname.startsWith(href);
