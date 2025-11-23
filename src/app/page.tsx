@@ -69,17 +69,24 @@ export default function HomePage() {
   const categoriesQuery = useMemoFirebase(() => collection(firestore, "categories"), [firestore]);
   const achievementsQuery = useMemoFirebase(() => collection(firestore, "achievements"), [firestore]);
   const newsQuery = useMemoFirebase(() => query(collection(firestore, 'news'), orderBy('createdAt', 'desc'), limit(3)), [firestore]);
-  const studentOrgUpdatesQuery = useMemoFirebase(() => query(collection(firestore, 'student-org-updates'), orderBy('createdAt', 'desc'), limit(3)), [firestore]);
   
+  const studentOrgUpdatesQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    const allUpdates: Promise<any>[] = [];
+    return query(collection(firestore, "telebe-teskilatlari"), where("status", "==", "təsdiqlənmiş"));
+  }, [firestore]);
+
   const { data: students, isLoading: studentsLoading } = useCollection<Student>(studentsQuery);
   const { data: projects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
   const { data: organizations, isLoading: orgsLoading } = useCollection<Organization>(organizationsQuery);
-  const { data: studentOrgs } = useCollection<StudentOrganization>(studentOrgsQuery);
+  const { data: studentOrgs, isLoading: studentOrgsLoading } = useCollection<StudentOrganization>(studentOrgsQuery);
   const { data: categories, isLoading: categoriesLoading } = useCollection<CategoryData>(categoriesQuery);
   const { data: achievements, isLoading: achievementsLoading } = useCollection<Achievement>(achievementsQuery);
   const { data: latestNews, isLoading: newsLoading } = useCollection<News>(newsQuery);
-  const { data: latestOrgUpdates, isLoading: orgUpdatesLoading } = useCollection<StudentOrgUpdate>(studentOrgUpdatesQuery);
   
+  const [latestOrgUpdates, setLatestOrgUpdates] = useState<StudentOrgUpdate[]>([]);
+  const [orgUpdatesLoading, setOrgUpdatesLoading] = useState(true);
+
   const [topTalents, setTopTalents] = useState<Student[]>([]);
   const [newMembers, setNewMembers] = useState<Student[]>([]);
   const [strongestProjects, setStrongestProjects] = useState<EnrichedProject[]>([]);
@@ -87,6 +94,29 @@ export default function HomePage() {
   const [successStories, setSuccessStories] = useState<SuccessStory[]>([]);
   
   const isLoading = studentsLoading || projectsLoading || orgsLoading || categoriesLoading || achievementsLoading || newsLoading || orgUpdatesLoading;
+
+  useEffect(() => {
+      const fetchOrgUpdates = async () => {
+        if (!firestore) return;
+        setOrgUpdatesLoading(true);
+        const orgsSnapshot = await getDocs(query(collection(firestore, 'telebe-teskilatlari'), where('status', '==', 'təsdiqlənmiş')));
+        const allUpdates: StudentOrgUpdate[] = [];
+
+        for (const orgDoc of orgsSnapshot.docs) {
+            const updatesSnapshot = await getDocs(query(collection(firestore, `telebe-teskilatlari/${orgDoc.id}/updates`), orderBy('createdAt', 'desc'), limit(3)));
+            updatesSnapshot.forEach(updateDoc => {
+                allUpdates.push({ id: updateDoc.id, ...updateDoc.data() } as StudentOrgUpdate);
+            });
+        }
+
+        allUpdates.sort((a, b) => b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime());
+        setLatestOrgUpdates(allUpdates.slice(0, 3));
+        setOrgUpdatesLoading(false);
+    };
+
+    fetchOrgUpdates();
+  }, [firestore]);
+
 
   useEffect(() => {
     if (!students || students.length === 0) return;

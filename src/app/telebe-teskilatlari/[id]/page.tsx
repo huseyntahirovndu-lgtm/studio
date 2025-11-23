@@ -1,0 +1,167 @@
+'use client';
+import { useParams } from 'next/navigation';
+import { useDoc, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { StudentOrganization, Student, StudentOrgUpdate } from '@/types';
+import { doc, collection, query, orderBy, where, documentId } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Building, User, Users, Newspaper } from 'lucide-react';
+import Link from 'next/link';
+import { format } from 'date-fns';
+import Image from 'next/image';
+
+function OrgDetailsLoading() {
+  return (
+    <div className="container mx-auto py-12 px-4 max-w-5xl">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="md:col-span-1 space-y-6">
+          <Skeleton className="h-48 w-full" />
+          <Skeleton className="h-64 w-full" />
+        </div>
+        <div className="md:col-span-2 space-y-8">
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-80 w-full" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function StudentOrgDetailsPage() {
+  const { id } = useParams();
+  const firestore = useFirestore();
+
+  const orgId = typeof id === 'string' ? id : '';
+
+  const orgDocRef = useMemoFirebase(() => (firestore && orgId ? doc(firestore, 'telebe-teskilatlari', orgId) : null), [firestore, orgId]);
+  const { data: organization, isLoading: orgLoading } = useDoc<StudentOrganization>(orgDocRef);
+
+  const leaderQuery = useMemoFirebase(() => (firestore && organization?.leaderId ? doc(firestore, 'users', organization.leaderId) : null), [firestore, organization]);
+  const { data: leader } = useDoc<Student>(leaderQuery);
+  
+  const membersQuery = useMemoFirebase(
+    () => (firestore && organization?.memberIds && organization.memberIds.length > 0 ? query(collection(firestore, 'users'), where(documentId(), 'in', organization.memberIds)) : null),
+    [firestore, organization]
+  );
+  const { data: members } = useCollection<Student>(membersQuery);
+  
+  const updatesQuery = useMemoFirebase(
+    () => (firestore && orgId ? query(collection(firestore, `telebe-teskilatlari/${orgId}/updates`), orderBy('createdAt', 'desc')) : null),
+    [firestore, orgId]
+  );
+  const { data: updates, isLoading: updatesLoading } = useCollection<StudentOrgUpdate>(updatesQuery);
+
+  const isLoading = orgLoading || updatesLoading;
+
+  if (isLoading) {
+    return <OrgDetailsLoading />;
+  }
+
+  if (!organization) {
+    return <div className="text-center py-20">Tələbə təşkilatı tapılmadı.</div>;
+  }
+
+  return (
+    <main className="container mx-auto max-w-5xl py-8 md:py-12 px-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* Left Column */}
+        <aside className="md:col-span-1 space-y-6">
+          <Card>
+            <CardHeader className="items-center">
+              <Avatar className="h-24 w-24 mb-4 border">
+                <AvatarImage src={organization.logoUrl} alt={organization.name} />
+                <AvatarFallback className="text-3xl">
+                  <Building />
+                </AvatarFallback>
+              </Avatar>
+              <CardTitle className="text-2xl text-center">{organization.name}</CardTitle>
+              <CardDescription className="text-center">{organization.faculty}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">{organization.description}</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl"><Users /> Üzvlər</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {leader && (
+                <div>
+                  <h4 className="font-semibold text-sm mb-2">Rəhbər</h4>
+                  <Link href={`/profile/${leader.id}`} className="flex items-center gap-3 group">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={leader.profilePictureUrl} alt={`${leader.firstName} ${leader.lastName}`} />
+                      <AvatarFallback>{leader.firstName?.charAt(0)}{leader.lastName?.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium group-hover:underline">{`${leader.firstName} ${leader.lastName}`}</p>
+                      <p className="text-xs text-muted-foreground">{leader.major}</p>
+                    </div>
+                  </Link>
+                </div>
+              )}
+
+              {members && members.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-sm mb-2 mt-4">Aktiv Üzvlər</h4>
+                  <div className="space-y-3">
+                    {members.map(member => (
+                       <Link key={member.id} href={`/profile/${member.id}`} className="flex items-center gap-3 group">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={member.profilePictureUrl} alt={`${member.firstName} ${member.lastName}`} />
+                          <AvatarFallback>{member.firstName?.charAt(0)}{member.lastName?.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <p className="text-sm font-medium group-hover:underline">{`${member.firstName} ${member.lastName}`}</p>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </aside>
+        
+        {/* Right Column */}
+        <section className="md:col-span-2">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-xl"><Newspaper /> Təşkilat Yenilikləri</CardTitle>
+                    <CardDescription>Təşkilatın fəaliyyəti haqqında ən son məlumatlar.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    {updates && updates.length > 0 ? (
+                        updates.map(update => (
+                             <Link key={update.id} href={`/telebe-teskilatlari/yenilikler/${update.id}`} className="block group">
+                                <Card className="hover:border-primary/50 transition-colors">
+                                    {update.coverImageUrl && (
+                                        <div className="relative w-full h-40 rounded-t-lg overflow-hidden">
+                                            <Image src={update.coverImageUrl} alt={update.title} fill className="object-cover" />
+                                        </div>
+                                    )}
+                                    <div className="p-4">
+                                        <h3 className="font-bold text-lg group-hover:text-primary mb-1">{update.title}</h3>
+                                        <p className="text-xs text-muted-foreground mb-2">
+                                            {update.createdAt ? format(update.createdAt.toDate(), 'dd MMMM, yyyy') : ''}
+                                        </p>
+                                        <p className="text-sm text-muted-foreground line-clamp-2">
+                                             {update.content.replace(/<[^>]*>?/gm, '')}
+                                        </p>
+                                    </div>
+                                </Card>
+                            </Link>
+                        ))
+                    ) : (
+                        <div className="text-center text-muted-foreground py-10">
+                            <p>Bu təşkilat hələ heç bir yenilik paylaşmayıb.</p>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+        </section>
+      </div>
+    </main>
+  );
+}
