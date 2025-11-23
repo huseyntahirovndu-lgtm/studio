@@ -1,15 +1,11 @@
 import { getDocs, collection } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase'; // Assuming this can run server-side
+import { initializeServerFirebase } from '@/firebase/server-init';
 import { Student, News } from '@/types';
-
-// This is a simplified, conceptual approach.
-// In a real Next.js app, you'd need a serverless function or API route
-// to generate this, and it would need read-only admin access to Firestore.
 
 const BASE_URL = 'https://istedadmerkezi.net';
 
 export default async function sitemap() {
-  const { firestore } = initializeFirebase();
+  const { firestore } = initializeServerFirebase();
 
   // Static pages
   const routes = ['', '/search', '/rankings', '/məqalələr'].map((route) => ({
@@ -17,25 +13,35 @@ export default async function sitemap() {
     lastModified: new Date().toISOString(),
   }));
 
-  // Dynamic student pages
-  const studentsSnapshot = await getDocs(collection(firestore, 'users'));
-  const studentUrls = studentsSnapshot.docs
-    .map(doc => doc.data() as Student)
-    .filter(user => user.role === 'student' && user.status === 'təsdiqlənmiş')
-    .map((student) => ({
-      url: `${BASE_URL}/profile/${student.id}`,
-      lastModified: new Date().toISOString(), // Or use an 'updatedAt' field if you have one
-  }));
+  let studentUrls: any[] = [];
+  try {
+    const studentsSnapshot = await getDocs(collection(firestore, 'users'));
+    studentUrls = studentsSnapshot.docs
+      .map(doc => doc.data() as Student)
+      .filter(user => user.role === 'student' && user.status === 'təsdiqlənmiş')
+      .map((student) => ({
+        url: `${BASE_URL}/profile/${student.id}`,
+        lastModified: new Date().toISOString(), 
+    }));
+  } catch (e) {
+    console.error("Could not fetch students for sitemap", e);
+  }
 
-  // Dynamic news pages
-  const newsSnapshot = await getDocs(collection(firestore, 'news'));
-  const newsUrls = newsSnapshot.docs.map((doc) => {
-    const news = doc.data() as News;
-    return {
-      url: `${BASE_URL}/məqalələr/${news.slug}`,
-      lastModified: news.updatedAt?.toDate().toISOString() || news.createdAt.toDate().toISOString(),
-    };
-  });
+
+  let newsUrls: any[] = [];
+  try {
+    const newsSnapshot = await getDocs(collection(firestore, 'news'));
+    newsUrls = newsSnapshot.docs.map((doc) => {
+      const news = doc.data() as News;
+      return {
+        url: `${BASE_URL}/məqalələr/${news.slug}`,
+        lastModified: news.updatedAt?.toDate().toISOString() || news.createdAt.toDate().toISOString(),
+      };
+    });
+  } catch(e) {
+    console.error("Could not fetch news for sitemap", e);
+  }
+
 
   return [...routes, ...studentUrls, ...newsUrls];
 }
