@@ -41,7 +41,7 @@ import {
 import type { StudentOrgUpdate, StudentOrganization } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, useCollection, useFirestore, useMemoFirebase, deleteDocumentNonBlocking } from "@/firebase";
-import { collection, query, orderBy, doc, where, limit } from "firebase/firestore";
+import { collection, query, orderBy, doc, where, limit, writeBatch } from "firebase/firestore";
 import { format } from 'date-fns';
 
 export default function OrgUpdatesPage() {
@@ -62,10 +62,19 @@ export default function OrgUpdatesPage() {
     );
     const { data: updates, isLoading } = useCollection<StudentOrgUpdate>(updatesQuery);
 
-    const handleDelete = (updateId: string) => {
+    const handleDelete = async (updateId: string) => {
         if (!organizationId || !firestore) return;
-        const updateDocRef = doc(firestore, `telebe-teskilatlari/${organizationId}/updates`, updateId);
-        deleteDocumentNonBlocking(updateDocRef);
+
+        const batch = writeBatch(firestore);
+
+        const subCollectionDocRef = doc(firestore, `telebe-teskilatlari/${organizationId}/updates`, updateId);
+        const topLevelDocRef = doc(firestore, 'student-org-updates', updateId);
+
+        batch.delete(subCollectionDocRef);
+        batch.delete(topLevelDocRef);
+
+        await batch.commit();
+
         toast({ title: "Yenilik uğurla silindi." });
     };
 
@@ -119,7 +128,7 @@ export default function OrgUpdatesPage() {
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuLabel>Əməliyyatlar</DropdownMenuLabel>
                                         <DropdownMenuItem asChild>
-                                            <Link href={`/telebe-teskilati-paneli/updates/edit/${item.id}`}>Redaktə Et</Link>
+                                            <Link href={`/admin/news/edit/${item.id}`}>Redaktə Et</Link>
                                         </DropdownMenuItem>
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>

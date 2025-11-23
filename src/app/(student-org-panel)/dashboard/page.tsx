@@ -38,11 +38,17 @@ export default function OrganizationDashboardPage() {
     if (!members) return [];
     const monthlyData: { [key: string]: number } = {};
     members.forEach(member => {
-        if(member.createdAt && typeof member.createdAt.toDate === 'function') {
-            const month = member.createdAt.toDate().toLocaleString('default', { month: 'short' });
-            monthlyData[month] = (monthlyData[month] || 0) + 1;
+        let memberDate;
+        if (member.createdAt && typeof member.createdAt.toDate === 'function') {
+            memberDate = member.createdAt.toDate();
+        } else if (member.createdAt && typeof member.createdAt === 'string') {
+            memberDate = new Date(member.createdAt);
         } else if (member.createdAt) {
-             const month = new Date(member.createdAt).toLocaleString('default', { month: 'short' });
+            memberDate = member.createdAt; // Assume it's already a Date object
+        }
+
+        if (memberDate instanceof Date && !isNaN(memberDate.getTime())) {
+            const month = memberDate.toLocaleString('default', { month: 'short' });
             monthlyData[month] = (monthlyData[month] || 0) + 1;
         }
     });

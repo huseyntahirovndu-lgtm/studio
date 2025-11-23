@@ -6,7 +6,7 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useAuth, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, doc, serverTimestamp, updateDoc, addDoc, query, where, limit } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, updateDoc, addDoc, query, where, limit, setDoc } from 'firebase/firestore';
 import type { StudentOrgUpdate, StudentOrganization } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Upload } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
 
 const formSchema = z.object({
   title: z.string().min(5, "Başlıq ən azı 5 hərf olmalıdır."),
@@ -82,7 +83,7 @@ export default function OrgUpdateEditForm({ initialData, onSuccess }: EditOrgUpd
 
 
   const onSubmit: SubmitHandler<FormData> = async (values) => {
-    if (!organization) {
+    if (!organization || !firestore) {
       toast({ variant: 'destructive', title: 'Səlahiyyət Xətası', description: "Bu əməliyyatı etmək üçün təşkilat rəhbəri olmalısınız." });
       return;
     }
@@ -97,29 +98,33 @@ export default function OrgUpdateEditForm({ initialData, onSuccess }: EditOrgUpd
         const updateDocRef = doc(updatesCollectionRef, initialData.id);
         const topLevelUpdateDocRef = doc(topLevelUpdatesCollectionRef, initialData.id);
 
-        await updateDoc(updateDocRef, {
+        const updateData = {
           ...values,
           updatedAt: serverTimestamp(),
-        });
-        await updateDoc(topLevelUpdateDocRef, {
-          ...values,
-          updatedAt: serverTimestamp(),
-        });
+        };
+
+        await updateDoc(updateDocRef, updateData);
+        await updateDoc(topLevelUpdateDocRef, updateData);
 
         toast({ title: 'Uğurlu', description: 'Yenilik uğurla yeniləndi.' });
         onSuccess(initialData.id);
       } else {
+        const newUpdateId = uuidv4();
         const newUpdateData = {
           ...values,
+          id: newUpdateId, // Ensure the same ID is used
           organizationId: organization.id,
           createdAt: serverTimestamp(),
         };
-        const newDocRef = await addDoc(updatesCollectionRef, newUpdateData);
-        // Also add to top-level collection for easier querying on homepage
-        await addDoc(topLevelUpdatesCollectionRef, { ...newUpdateData, id: newDocRef.id });
+        
+        const newDocRef = doc(updatesCollectionRef, newUpdateId);
+        const newTopLevelDocRef = doc(topLevelUpdatesCollectionRef, newUpdateId);
+
+        await setDoc(newDocRef, newUpdateData);
+        await setDoc(newTopLevelDocRef, newUpdateData);
 
         toast({ title: 'Uğurlu', description: 'Yenilik uğurla yaradıldı.' });
-        onSuccess(newDocRef.id);
+        onSuccess(newUpdateId);
       }
     } catch (error: any) {
       console.error("Yenilik yaradılarkən/yenilənərkən xəta:", error);
