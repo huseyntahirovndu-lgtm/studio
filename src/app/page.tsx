@@ -264,12 +264,12 @@ export default function HomePage() {
             
             <div className="relative h-full flex items-center">
               <div className="container mx-auto">
-                <div className="max-w-3xl text-white bg-black/20 p-8 rounded-xl backdrop-blur-sm">
-                  <p className="text-xl md:text-2xl font-medium tracking-tight drop-shadow-md">Naxçıvan Dövlət Universiteti</p>
+                <div className="max-w-3xl">
+                  <p className="text-xl md:text-2xl font-medium tracking-tight drop-shadow-md text-primary">Naxçıvan Dövlət Universiteti</p>
                   <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tighter drop-shadow-lg text-primary mt-1">
                      İstedad Mərkəzi
                   </h1>
-                  <p className="mt-6 max-w-2xl text-lg text-white/90 drop-shadow-md">
+                  <p className="mt-6 max-w-2xl text-lg text-primary drop-shadow-md">
                       Tələbələrimizin bacarıqlarını, layihələrini və nailiyyətlərini kəşf edin. Potensialı reallığa çevirən platforma.
                   </p>
                   <div className="mt-8 flex flex-col sm:flex-row gap-4">
