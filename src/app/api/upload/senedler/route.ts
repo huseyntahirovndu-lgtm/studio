@@ -49,7 +49,8 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer());
     fs.writeFileSync(filePath, buffer);
     
-    const url = `/uploads/senedler/${newFilename}`;
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
+    const url = `${baseUrl}/uploads/senedler/${newFilename}`;
 
     return NextResponse.json({ success: true, url });
   } catch (error: any) {

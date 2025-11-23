@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useAuth, useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { collection, doc, serverTimestamp } from 'firebase/firestore';
+import { useAuth, useFirestore } from '@/firebase';
+import { collection, doc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
 import type { News, Admin } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -66,7 +66,7 @@ export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormPro
     formData.append('file', file);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/upload/sekiller`, { method: 'POST', body: formData });
+      const response = await fetch('/api/upload/sekiller', { method: 'POST', body: formData });
       const result = await response.json();
       if (response.ok && result.success) {
         form.setValue('coverImageUrl', result.url, { shouldValidate: true, shouldDirty: true });
@@ -85,15 +85,20 @@ export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormPro
 
   const onSubmit: SubmitHandler<FormData> = async (values) => {
     setIsSaving(true);
+    
+    if (!firestore) {
+      toast({ variant: 'destructive', title: 'Xəta', description: 'Verilənlər bazası tapılmadı.' });
+      setIsSaving(false);
+      return;
+    }
 
     try {
       const newsCollectionRef = collection(firestore, 'news');
       const adminUser = user as Admin;
 
       if (isEditMode && initialData) {
-        // Update existing news
         const newsDocRef = doc(newsCollectionRef, initialData.id);
-        await updateDocumentNonBlocking(newsDocRef, {
+        await updateDoc(newsDocRef, {
           ...values,
           slug: generateSlug(values.title),
           updatedAt: serverTimestamp(),
@@ -101,7 +106,6 @@ export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormPro
         toast({ title: 'Uğurlu', description: 'Xəbər uğurla yeniləndi.' });
         onSuccess(initialData.id);
       } else {
-        // Create new news
         const newDocId = uuidv4();
         const newNewsData = {
           ...values,
@@ -110,11 +114,12 @@ export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormPro
           authorId: user?.id || 'admin_user',
           authorName: (adminUser?.firstName && adminUser?.lastName) ? `${adminUser.firstName} ${adminUser.lastName}` : "Admin",
           createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
         };
         const newDocRef = doc(newsCollectionRef, newDocId);
-        await addDocumentNonBlocking(newDocRef, newNewsData);
+        await setDoc(newDocRef, newNewsData);
         toast({ title: 'Uğurlu', description: 'Xəbər uğurla yaradıldı.' });
-        onSuccess(newDocRef.id);
+        onSuccess(newDocId);
       }
     } catch (error: any) {
       console.error("Xəbər yaradılarkən/yenilənərkən xəta:", error);
