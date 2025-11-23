@@ -13,8 +13,8 @@ export default function AddStudentOrgPage() {
     const { toast } = useToast();
 
     const handleSave = async (data: any) => {
-        if (!user || user.role !== 'admin' || !firestore) {
-            toast({ variant: 'destructive', title: 'Səlahiyyət xətası' });
+        if (!firestore) {
+            toast({ variant: 'destructive', title: 'Xəta', description: 'Firestore servisi tapılmadı.' });
             return false;
         }
         

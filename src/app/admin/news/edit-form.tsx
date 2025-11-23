@@ -66,7 +66,7 @@ export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormPro
     formData.append('file', file);
 
     try {
-      const response = await fetch('/api/upload/sekiller', { method: 'POST', body: formData });
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/upload/sekiller`, { method: 'POST', body: formData });
       const result = await response.json();
       if (response.ok && result.success) {
         form.setValue('coverImageUrl', result.url, { shouldValidate: true, shouldDirty: true });
@@ -84,11 +84,6 @@ export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormPro
 
 
   const onSubmit: SubmitHandler<FormData> = async (values) => {
-    if (!user || user.role !== 'admin') {
-      toast({ variant: 'destructive', title: 'Səlahiyyət Xətası', description: "Bu əməliyyatı etmək üçün admin olmalısınız." });
-      return;
-    }
-    
     setIsSaving(true);
 
     try {
@@ -112,8 +107,8 @@ export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormPro
           ...values,
           id: newDocId,
           slug: generateSlug(values.title),
-          authorId: user.id,
-          authorName: (adminUser.firstName && adminUser.lastName) ? `${adminUser.firstName} ${adminUser.lastName}` : "Admin",
+          authorId: user?.id || 'admin_user',
+          authorName: (adminUser?.firstName && adminUser?.lastName) ? `${adminUser.firstName} ${adminUser.lastName}` : "Admin",
           createdAt: serverTimestamp(),
         };
         const newDocRef = doc(newsCollectionRef, newDocId);
