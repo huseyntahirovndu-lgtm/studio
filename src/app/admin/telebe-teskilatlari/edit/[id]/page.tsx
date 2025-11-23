@@ -6,6 +6,7 @@ import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import type { StudentOrganization } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useMemoFirebase } from '@/firebase/provider';
 
 export default function EditStudentOrgPage() {
     const { id } = useParams();
@@ -14,7 +15,7 @@ export default function EditStudentOrgPage() {
     const { toast } = useToast();
     
     const orgId = typeof id === 'string' ? id : '';
-    const orgDocRef = firestore ? doc(firestore, 'telebe-teskilatlari', orgId) : null;
+    const orgDocRef = useMemoFirebase(() => firestore ? doc(firestore, 'telebe-teskilatlari', orgId) : null, [firestore, orgId]);
     const { data: org, isLoading } = useDoc<StudentOrganization>(orgDocRef);
 
     const handleSave = async (data: any) => {

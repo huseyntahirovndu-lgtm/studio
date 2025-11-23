@@ -1,6 +1,6 @@
 # İstedad Mərkəzi - Naxçıvan Dövlət Universiteti
 
-Bu sənəd, "İstedad Mərkəzi" veb-platformasının istifadəsi üçün ətraflı təlimatdır. Platforma üç fərqli istifadəçi növü üçün nəzərdə tutulub: **Tələbə**, **Təşkilat** və **Admin**.
+Bu sənəd, "İstedad Mərkəzi" veb-platformasının istifadəsi üçün ətraflı təlimatdır. Platforma dörd fərqli istifadəçi növü üçün nəzərdə tutulub: **Tələbə**, **Təşkilat**, **Tələbə Təşkilatı Rəhbəri** və **Admin**.
 
 ---
 
@@ -63,7 +63,21 @@ Bu, platformadakı ən vacib səhifənizdir.
 
 ---
 
-## 3. Admin üçün Təlimat
+## 3. Tələbə Təşkilatı Rəhbəri üçün Təlimat
+
+**Məqsəd:** Rəhbərlik etdiyiniz tələbə təşkilatını idarə etmək, üzvləri əlavə edib/çıxarmaq və yenilikləri paylaşmaq.
+
+#### **Giriş**
+* Tələbə hesabınızla `/login` səhifəsindən daxil olun. Əgər admin tərəfindən bir təşkilatın rəhbəri təyin edilmisinizsə, naviqasiya menyusunda Təşkilat Panelinə keçid görəcəksiniz.
+
+#### **Təşkilat Paneli (`/organization/dashboard`)**
+* **Panel:** Təşkilatınızın ümumi statistikası, üzv sayı və son fəaliyyətlər.
+* **Üzvlər (`/organization/members`):** Təşkilata yeni üzvlər (tələbələr) əlavə edə və ya mövcud üzvləri siyahıdan çıxara bilərsiniz.
+* **Yeniliklər (`/organization/updates`):** Təşkilatınızın fəaliyyəti ilə bağlı xəbərlər, elanlar və yeniliklər yaradıb paylaşa bilərsiniz.
+
+---
+
+## 4. Admin üçün Təlimat
 
 **Məqsəd:** Platformanın ümumi fəaliyyətinə nəzarət etmək, məlumatların düzgünlüyünü təmin etmək və sistemi idarə etmək.
 
@@ -81,5 +95,9 @@ Bu məlumatlarla `/login` səhifəsindən daxil olduqda birbaşa **Admin Panelə
     *   Lazım gəldikdə tələbə profillərini redaktə edə və ya sistemdən silə bilərsiniz.
 *   **Təşkilatlar (`/admin/organizations`):**
     *   Sistemdəki bütün partnyor təşkilatların siyahısını idarə edə bilərsiniz.
+*   **Tələbə Təşkilatları (`/admin/telebe-teskilatlari`):**
+    *   Universitet daxilində fəaliyyət göstərən tələbə təşkilatlarını yarada, redaktə edə və statuslarını (təsdiqlənmiş, gözləyir, arxivlənmiş) dəyişə bilərsiniz.
+*   **Xəbərlər (`/admin/news`):**
+    *   Platforma üçün ümumi xəbərlər və elanlar yaradıb idarə edə bilərsiniz.
 *   **Kateqoriyalar (`/admin/categories`):**
     *   Sistemə yeni istedad kateqoriyaları əlavə edə və ya mövcud olanları silə bilərsiniz. Bu, axtarış və filtr sisteminə birbaşa təsir edir.

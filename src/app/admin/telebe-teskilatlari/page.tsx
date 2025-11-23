@@ -42,6 +42,7 @@ import type { StudentOrganization } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useCollection, useFirestore, useMemoFirebase, deleteDocumentNonBlocking } from "@/firebase";
 import { collection, query, doc } from "firebase/firestore";
+import { Badge } from "@/components/ui/badge";
 
 export default function AdminStudentOrgsPage() {
     const { toast } = useToast();
@@ -55,6 +56,12 @@ export default function AdminStudentOrgsPage() {
         const orgDocRef = doc(firestore, 'telebe-teskilatlari', orgId);
         deleteDocumentNonBlocking(orgDocRef);
         toast({ title: "Təşkilat uğurla silindi." });
+    };
+    
+    const statusMap: Record<StudentOrganization['status'], string> = {
+        'təsdiqlənmiş': 'Təsdiqlənmiş',
+        'gözləyir': 'Gözləyir',
+        'arxivlənmiş': 'Arxivlənmiş'
     };
 
     return (
@@ -83,13 +90,16 @@ export default function AdminStudentOrgsPage() {
                     <TableHead className="hidden md:table-cell">
                         Fakültə
                     </TableHead>
+                     <TableHead className="hidden md:table-cell">
+                        Status
+                    </TableHead>
                     <TableHead className="text-right">Əməliyyatlar</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                      {isLoading ? (
                          <TableRow>
-                            <TableCell colSpan={3} className="h-24 text-center">Yüklənir...</TableCell>
+                            <TableCell colSpan={4} className="h-24 text-center">Yüklənir...</TableCell>
                         </TableRow>
                     ) : organizations && organizations.length > 0 ? (
                         organizations.map((org) => (
@@ -97,6 +107,11 @@ export default function AdminStudentOrgsPage() {
                             <TableCell className="font-medium">{org.name}</TableCell>
                             <TableCell className="hidden md:table-cell">
                                 {org.faculty}
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell">
+                                <Badge variant={org.status === 'təsdiqlənmiş' ? 'default' : org.status === 'gözləyir' ? 'secondary' : 'outline'}>
+                                  {statusMap[org.status]}
+                                </Badge>
                             </TableCell>
                             <TableCell className="text-right">
                                <DropdownMenu>
@@ -135,7 +150,7 @@ export default function AdminStudentOrgsPage() {
                         ))
                     ) : (
                          <TableRow>
-                            <TableCell colSpan={3} className="h-24 text-center">Heç bir təşkilat tapılmadı.</TableCell>
+                            <TableCell colSpan={4} className="h-24 text-center">Heç bir təşkilat tapılmadı.</TableCell>
                         </TableRow>
                     )}
                 </TableBody>

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Home, Newspaper, Settings, ShieldCheck, Library } from "lucide-react"
+import { Home, Newspaper, Settings, Users, Library } from "lucide-react"
 import { useAuth, useCollection, useFirestore, useMemoFirebase } from "@/firebase"
 import { cn } from "@/lib/utils"
 import {
@@ -17,6 +17,7 @@ import { collection, query, where } from "firebase/firestore";
 
 const NAV_LINKS = [
     { href: "/organization-panel/dashboard", icon: Home, label: "Panel", exact: true },
+    { href: "/organization-panel/members", icon: Users, label: "Üzvlər" },
     { href: "/organization-panel/updates", icon: Newspaper, label: "Yeniliklər" },
 ];
 
@@ -31,7 +32,7 @@ export default function StudentOrganizationLayout({
   const firestore = useFirestore();
 
   const ledOrgQuery = useMemoFirebase(() => 
-    user ? query(collection(firestore, 'telebe-teskilatlari'), where('leaderId', '==', user.id)) : null,
+    user ? query(collection(firestore, 'telebe-teskilatlari'), where('leaderId', '==', user.id), where('status', '==', 'təsdiqlənmiş')) : null,
     [firestore, user]
   );
   const { data: ledOrgs, isLoading: ledOrgsLoading } = useCollection<StudentOrganization>(ledOrgQuery);
@@ -49,7 +50,9 @@ export default function StudentOrganizationLayout({
   }
   
   const isActive = (href: string, exact?: boolean) => {
-    return exact ? pathname === href : pathname.startsWith(href);
+    // Correctly match the dashboard route and its children
+    const adjustedHref = href.replace('-panel', '');
+    return exact ? pathname === adjustedHref : pathname.startsWith(adjustedHref);
   }
 
   return (
@@ -69,7 +72,7 @@ export default function StudentOrganizationLayout({
                 <Tooltip key={link.href}>
                     <TooltipTrigger asChild>
                     <Link
-                        href={link.href}
+                        href={link.href.replace('-panel', '')}
                         className={cn("flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8",
                             isActive(link.href, link.exact) && "bg-accent text-accent-foreground"
                         )}

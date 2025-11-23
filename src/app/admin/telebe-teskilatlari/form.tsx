@@ -15,6 +15,7 @@ import { collection, query, where } from 'firebase/firestore';
 import type { Student, StudentOrganization, FacultyData } from '@/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Combobox } from '@/components/ui/combobox';
+import { Switch } from '@/components/ui/switch';
 
 const formSchema = z.object({
   name: z.string().min(3, "Ad ən azı 3 hərf olmalıdır."),
@@ -22,6 +23,7 @@ const formSchema = z.object({
   faculty: z.string().min(1, "Fakültə seçmək mütləqdir."),
   leaderId: z.string().min(1, "Rəhbər seçmək mütləqdir."),
   logoUrl: z.string().url().or(z.literal('')).optional(),
+  status: z.enum(['təsdiqlənmiş', 'gözləyir', 'arxivlənmiş']),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -54,6 +56,7 @@ export default function OrgForm({ initialData, onSave }: OrgFormProps) {
       faculty: '',
       leaderId: '',
       logoUrl: '',
+      status: 'gözləyir',
     },
   });
 
@@ -157,6 +160,29 @@ export default function OrgForm({ initialData, onSave }: OrgFormProps) {
                     <Input type="url" placeholder="https://example.com/logo.png" {...field} />
                   </FormControl>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Status</FormLabel>
+                     <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Status seçin" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                          <SelectItem value="təsdiqlənmiş">Təsdiqlənmiş</SelectItem>
+                          <SelectItem value="gözləyir">Gözləyir</SelectItem>
+                          <SelectItem value="arxivlənmiş">Arxivlənmiş</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
                 </FormItem>
               )}
             />

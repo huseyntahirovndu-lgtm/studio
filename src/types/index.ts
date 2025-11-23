@@ -119,6 +119,7 @@ export interface Admin extends BaseUser {
     lastName: string;
 }
 
+export type StudentOrganizationStatus = 'təsdiqlənmiş' | 'gözləyir' | 'arxivlənmiş';
 export interface StudentOrganization {
   id: string;
   name: string;
@@ -127,6 +128,7 @@ export interface StudentOrganization {
   faculty: string;
   leaderId: string; // student id
   memberIds: string[]; // array of student ids
+  status: StudentOrganizationStatus;
 }
 
 export interface News {
