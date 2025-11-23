@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useAuth, useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { useAuth, useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import type { News, Admin } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -114,11 +114,11 @@ export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormPro
             coverImageUrl: values.coverImageUrl,
             slug: generateSlug(values.title),
             authorId: user.id,
-            authorName: (adminUser?.firstName && adminUser?.lastName) ? `${adminUser.firstName} ${adminUser.lastName}` : "Admin",
+            authorName: adminUser?.firstName && adminUser?.lastName ? `${adminUser.firstName} ${adminUser.lastName}` : "Admin",
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
         };
-        setDocumentNonBlocking(newDocRef, newNewsData);
+        addDocumentNonBlocking(collection(firestore, 'news'), newNewsData);
         toast({ title: 'Uğurlu', description: 'Xəbər uğurla yaradıldı.' });
         onSuccess(newDocId);
       }
@@ -133,6 +133,8 @@ export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormPro
 
     setIsSaving(false);
   };
+
+  const isSubmitDisabled = isSaving || isUploading || !user || !firestore;
 
   return (
     <Card>
@@ -204,7 +206,7 @@ export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormPro
                 <Button variant="outline" type="button" onClick={() => router.back()}>
                     Ləğv et
                 </Button>
-                <Button type="submit" disabled={isSaving || isUploading}>
+                <Button type="submit" disabled={isSubmitDisabled}>
                     {isSaving ? 'Yadda saxlanılır...' : (isEditMode ? 'Yenilə' : 'Yarat')}
                 </Button>
             </div>
