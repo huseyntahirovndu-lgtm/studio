@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { BarChart, Home, Package, Settings, ShieldCheck, ShoppingCart, Users2, ListTree, Building, Library, Newspaper } from "lucide-react"
+import { BarChart, Home, Package, Settings, ShieldCheck, ShoppingCart, Users2, ListTree, Building, Library, Newspaper, School } from "lucide-react"
 
 import { useAuth } from "@/hooks/use-auth"
 import { cn } from "@/lib/utils"
@@ -21,6 +21,7 @@ const NAV_LINKS = [
     { href: "/admin/organizations", icon: Building, label: "Təşkilatlar" },
     { href: "/admin/telebe-teskilatlari", icon: Library, label: "Tələbə Təşkilatları" },
     { href: "/admin/news", icon: Newspaper, label: "Xəbərlər" },
+    { href: "/admin/faculties", icon: School, label: "Fakültələr" },
     { href: "/admin/categories", icon: ListTree, label: "Kateqoriyalar" },
 ];
 
