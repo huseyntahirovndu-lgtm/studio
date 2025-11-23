@@ -38,7 +38,7 @@ export default function OrganizationDashboardPage() {
     if (!members) return [];
     const monthlyData: { [key: string]: number } = {};
     const currentYear = new Date().getFullYear();
-    const monthOrder = ["Yan", "Fev", "Mar", "Apr", "May", "İyn", "İyl", "Avq", "Sen", "Okt", "Noy", "Dek"];
+    const monthOrder = ["Yan", "Fev", "Mar", "Apr", "İyn", "İyl", "Avq", "Sen", "Okt", "Noy", "Dek"];
     
     // Initialize all months of the current year with 0
     monthOrder.forEach(month => {
@@ -52,14 +52,20 @@ export default function OrganizationDashboardPage() {
         }
 
         let memberDate: Date | null = null;
-        // Handle different timestamp formats
-        if (typeof member.createdAt.toDate === 'function') {
-            memberDate = member.createdAt.toDate();
-        } else if (typeof member.createdAt === 'string' || typeof member.createdAt === 'number') {
-            memberDate = new Date(member.createdAt);
-        } else if (member.createdAt instanceof Date) {
-            memberDate = member.createdAt;
+        try {
+            // Handle different timestamp formats
+            if (typeof member.createdAt.toDate === 'function') {
+                memberDate = member.createdAt.toDate();
+            } else if (typeof member.createdAt === 'string' || typeof member.createdAt === 'number') {
+                memberDate = new Date(member.createdAt);
+            } else if (member.createdAt instanceof Date) {
+                memberDate = member.createdAt;
+            }
+        } catch(e) {
+            console.error("Could not parse date for member:", member.id, e);
+            return;
         }
+
 
         // Check if a valid date was created and if it's in the current year
         if (memberDate instanceof Date && !isNaN(memberDate.getTime()) && memberDate.getFullYear() === currentYear) {

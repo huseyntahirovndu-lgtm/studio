@@ -52,7 +52,7 @@ const profileSchema = z.object({
   courseYear: z.coerce.number().min(1).max(6),
   educationForm: z.string().optional(),
   gpa: z.coerce.number({invalid_type_error: "ÜOMG mütləq qeyd edilməlidir."}).min(0, "ÜOMG 0-dan az ola bilməz.").max(100, "ÜOMG 100-dən çox ola bilməz."),
-  skills: z.array(skillSchema).min(1, "Ən azı bir bacarıq daxil edin."),
+  skills: z.array(skillSchema).optional(),
   successStory: z.string().optional(),
   linkedInURL: z.string().url().or(z.literal('')).optional(),
   githubURL: z.string().url().or(z.literal('')).optional(),
@@ -197,42 +197,35 @@ function EditProfilePageComponent() {
   }, [targetUser, profileForm]);
 
   const triggerTalentScoreUpdate = useCallback(async (userId: string) => {
+    if (isSaving) return;
     setIsSaving(true);
-    toast({ title: "İstedad Balı Hesablanır...", description: "Profiliniz yenilənir, bu proses digər tələbələrlə müqayisə apardığı üçün bir az vaxt ala bilər." });
+    toast({ title: "İstedad Balı Hesablanır...", description: "Profiliniz yenilənir, bu proses bir az vaxt ala bilər." });
 
     try {
-        const allUsersSnapshot = await getDocs(query(collection(firestore, 'users')));
+        const allUsersSnapshot = await getDocs(query(collection(firestore, 'users'), where('role', '==', 'student')));
         
-        const allStudentsPromises = allUsersSnapshot.docs.map(async (userDoc) => {
-            const userData = userDoc.data() as Student;
-            if (userData.role !== 'student') return null;
-
-            const projectsSnap = await getDocs(collection(firestore, `users/${userDoc.id}/projects`));
-            const achievementsSnap = await getDocs(collection(firestore, `users/${userDoc.id}/achievements`));
-            const certificatesSnap = await getDocs(collection(firestore, `users/${userDoc.id}/certificates`));
-
+        const allStudentsContext = allUsersSnapshot.docs.map(doc => {
+            const data = doc.data() as Student;
             return {
-                id: userDoc.id,
-                talentScore: userData.talentScore,
-                skills: userData.skills,
-                gpa: userData.gpa,
-                courseYear: userData.courseYear,
-                projects: projectsSnap.docs.map(d => d.data()),
-                achievements: achievementsSnap.docs.map(d => d.data()),
-                certificates: certificatesSnap.docs.map(d => d.data()),
+                id: doc.id,
+                talentScore: data.talentScore || 0,
+                skills: data.skills?.map(s => s.name) || [],
+                gpa: data.gpa || 0,
+                courseYear: data.courseYear || 1,
+                // We don't need full subcollections for context, just counts
+                projects: data.projectIds?.length || 0,
+                achievements: data.achievementIds?.length || 0,
+                certificates: data.certificateIds?.length || 0,
             };
         });
 
-        const allStudentsRaw = await Promise.all(allStudentsPromises);
-        const allStudents = allStudentsRaw.filter(s => s !== null) as any[];
-
-        if (allStudents.length === 0) {
+        if (allStudentsContext.length === 0) {
             throw new Error("No students found to compare against.");
         }
         
         const scoreResult = await calculateTalentScore({
             targetStudentId: userId,
-            allStudents: allStudents,
+            allStudents: allStudentsContext as any, // Cast because we simplified the context
         });
         
         const targetUserDoc = doc(firestore, 'users', userId);
@@ -245,7 +238,7 @@ function EditProfilePageComponent() {
     } finally {
         setIsSaving(false);
     }
-}, [firestore, toast]);
+  }, [firestore, toast, isSaving]);
   
   const handleFileUpload = async (file: File, type: 'sekil' | 'sened'): Promise<string | null> => {
     setIsUploading(true);
