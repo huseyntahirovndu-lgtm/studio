@@ -24,9 +24,9 @@ export default function RootLayout({
   const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/register-student') || pathname.startsWith('/register-organization');
   
   const isAdminRoute = pathname.startsWith('/admin');
-  const isOrgRoute = pathname.startsWith('/organization-panel');
+  const isOrgPanelRoute = pathname.startsWith('/telebe-teskilati-paneli');
 
-  const showHeaderFooter = !isAuthPage && !isAdminRoute && !isOrgRoute;
+  const showHeaderFooter = !isAuthPage && !isAdminRoute && !isOrgPanelRoute;
 
   return (
     <html lang="az">

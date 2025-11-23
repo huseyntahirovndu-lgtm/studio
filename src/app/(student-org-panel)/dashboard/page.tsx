@@ -2,7 +2,7 @@
 import { useAuth, useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { StudentOrganization, Student } from '@/types';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { collection, doc, query, where, documentId, updateDoc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';

@@ -80,7 +80,7 @@ export default function OrgUpdatesPage() {
                         </CardDescription>
                     </div>
                     <Button asChild>
-                        <Link href="/organization/updates/add">
+                        <Link href="/telebe-teskilati-paneli/updates/add">
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Yeni Yenilik Yarat
                         </Link>
@@ -119,7 +119,7 @@ export default function OrgUpdatesPage() {
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuLabel>Əməliyyatlar</DropdownMenuLabel>
                                         <DropdownMenuItem asChild>
-                                            <Link href={`/organization/updates/edit/${item.id}`}>Redaktə Et</Link>
+                                            <Link href={`/telebe-teskilati-paneli/updates/edit/${item.id}`}>Redaktə Et</Link>
                                         </DropdownMenuItem>
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>

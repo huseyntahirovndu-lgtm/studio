@@ -16,9 +16,9 @@ import type { StudentOrganization } from "@/types";
 import { collection, query, where } from "firebase/firestore";
 
 const NAV_LINKS = [
-    { href: "/organization/dashboard", icon: Home, label: "Panel", exact: true },
-    { href: "/organization/members", icon: Users, label: "Üzvlər" },
-    { href: "/organization/updates", icon: Newspaper, label: "Yeniliklər" },
+    { href: "/telebe-teskilati-paneli/dashboard", icon: Home, label: "Panel", exact: true },
+    { href: "/telebe-teskilati-paneli/members", icon: Users, label: "Üzvlər" },
+    { href: "/telebe-teskilati-paneli/updates", icon: Newspaper, label: "Yeniliklər" },
 ];
 
 export default function StudentOrganizationLayout({

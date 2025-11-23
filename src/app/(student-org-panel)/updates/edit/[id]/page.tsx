@@ -31,7 +31,7 @@ export default function EditOrgUpdatePage() {
   const isLoading = orgsLoading || updateLoading;
 
   const handleSuccess = () => {
-    router.push('/organization/updates');
+    router.push('/telebe-teskilati-paneli/updates');
   };
   
   if(isLoading) {

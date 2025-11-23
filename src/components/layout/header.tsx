@@ -133,7 +133,7 @@ export function Header() {
                 )}
                  {isOrgLeader && (
                    <DropdownMenuItem asChild>
-                    <Link href="/organization-panel/updates">Təşkilat Yenilikləri</Link>
+                    <Link href="/telebe-teskilati-paneli/dashboard">Təşkilat Paneli</Link>
                    </DropdownMenuItem>
                  )}
                  {appUser.role === 'organization' && (
