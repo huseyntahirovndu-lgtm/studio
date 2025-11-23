@@ -10,11 +10,15 @@ import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import type { News } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Upload } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+const RichTextEditor = dynamic(() => import('@/components/ui/rich-text-editor'), { ssr: false });
+import 'react-quill/dist/quill.snow.css';
+
 
 const formSchema = z.object({
   title: z.string().min(5, "Başlıq ən azı 5 hərf olmalıdır."),
@@ -185,11 +189,8 @@ export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormPro
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Məzmun</FormLabel>
-                   <FormDescription>
-                    Mətni formatlamaq üçün sadə HTML teqlərindən istifadə edə bilərsiniz: `<b>qalın</b>`, `<h2>başlıq</h2>`, `<ul><li>siyahı</li></ul>`.
-                  </FormDescription>
                   <FormControl>
-                    <Textarea placeholder="<b>Qalın mətn</b> və ya <h2>Başlıq</h2> kimi HTML teqlərindən istifadə edə bilərsiniz..." {...field} rows={15} />
+                     <RichTextEditor {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

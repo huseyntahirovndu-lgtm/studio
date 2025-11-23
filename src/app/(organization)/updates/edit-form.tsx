@@ -10,11 +10,13 @@ import { collection, doc, serverTimestamp, query, where, limit, addDoc, updateDo
 import type { StudentOrgUpdate, StudentOrganization } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Upload } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+const RichTextEditor = dynamic(() => import('@/components/ui/rich-text-editor'), { ssr: false });
 
 const formSchema = z.object({
   title: z.string().min(5, "Başlıq ən azı 5 hərf olmalıdır."),
@@ -181,11 +183,8 @@ export default function OrgUpdateEditForm({ initialData, onSuccess }: EditOrgUpd
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Məzmun</FormLabel>
-                  <FormDescription>
-                    Mətni formatlamaq üçün sadə HTML teqlərindən istifadə edə bilərsiniz: `<b>qalın</b>`, `<h2>başlıq</h2>`, `<ul><li>siyahı</li></ul>`.
-                  </FormDescription>
                   <FormControl>
-                    <Textarea placeholder="Yeniliyin tam məzmununu buraya daxil edin..." {...field} rows={10} />
+                    <RichTextEditor {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
