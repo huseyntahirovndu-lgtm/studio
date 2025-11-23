@@ -33,7 +33,7 @@ const SelectedStorySchema = z.object({
 });
 
 const StorySelectorOutputSchema = z.object({
-  selectedStories: z.array(SelectedStorySchema).length(2).describe('An array of exactly two of the most inspiring and well-written success stories.'),
+  selectedStories: z.array(SelectedStorySchema).describe('An array of the most inspiring and well-written success stories.'),
 });
 
 export type StorySelectorOutput = z.infer<typeof StorySelectorOutputSchema>;
@@ -44,10 +44,14 @@ export async function selectTopStories(
   return storySelectorFlow(input);
 }
 
+const strictOutputSchema = z.object({
+  selectedStories: z.array(SelectedStorySchema).length(2).describe('An array of exactly two of the most inspiring and well-written success stories.'),
+});
+
 const prompt = ai.definePrompt({
   name: 'storySelectorPrompt',
   input: { schema: StorySelectorInputSchema },
-  output: { schema: StorySelectorOutputSchema },
+  output: { schema: strictOutputSchema },
   prompt: `You are a public relations expert for Naxçıvan Dövlət Universiteti. Your task is to analyze a list of student success stories and select the top 2 to feature on the university's homepage.
 
 Instructions:
