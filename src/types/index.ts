@@ -83,7 +83,7 @@ export interface Student extends BaseUser {
   major: string;
   courseYear: number;
   educationForm?: string;
-  gpa?: number;
+  gpa?: number | null;
   skills: Skill[];
   category: string;
   projectIds?: string[];
@@ -148,7 +148,9 @@ export interface StudentOrgUpdate {
   organizationId: string;
   title: string;
   content: string;
+  coverImageUrl?: string;
   createdAt: any;
+  updatedAt?: any;
 }
 
 export interface FacultyData {

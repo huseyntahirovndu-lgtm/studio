@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,10 +14,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { Upload } from 'lucide-react';
 
 const formSchema = z.object({
   title: z.string().min(5, "Başlıq ən azı 5 hərf olmalıdır."),
   content: z.string().min(20, "Məzmun ən azı 20 hərf olmalıdır."),
+  coverImageUrl: z.string().url().or(z.literal('')).optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -28,7 +30,8 @@ interface EditOrgUpdateFormProps {
 }
 
 export default function OrgUpdateEditForm({ initialData, onSuccess }: EditOrgUpdateFormProps) {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
   const firestore = useFirestore();
@@ -42,14 +45,40 @@ export default function OrgUpdateEditForm({ initialData, onSuccess }: EditOrgUpd
   const organizationId = ledOrgs?.[0]?.id;
 
   const isEditMode = !!initialData;
+  const coverImageInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: initialData?.title || '',
       content: initialData?.content || '',
+      coverImageUrl: initialData?.coverImageUrl || '',
     },
   });
+
+  const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('/api/upload/sekiller', { method: 'POST', body: formData });
+      const result = await response.json();
+      if (result.success) {
+        form.setValue('coverImageUrl', result.url, { shouldValidate: true, shouldDirty: true });
+        toast({ title: "Şəkil uğurla yükləndi." });
+      } else {
+        throw new Error(result.error || 'Şəkil yüklənərkən xəta baş verdi.');
+      }
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: "Yükləmə Xətası", description: err.message });
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const onSubmit: SubmitHandler<FormData> = async (values) => {
     if (!user || !organizationId || !firestore) {
@@ -57,7 +86,7 @@ export default function OrgUpdateEditForm({ initialData, onSuccess }: EditOrgUpd
       return;
     }
     
-    setIsLoading(true);
+    setIsSaving(true);
 
     try {
       const updatesCollectionRef = collection(firestore, `telebe-teskilatlari/${organizationId}/updates`);
@@ -93,7 +122,7 @@ export default function OrgUpdateEditForm({ initialData, onSuccess }: EditOrgUpd
       });
     }
 
-    setIsLoading(false);
+    setIsSaving(false);
   };
 
   return (
@@ -122,10 +151,36 @@ export default function OrgUpdateEditForm({ initialData, onSuccess }: EditOrgUpd
             />
             <FormField
               control={form.control}
+              name="coverImageUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Örtük Şəkli (Könüllü)</FormLabel>
+                  <div className="flex items-center gap-2">
+                    <FormControl>
+                      <Input placeholder="https://example.com/image.jpg" {...field} />
+                    </FormControl>
+                     <Button type="button" onClick={() => coverImageInputRef.current?.click()} disabled={isUploading}>
+                        <Upload className="mr-2 h-4 w-4" />
+                        {isUploading ? 'Yüklənir...' : 'Yüklə'}
+                    </Button>
+                    <Input 
+                        ref={coverImageInputRef}
+                        type="file" 
+                        className="hidden" 
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                    />
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
               name="content"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Məzmun</FormLabel>
+                  <FormLabel>Məzmun (HTML dəstəklənir)</FormLabel>
                   <FormControl>
                     <Textarea placeholder="Yeniliyin tam məzmununu buraya daxil edin..." {...field} rows={10} />
                   </FormControl>
@@ -137,8 +192,8 @@ export default function OrgUpdateEditForm({ initialData, onSuccess }: EditOrgUpd
                 <Button variant="outline" type="button" onClick={() => router.back()}>
                     Ləğv et
                 </Button>
-                <Button type="submit" disabled={isLoading}>
-                    {isLoading ? 'Yadda saxlanılır...' : (isEditMode ? 'Yenilə' : 'Yarat')}
+                <Button type="submit" disabled={isSaving || isUploading}>
+                    {isSaving ? 'Yadda saxlanılır...' : (isEditMode ? 'Yenilə' : 'Yarat')}
                 </Button>
             </div>
           </form>
