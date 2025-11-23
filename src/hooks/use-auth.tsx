@@ -39,38 +39,35 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const checkUserSession = async () => {
+      setLoading(true);
       try {
         const userId = localStorage.getItem('userId');
-        if (userId) {
-            if (userId === adminUserObject.id) {
-                setUser(adminUserObject);
-            } else if (firestore) {
-                const userDocRef = doc(firestore, 'users', userId);
-                const userSnap = await getDoc(userDocRef);
-                if (userSnap.exists()) {
-                    setUser(userSnap.data() as AppUser);
-                } else {
-                    localStorage.removeItem('userId');
-                }
-            }
+        if (userId === adminUserObject.id) {
+          setUser(adminUserObject);
+        } else if (userId && firestore) {
+          const userDocRef = doc(firestore, 'users', userId);
+          const userSnap = await getDoc(userDocRef);
+          if (userSnap.exists()) {
+            setUser(userSnap.data() as AppUser);
+          } else {
+            // Clear invalid user id from storage
+            localStorage.removeItem('userId');
+            setUser(null);
+          }
+        } else {
+            setUser(null);
         }
       } catch (e) {
         console.error("Failed to restore session", e);
+        setUser(null);
+        localStorage.removeItem('userId');
       } finally {
         setLoading(false);
       }
     };
-    if (firestore) {
-      checkUserSession();
-    } else if (!loading) {
-      // If firestore isn't ready, try to check for admin session at least
-      const userId = localStorage.getItem('userId');
-      if (userId === adminUserObject.id) {
-          setUser(adminUserObject);
-      }
-      setLoading(false);
-    }
-  }, [firestore, loading]);
+    
+    checkUserSession();
+  }, [firestore]); // Run only when firestore instance is available
 
 
   const login = async (email: string, pass: string): Promise<boolean> => {

@@ -98,10 +98,8 @@ export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormPro
       if (isEditMode && initialData) {
         // Update existing news
         const newsDocRef = doc(newsCollectionRef, initialData.id);
-        const newDocId = uuidv4();
         await updateDocumentNonBlocking(newsDocRef, {
           ...values,
-          id: newDocId,
           slug: generateSlug(values.title),
           updatedAt: serverTimestamp(),
         });
@@ -115,7 +113,7 @@ export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormPro
           id: newDocId,
           slug: generateSlug(values.title),
           authorId: user.id,
-          authorName: `${adminUser.firstName} ${adminUser.lastName}`,
+          authorName: (adminUser.firstName && adminUser.lastName) ? `${adminUser.firstName} ${adminUser.lastName}` : "Admin",
           createdAt: serverTimestamp(),
         };
         const newDocRef = doc(newsCollectionRef, newDocId);

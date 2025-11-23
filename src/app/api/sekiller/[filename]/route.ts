@@ -12,7 +12,7 @@ export async function GET(req: NextRequest, { params }: { params: { filename: st
     return NextResponse.json({ error: 'Giriş qadağandır' }, { status: 403 });
   }
 
-  const filePath = path.join(process.cwd(), 'uploads', 'sekiller', safeFilename);
+  const filePath = path.join(process.cwd(), 'public', 'uploads', 'sekiller', safeFilename);
 
   try {
     // Faylın mövcudluğunu yoxla

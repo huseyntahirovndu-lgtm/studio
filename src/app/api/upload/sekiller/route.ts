@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: 'Fayl tapılmadı' }, { status: 400 });
   }
 
-  const uploadDir = path.join(process.cwd(), 'uploads', 'sekiller');
+  const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'sekiller');
 
   // Əgər qovluq yoxdursa, yarat
   if (!fs.existsSync(uploadDir)) {
@@ -49,8 +49,7 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer());
     fs.writeFileSync(filePath, buffer);
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:9002' : 'https://istedadmerkezi.net');
-    const url = `${baseUrl}/api/sekiller/${newFilename}`;
+    const url = `/uploads/sekiller/${newFilename}`;
 
     return NextResponse.json({ success: true, url });
   } catch (error: any) {
