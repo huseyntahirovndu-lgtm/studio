@@ -58,11 +58,11 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     await new Promise(res => setTimeout(res, FAKE_AUTH_DELAY));
 
-    if (email === 'huseynimanov@ndu.edu.az' && pass === 'adminpassword') {
+    if (email === 'huseynimanov2009@ndu.edu.az' && pass === 'adminpassword') {
         const adminUser: AppUser = {
             id: 'admin_user',
             role: 'admin',
-            email: 'huseynimanov@ndu.edu.az',
+            email: 'huseynimanov2009@ndu.edu.az',
             firstName: 'Admin',
             lastName: 'User',
         };
@@ -162,21 +162,18 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateUser = (updatedData: Partial<AppUser>) => {
-    if (!user) return;
-    setUser(prevUser => {
-      if (!prevUser) return null;
-      const newUserData = { ...prevUser, ...updatedData } as AppUser;
-      
-      // Update in Firestore non-blockingly
-      if (firestore) {
+    if (!user) return false;
+    const newUserData = { ...user, ...updatedData };
+    setUser(newUserData);
+    
+    if (firestore) {
         const userDocRef = doc(firestore, 'users', newUserData.id);
-        setDoc(userDocRef, newUserData, { merge: true }).catch(err => {
+        setDoc(userDocRef, updatedData, { merge: true }).catch(err => {
             console.error("Failed to update user in Firestore:", err);
             // Optionally, revert local state or show an error toast
         });
-      }
-      return newUserData;
-    });
+    }
+    return true;
   };
 
   return (
