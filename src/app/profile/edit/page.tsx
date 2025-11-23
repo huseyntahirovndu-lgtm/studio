@@ -2,19 +2,19 @@
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, useCallback, useRef, Suspense, ChangeEvent } from 'react';
-import { useForm, SubmitHandler, useFieldArray } from 'react-hook-form';
+import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Student, Project, Achievement, Certificate, AchievementLevel, CertificateLevel, AppUser, Skill, SkillLevel } from '@/types';
+import { Student, Project, Achievement, Certificate, AchievementLevel, Skill, SkillLevel } from '@/types';
 import { calculateTalentScore } from '@/ai/flows/talent-scoring';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Trash2, PlusCircle, Award, Briefcase, FileText, User as UserIcon, X, Book, Youtube, PenLine, Link, Upload } from 'lucide-react';
+import { Trash2, PlusCircle, Award, Briefcase, FileText, User as UserIcon, X, Link, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -29,10 +29,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from '@/components/ui/badge';
 import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, doc, writeBatch, getDoc, getDocs, query, deleteField, setDoc } from 'firebase/firestore';
+import { collection, doc, writeBatch, getDocs, query, setDoc } from 'firebase/firestore';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import AvatarEditor from 'react-avatar-editor';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
@@ -43,7 +43,6 @@ const skillSchema = z.object({
     level: z.enum(['Başlanğıc', 'Orta', 'İrəli']),
 });
 
-// Schemas
 const profileSchema = z.object({
   firstName: z.string().min(2, "Ad ən azı 2 hərf olmalıdır."),
   lastName: z.string().min(2, "Soyad ən azı 2 hərf olmalıdır."),
@@ -101,7 +100,6 @@ function EditProfilePageComponent() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1.2);
-  const editorRef = useRef<AvatarEditor>(null);
   
   const userIdFromQuery = searchParams.get('userId');
   const userIdToFetch = currentUser?.role === 'admin' && userIdFromQuery ? userIdFromQuery : currentUser?.id;
@@ -124,6 +122,48 @@ function EditProfilePageComponent() {
   const profilePictureInputRef = useRef<HTMLInputElement>(null);
   const certificateFileInputRef = useRef<HTMLInputElement>(null);
 
+  const triggerTalentScoreUpdate = useCallback(async (userId: string) => {
+    setIsSaving(true);
+    toast({ title: "İstedad Balı Hesablanır...", description: "Profiliniz yenilənir, bu proses bir az vaxt ala bilər." });
+
+    try {
+        const allUsersSnapshot = await getDocs(query(collection(firestore, 'users')));
+        
+        const allStudentsContext = allUsersSnapshot.docs.map(doc => {
+            const data = doc.data() as Student;
+            return {
+                id: doc.id,
+                talentScore: data.talentScore || 0,
+                skills: data.skills || [],
+                gpa: data.gpa || 0,
+                courseYear: data.courseYear || 1,
+                projects: data.projectIds?.length || 0,
+                achievements: data.achievementIds?.length || 0,
+                certificates: data.certificateIds?.length || 0,
+            };
+        });
+
+        if (allStudentsContext.length === 0) {
+            throw new Error("No students found to compare against.");
+        }
+        
+        const scoreResult = await calculateTalentScore({
+            targetStudentId: userId,
+            allStudents: allStudentsContext as any,
+        });
+        
+        const targetUserDoc = doc(firestore, 'users', userId);
+        await updateDocumentNonBlocking(targetUserDoc, { talentScore: scoreResult.talentScore });
+
+        toast({ title: "Profil Yeniləndi!", description: `Yeni istedad balınız: ${scoreResult.talentScore}. Səbəb: ${scoreResult.reasoning}` });
+    } catch (error: any) {
+        console.error("Error updating talent score:", error);
+        toast({ variant: "destructive", title: "Xəta", description: `İstedad balını yeniləyərkən xəta baş verdi: ${error.message}` });
+    } finally {
+        setIsSaving(false);
+    }
+  }, [firestore, toast]);
+  
   useEffect(() => {
     if (!loading && !currentUser) {
       router.push('/login');
@@ -135,26 +175,11 @@ function EditProfilePageComponent() {
     resolver: zodResolver(profileSchema),
     mode: 'onChange',
     defaultValues: {
-        firstName: '',
-        lastName: '',
-        profilePictureUrl: '',
-        major: '',
-        courseYear: 1,
-        educationForm: '',
-        gpa: 0,
         skills: [],
-        successStory: '',
-        linkedInURL: '',
-        githubURL: '',
-        behanceURL: '',
-        instagramURL: '',
-        portfolioURL: '',
-        googleScholarURL: '',
-        youtubeURL: '',
     }
   });
   
-  const { control: profileControl, watch: watchProfile, setValue: setProfileValue, trigger: triggerProfile } = profileForm;
+  const { control: profileControl, watch: watchProfile, setValue: setProfileValue } = profileForm;
   const skills = watchProfile('skills', []);
   const profilePictureUrl = watchProfile('profilePictureUrl');
 
@@ -195,50 +220,6 @@ function EditProfilePageComponent() {
       });
     }
   }, [targetUser, profileForm]);
-
-  const triggerTalentScoreUpdate = useCallback(async (userId: string) => {
-    if (isSaving) return;
-    setIsSaving(true);
-    toast({ title: "İstedad Balı Hesablanır...", description: "Profiliniz yenilənir, bu proses bir az vaxt ala bilər." });
-
-    try {
-        const allUsersSnapshot = await getDocs(query(collection(firestore, 'users'), where('role', '==', 'student')));
-        
-        const allStudentsContext = allUsersSnapshot.docs.map(doc => {
-            const data = doc.data() as Student;
-            return {
-                id: doc.id,
-                talentScore: data.talentScore || 0,
-                skills: data.skills?.map(s => s.name) || [],
-                gpa: data.gpa || 0,
-                courseYear: data.courseYear || 1,
-                // We don't need full subcollections for context, just counts
-                projects: data.projectIds?.length || 0,
-                achievements: data.achievementIds?.length || 0,
-                certificates: data.certificateIds?.length || 0,
-            };
-        });
-
-        if (allStudentsContext.length === 0) {
-            throw new Error("No students found to compare against.");
-        }
-        
-        const scoreResult = await calculateTalentScore({
-            targetStudentId: userId,
-            allStudents: allStudentsContext as any, // Cast because we simplified the context
-        });
-        
-        const targetUserDoc = doc(firestore, 'users', userId);
-        await updateDocumentNonBlocking(targetUserDoc, { talentScore: scoreResult.talentScore });
-
-        toast({ title: "Profil Yeniləndi!", description: `Yeni istedad balınız: ${scoreResult.talentScore}. Səbəb: ${scoreResult.reasoning}` });
-    } catch (error: any) {
-        console.error("Error updating talent score:", error);
-        toast({ variant: "destructive", title: "Xəta", description: `İstedad balını yeniləyərkən xəta baş verdi: ${error.message}` });
-    } finally {
-        setIsSaving(false);
-    }
-  }, [firestore, toast, isSaving]);
   
   const handleFileUpload = async (file: File, type: 'sekil' | 'sened'): Promise<string | null> => {
     setIsUploading(true);
@@ -301,9 +282,13 @@ function EditProfilePageComponent() {
       
       const updateData: { [key: string]: any } = { ...data };
       if (updateData.gpa === '' || updateData.gpa === null || isNaN(Number(updateData.gpa))) {
-          updateData.gpa = 0; // Set to 0 if invalid
+          updateData.gpa = 0;
       } else {
           updateData.gpa = Number(updateData.gpa);
+      }
+      
+      if (!updateData.skills) {
+        updateData.skills = [];
       }
 
       setDoc(userDocRef, updateData, { merge: true });
@@ -350,7 +335,7 @@ function EditProfilePageComponent() {
         if (url) {
             finalCertificateURL = url;
         } else {
-            return; // Stop if upload fails
+            return;
         }
     }
 
@@ -411,7 +396,7 @@ function EditProfilePageComponent() {
 };
 
   const handleSkillRemove = (skillToRemove: string) => {
-    setProfileValue('skills', skills.filter(skill => skill.name !== skillToRemove));
+    setProfileValue('skills', (skills || []).filter(skill => skill.name !== skillToRemove));
   };
 
 
@@ -570,7 +555,7 @@ function EditProfilePageComponent() {
                         </div>
                         <FormMessage />
                         <div className="flex flex-wrap gap-2 pt-2">
-                            {skills.map((skill) => (
+                            {skills && skills.map((skill) => (
                                 <Badge key={skill.name} variant="secondary" className="flex items-center gap-2 text-sm">
                                     {skill.name} <span className="text-xs opacity-70">({skill.level})</span>
                                     <button type="button" onClick={() => handleSkillRemove(skill.name)} className="rounded-full hover:bg-muted-foreground/20 p-0.5">
@@ -791,18 +776,14 @@ function EditProfilePageComponent() {
                     <FormControl>
                          <Input type="file" ref={certificateFileInputRef} accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" disabled={isUploading} />
                     </FormControl>
-                    <FormDescription>
-                        Fayl yükləyə və ya aşağıya birbaşa link əlavə edə bilərsiniz.
-                    </FormDescription>
                     <FormMessage />
                 </FormItem>
-
                  <FormField name="level" control={certificateForm.control} render={({ field }) => (
                     <FormItem><FormLabel>Səviyyə</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                         <SelectContent>
-                              {(['Universitet', 'Regional', 'Respublika', 'Beynəlxalq'] as CertificateLevel[]).map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                              {(['Universitet', 'Regional', 'Respublika', 'Beynəlxalq'] as AchievementLevel[]).map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
                         </SelectContent>
                     </Select>
                     <FormMessage /></FormItem>

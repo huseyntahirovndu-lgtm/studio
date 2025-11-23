@@ -27,8 +27,8 @@ const adminUserObject: Admin = {
     id: 'admin_user',
     role: 'admin',
     email: 'huseynimanov@ndu.edu.az',
-    firstName: 'Admin',
-    lastName: 'User',
+    firstName: 'Hüseyn',
+    lastName: 'Tahirov',
 };
 
 export const SessionProvider = ({ children }: { children: ReactNode }) => {
@@ -40,34 +40,36 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const checkUserSession = async () => {
       setLoading(true);
-      try {
-        const userId = localStorage.getItem('userId');
-        if (userId === adminUserObject.id) {
-          setUser(adminUserObject);
-        } else if (userId && firestore) {
+      const userId = localStorage.getItem('userId');
+      
+      if (userId === adminUserObject.id) {
+        setUser(adminUserObject);
+      } else if (userId && firestore) {
+        try {
           const userDocRef = doc(firestore, 'users', userId);
           const userSnap = await getDoc(userDocRef);
           if (userSnap.exists()) {
             setUser(userSnap.data() as AppUser);
           } else {
-            // Clear invalid user id from storage
             localStorage.removeItem('userId');
             setUser(null);
           }
-        } else {
-            setUser(null);
+        } catch (e) {
+          console.error("Failed to restore session from Firestore", e);
+          localStorage.removeItem('userId');
+          setUser(null);
         }
-      } catch (e) {
-        console.error("Failed to restore session", e);
+      } else {
         setUser(null);
-        localStorage.removeItem('userId');
-      } finally {
-        setLoading(false);
       }
+      setLoading(false);
     };
     
-    checkUserSession();
-  }, [firestore]); // Run only when firestore instance is available
+    // Run only when firestore is available to prevent race conditions
+    if(firestore) {
+      checkUserSession();
+    }
+  }, [firestore]);
 
 
   const login = async (email: string, pass: string): Promise<boolean> => {
@@ -98,14 +100,13 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       const userDoc = querySnapshot.docs[0];
       const userData = userDoc.data() as AppUser;
       
-      // In a real app, you would compare a hashed password. 
-      // For this prototype, we are simplifying by not checking the password.
       if (userData) {
         setUser(userData);
         localStorage.setItem('userId', userData.id);
         
         if (userData.role === 'student') router.push('/student-dashboard');
         else if (userData.role === 'organization') router.push('/organization-dashboard');
+        else if (userData.role === 'admin') router.push('/admin/dashboard');
         else router.push('/');
 
         setLoading(false);
@@ -179,7 +180,6 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
         const userDocRef = doc(firestore, 'users', newUserData.id);
         setDoc(userDocRef, updatedData, { merge: true }).catch(err => {
             console.error("Failed to update user in Firestore:", err);
-            // Optionally, revert local state or show an error toast
         });
     }
     return true;

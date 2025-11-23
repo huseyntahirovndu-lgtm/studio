@@ -1,10 +1,9 @@
 'use client';
 
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { BarChart, Home, Package, Settings, ShieldCheck, ShoppingCart, Users2, ListTree, Building, Library, Newspaper, School } from "lucide-react"
 
-import { useAuth } from "@/hooks/use-auth"
 import { cn } from "@/lib/utils"
 import {
   Tooltip,
@@ -12,11 +11,9 @@ import {
   TooltipTrigger,
   TooltipProvider
 } from "@/components/ui/tooltip"
-import { useEffect } from "react";
-import type { Admin } from "@/types";
 
 const NAV_LINKS = [
-    { href: "/admin/dashboard", icon: Home, label: "Dashboard", exact: true },
+    { href: "/admin/dashboard", icon: Home, label: "Panel", exact: true },
     { href: "/admin/students", icon: Users2, label: "Tələbələr" },
     { href: "/admin/organizations", icon: Building, label: "Təşkilatlar" },
     { href: "/admin/telebe-teskilatlari", icon: Library, label: "Tələbə Təşkilatları" },
@@ -32,19 +29,6 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname();
-  const { user, loading } = useAuth();
-  const router = useRouter();
-
-  // useEffect(() => {
-  //   if (!loading && (!user || (user as Admin)?.role !== 'admin')) {
-  //       router.push('/login');
-  //   }
-  // }, [user, loading, router]);
-
-
-  // if (loading || !user || (user as Admin).role !== 'admin') {
-  //     return <div className="flex h-screen items-center justify-center">Yüklənir...</div>;
-  // }
   
   const isActive = (href: string, exact?: boolean) => {
     return exact ? pathname === href : pathname.startsWith(href);

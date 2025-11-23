@@ -5,20 +5,19 @@ import path from 'path';
 export const config = {
   api: {
     bodyParser: {
-      sizeLimit: '50mb', // Limiti 50MB-a qaldır
+      sizeLimit: '50mb',
     },
   },
 };
 
-// Fayl adını təhlükəsiz formata salmaq üçün funksiya
 const slugify = (text: string) => {
   return text
     .toString()
     .toLowerCase()
     .trim()
-    .replace(/\s+/g, '-')           // Boşluqları defislə əvəz et
-    .replace(/[^\w\-]+/g, '')       // Bütün qeyri-söz simvollarını sil
-    .replace(/\-\-+/g, '-');        // Çoxlu defisləri tək defislə əvəz et
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '-');
 };
 
 export async function POST(req: NextRequest) {
@@ -31,12 +30,10 @@ export async function POST(req: NextRequest) {
 
   const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'senedler');
 
-  // Əgər qovluq yoxdursa, yarat
   if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
   }
 
-  // Yeni, unikal fayl adı yarat
   const originalName = file.name || 'fayl';
   const safeName = slugify(path.parse(originalName).name);
   const timestamp = Date.now();
@@ -45,7 +42,6 @@ export async function POST(req: NextRequest) {
   const filePath = path.join(uploadDir, newFilename);
 
   try {
-    // Faylı buffer-ə çevir və yadda saxla
     const buffer = Buffer.from(await file.arrayBuffer());
     fs.writeFileSync(filePath, buffer);
     

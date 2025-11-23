@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useAuth, useFirestore } from '@/firebase';
-import { collection, doc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
+import { useAuth, useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import type { News, Admin } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
@@ -86,19 +86,18 @@ export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormPro
   const onSubmit: SubmitHandler<FormData> = async (values) => {
     setIsSaving(true);
     
-    if (!firestore) {
-      toast({ variant: 'destructive', title: 'Xəta', description: 'Verilənlər bazası tapılmadı.' });
+    if (!firestore || !user) {
+      toast({ variant: 'destructive', title: 'Xəta', description: 'Giriş edilməyib və ya verilənlər bazası tapılmadı.' });
       setIsSaving(false);
       return;
     }
 
     try {
-      const newsCollectionRef = collection(firestore, 'news');
       const adminUser = user as Admin;
 
       if (isEditMode && initialData) {
-        const newsDocRef = doc(newsCollectionRef, initialData.id);
-        await updateDoc(newsDocRef, {
+        const newsDocRef = doc(firestore, 'news', initialData.id);
+        updateDocumentNonBlocking(newsDocRef, {
           ...values,
           slug: generateSlug(values.title),
           updatedAt: serverTimestamp(),
@@ -107,17 +106,19 @@ export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormPro
         onSuccess(initialData.id);
       } else {
         const newDocId = uuidv4();
-        const newNewsData = {
-          ...values,
-          id: newDocId,
-          slug: generateSlug(values.title),
-          authorId: user?.id || 'admin_user',
-          authorName: (adminUser?.firstName && adminUser?.lastName) ? `${adminUser.firstName} ${adminUser.lastName}` : "Admin",
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
+        const newDocRef = doc(firestore, 'news', newDocId);
+        const newNewsData: News = {
+            id: newDocId,
+            title: values.title,
+            content: values.content,
+            coverImageUrl: values.coverImageUrl,
+            slug: generateSlug(values.title),
+            authorId: user.id,
+            authorName: (adminUser?.firstName && adminUser?.lastName) ? `${adminUser.firstName} ${adminUser.lastName}` : "Admin",
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
         };
-        const newDocRef = doc(newsCollectionRef, newDocId);
-        await setDoc(newDocRef, newNewsData);
+        setDocumentNonBlocking(newDocRef, newNewsData);
         toast({ title: 'Uğurlu', description: 'Xəbər uğurla yaradıldı.' });
         onSuccess(newDocId);
       }
@@ -190,7 +191,7 @@ export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormPro
                 <FormItem>
                   <FormLabel>Məzmun</FormLabel>
                   <FormControl>
-                     <Textarea {...field} rows={10} />
+                     <Textarea {...field} rows={10} placeholder="Xəbərin tam mətni..."/>
                   </FormControl>
                    <div className="text-sm text-muted-foreground">
                     Mətni formatlamaq üçün sadə HTML teqlərindən istifadə edə bilərsiniz (məs: `<b>qalin</b>`, `<h2>başlıq</h2>`, `<ul><li>siyahı</li></ul>`).

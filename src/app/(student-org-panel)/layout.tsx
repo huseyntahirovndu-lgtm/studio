@@ -14,6 +14,13 @@ import {
 import { useEffect, createContext, useContext } from "react";
 import type { StudentOrganization } from "@/types";
 import { collection, query, where, limit } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
+
+const NAV_LINKS = [
+    { href: "/telebe-teskilati-paneli/dashboard", icon: Home, label: "Panel", exact: true },
+    { href: "/telebe-teskilati-paneli/members", icon: Users, label: "Üzvlər" },
+    { href: "/telebe-teskilati-paneli/updates", icon: Newspaper, label: "Yeniliklər" },
+];
 
 interface OrgContextType {
     organization: StudentOrganization | null;
@@ -39,6 +46,7 @@ export default function StudentOrganizationLayout({
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const firestore = useFirestore();
+  const { toast } = useToast();
 
   const ledOrgQuery = useMemoFirebase(() => 
     user ? query(collection(firestore, 'telebe-teskilatlari'), where('leaderId', '==', user.id), where('status', '==', 'təsdiqlənmiş'), limit(1)) : null,
@@ -52,10 +60,10 @@ export default function StudentOrganizationLayout({
 
   useEffect(() => {
     if (!isLoading && !isOrgLeader) {
-        toast({ title: "Səlahiyyət Xətası", description: "Bu səhifəyə yalnız təşkilat rəhbərləri daxil ola bilər.", variant: "destructive"});
+        toast({ title: "Səlahiyyət Xətası", description: "Bu səhifəyə yalnız təsdiqlənmiş təşkilat rəhbərləri daxil ola bilər.", variant: "destructive"});
         router.push('/');
     }
-  }, [isLoading, isOrgLeader, router]);
+  }, [isLoading, isOrgLeader, router, toast]);
 
   if (isLoading || !isOrgLeader) {
       return <div className="flex h-screen items-center justify-center">Yüklənir və ya səlahiyyət yoxlanılır...</div>;
@@ -66,7 +74,7 @@ export default function StudentOrganizationLayout({
   }
 
   return (
-    <StudentOrgContext.Provider value={{ organization, isLoading }}>
+    <StudentOrgContext.Provider value={{ organization, isLoading: orgsLoading }}>
         <div className="flex min-h-screen w-full flex-col bg-muted/40">
         <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
             <TooltipProvider>

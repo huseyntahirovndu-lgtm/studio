@@ -13,19 +13,16 @@ import { StatCard } from '@/components/stat-card';
 import { StudentCard } from '@/components/student-card';
 import { CategoryPieChart } from '@/components/charts/category-pie-chart';
 import { FacultyBarChart } from '@/components/charts/faculty-bar-chart';
-import { Student, Project, Organization, FacultyData, CategoryData, Achievement, News, StudentOrganization, StudentOrgUpdate } from '@/types';
+import { Student, Project, Organization, CategoryData, Achievement, News, StudentOrganization, StudentOrgUpdate } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { useEffect, useState, useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAuth } from '@/hooks/use-auth';
-import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, getDocs, orderBy, limit, writeBatch, doc, documentId } from 'firebase/firestore';
+import { collection, query, where, orderBy, limit, doc, getDocs, documentId } from 'firebase/firestore';
 import { selectTopStories } from '@/ai/flows/story-selector';
 import { format } from 'date-fns';
-
 
 interface EnrichedProject extends Project {
     student?: Student;
@@ -135,7 +132,6 @@ export default function HomePage() {
         
         if (storiesToConsider.length === 0) return;
 
-        // If there are 2 or fewer stories, just use them without calling AI
         if (storiesToConsider.length <= 2) {
             setSuccessStories(storiesToConsider.map(s => ({
                 studentId: s.id,
@@ -152,7 +148,6 @@ export default function HomePage() {
             setSuccessStories(result.selectedStories.map(s => ({...s, profilePictureUrl: storiesToConsider.find(stc => stc.id === s.studentId)?.profilePictureUrl})));
         } catch (error) {
             console.error("AI story selection failed, using fallback:", error);
-            // Fallback to the first two stories
             setSuccessStories(storiesToConsider.slice(0, 2).map(s => ({
                  studentId: s.id,
                  name: `${s.firstName} ${s.lastName}`,
@@ -197,10 +192,15 @@ export default function HomePage() {
               priority
               data-ai-hint="university campus students"
             />
-            
-            <div className="relative h-full flex items-center pt-32">
-              <div className="container mx-auto">
-                <div className="max-w-3xl">
+            <div className="relative z-10 h-full flex items-center bg-black/50">
+              <div className="container mx-auto px-4">
+                <div className="max-w-3xl text-white">
+                  <h1 className="text-4xl md:text-6xl font-extrabold !leading-tight tracking-tight">
+                    Naxçıvan Dövlət Universiteti <span className="text-primary">İstedad Mərkəzi</span>
+                  </h1>
+                  <p className="mt-6 text-lg md:text-xl text-white/80">
+                    Potensialı reallığa çevirən platforma. Universitetimizin parlaq tələbələrini kəşf edin, layihələrini izləyin və onlarla əlaqə qurun.
+                  </p>
                 </div>
               </div>
             </div>
