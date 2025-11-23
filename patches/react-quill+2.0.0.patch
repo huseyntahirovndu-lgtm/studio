@@ -1,0 +1,39 @@
+diff --git a/node_modules/react-quill/lib/index.js b/node_modules/react-quill/lib/index.js
+index 733806a..a3ff30e 100644
+--- a/node_modules/react-quill/lib/index.js
++++ b/node_modules/react-quill/lib/index.js
+@@ -481,7 +481,7 @@
+ 	},
+ 
+ 	getEditingArea: function() {
+-		return ReactDOM.findDOMNode(this).querySelector('.ql-editor');
++		return this.editingArea;
+ 	},
+ 
+ 	getEditor: function() {
+diff --git a/node_modules/react-quill/lib/component.js b/node_modules/react-quill/lib/component.js
+index 9e907a7..774c86d 100644
+--- a/node_modules/react-quill/lib/component.js
++++ b/node_modules/react-quill/lib/component.js
+@@ -375,6 +375,7 @@
+ 			'ql-container',
+ 			this.props.theme,
+ 			!this.state.readOnly && 'ql-snow',
++			this.props.className,
+ 		);
+ 		var editorClasses = classNames(
+ 			'ql-editor',
+@@ -382,10 +383,12 @@
+ 			this.props.className
+ 		);
+ 		return DOM.div({
+-			className: containerClasses,
++			ref: (el) => { this.editingArea = el },
++			className: editorClasses,
+ 			onKeyPress: this.props.onKeyPress,
+ 			onKeyDown: this.props.onKeyDown,
+ 			onKeyUp: this.props.onKeyUp,
++			dangerouslySetInnerHTML: { __html:this.getEditorContents() }
+ 		},
+ 			this.getEditor()
+ 		);
