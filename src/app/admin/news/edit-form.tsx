@@ -188,9 +188,9 @@ export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormPro
                   <FormControl>
                      <Textarea {...field} rows={10} />
                   </FormControl>
-                  <FormDescription>
+                   <div className="text-sm text-muted-foreground">
                     Mətni formatlamaq üçün sadə HTML teqlərindən istifadə edə bilərsiniz (məs: `<b>qalin</b>`, `<h2>başlıq</h2>`, `<ul><li>siyahı</li></ul>`).
-                  </FormDescription>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
