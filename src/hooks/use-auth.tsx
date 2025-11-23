@@ -4,7 +4,7 @@ import React, { createContext, useContext, ReactNode, useEffect, useState } from
 import { useRouter } from 'next/navigation';
 import { collection, query, where, getDocs, doc, setDoc, getDoc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
-import type { AppUser, Student, Organization } from '@/types';
+import type { AppUser, Student, Organization, Admin } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 
 interface AuthContextType {
@@ -38,7 +38,17 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
           const userSnap = await getDoc(userDocRef);
           if (userSnap.exists()) {
             setUser(userSnap.data() as AppUser);
-          } else {
+          } else if (userId === 'admin_user') {
+             const adminUser: Admin = {
+                id: 'admin_user',
+                role: 'admin',
+                email: 'huseynimanov@ndu.edu.az',
+                firstName: 'Admin',
+                lastName: 'User',
+            };
+            setUser(adminUser);
+          }
+           else {
             localStorage.removeItem('userId');
           }
         }
@@ -59,7 +69,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     await new Promise(res => setTimeout(res, FAKE_AUTH_DELAY));
 
     if (email === 'huseynimanov@ndu.edu.az' && pass === 'huseynimanov2009@thikndu') {
-        const adminUser: AppUser = {
+        const adminUser: Admin = {
             id: 'admin_user',
             role: 'admin',
             email: 'huseynimanov@ndu.edu.az',
