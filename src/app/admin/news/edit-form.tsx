@@ -17,7 +17,6 @@ import { Upload } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
 const RichTextEditor = dynamic(() => import('@/components/ui/rich-text-editor'), { ssr: false });
-import 'react-quill/dist/quill.snow.css';
 
 
 const formSchema = z.object({

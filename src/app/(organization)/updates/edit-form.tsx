@@ -104,16 +104,13 @@ export default function OrgUpdateEditForm({ initialData, onSuccess }: EditOrgUpd
         onSuccess(initialData.id);
       } else {
         // Create new update
-        const newUpdateData = {
+        const newDocRef = await addDoc(updatesCollectionRef, {
           ...values,
           organizationId: organizationId,
           createdAt: serverTimestamp(),
-        };
-        const newDocRef = await addDoc(updatesCollectionRef, newUpdateData);
+        });
         toast({ title: 'Uğurlu', description: 'Yenilik uğurla yaradıldı.' });
-        if (newDocRef) {
-          onSuccess(newDocRef.id);
-        }
+        onSuccess(newDocRef.id);
       }
     } catch (error: any) {
       console.error("Yenilik yaradılarkən/yenilənərkən xəta:", error);
