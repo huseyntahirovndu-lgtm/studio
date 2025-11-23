@@ -201,14 +201,6 @@ export default function HomePage() {
             <div className="relative h-full flex items-center pt-32">
               <div className="container mx-auto">
                 <div className="max-w-3xl">
-                  <div className="mt-8 flex flex-col sm:flex-row gap-4">
-                      <Button asChild size="lg">
-                          <Link href="/search">İstedadları Kəşf Et <ArrowRight className="ml-2" /></Link>
-                      </Button>
-                      <Button asChild size="lg" variant="secondary">
-                          <Link href="/register-student">Platformaya Qoşul</Link>
-                      </Button>
-                  </div>
                 </div>
               </div>
             </div>
