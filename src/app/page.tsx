@@ -261,7 +261,7 @@ export default function HomePage() {
               priority
               data-ai-hint="university campus students"
             />
-            <div className="absolute inset-0 bg-black/50" />
+            
             <div className="relative h-full flex items-center">
               <div className="container mx-auto">
                 <div className="max-w-3xl text-white">
