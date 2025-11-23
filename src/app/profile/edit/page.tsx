@@ -83,7 +83,7 @@ const achievementSchema = z.object({
 
 const certificateSchema = z.object({
     name: z.string().min(3, "Sertifikat adı boş ola bilməz."),
-    certificateURL: z.string().url({ message: "Etibarlı bir link daxil edin." }).min(1, "Link boş ola bilməz."),
+    certificateURL: z.string().url({ message: "Etibarlı bir link daxil edin." }).optional().or(z.literal('')),
     level: z.enum(['Beynəlxalq', 'Respublika', 'Regional', 'Universitet']),
 });
 
@@ -292,7 +292,7 @@ function EditProfilePageComponent() {
           const url = await handleFileUpload(file, 'sekil');
           if (url) {
             setProfileValue('profilePictureUrl', url, { shouldValidate: true, shouldDirty: true });
-            if (currentUser) {
+            if (currentUser && userDocRef && currentUser.id === userDocRef.id) {
               updateUser({ ...currentUser, profilePictureUrl: url });
             }
             setEditorOpen(false);
@@ -349,23 +349,29 @@ function EditProfilePageComponent() {
  const onCertificateSubmit: SubmitHandler<z.infer<typeof certificateSchema>> = async (data) => {
     if (!targetUser || !firestore) return;
 
+    let finalCertificateURL = data.certificateURL;
     const fileInput = certificateFileInputRef.current;
+    
     if (fileInput && fileInput.files && fileInput.files[0]) {
         const url = await handleFileUpload(fileInput.files[0], 'sened');
         if (url) {
-            data.certificateURL = url;
+            finalCertificateURL = url;
         } else {
             return; // Stop if upload fails
         }
-    } else if (!data.certificateURL) {
-        toast({ variant: 'destructive', title: "Xəta", description: "Sertifikat faylı və ya linki mütləqdir."});
+    }
+
+    if (!finalCertificateURL) {
+        toast({ variant: 'destructive', title: "Xəta", description: "Sertifikat üçün fayl yükləməli və ya link daxil etməlisiniz."});
         return;
     }
 
     const certificateCollectionRef = collection(firestore, `users/${targetUser.id}/certificates`);
-    addDocumentNonBlocking(certificateCollectionRef, { ...data, studentId: targetUser.id });
+    addDocumentNonBlocking(certificateCollectionRef, { ...data, certificateURL: finalCertificateURL, studentId: targetUser.id });
+    
     certificateForm.reset();
     if(fileInput) fileInput.value = '';
+    
     triggerTalentScoreUpdate(targetUser.id);
     toast({ title: "Sertifikat əlavə edildi" });
   };
