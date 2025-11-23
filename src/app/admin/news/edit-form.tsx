@@ -10,7 +10,7 @@ import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import type { News } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
@@ -184,7 +184,10 @@ export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormPro
               name="content"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Məzmun (HTML dəstəklənir)</FormLabel>
+                  <FormLabel>Məzmun</FormLabel>
+                   <FormDescription>
+                    Mətni formatlamaq üçün sadə HTML teqlərindən istifadə edə bilərsiniz: `<b>qalın</b>`, `<h2>başlıq</h2>`, `<ul><li>siyahı</li></ul>`.
+                  </FormDescription>
                   <FormControl>
                     <Textarea placeholder="<b>Qalın mətn</b> və ya <h2>Başlıq</h2> kimi HTML teqlərindən istifadə edə bilərsiniz..." {...field} rows={15} />
                   </FormControl>

@@ -10,7 +10,7 @@ import { collection, doc, serverTimestamp, query, where, limit, addDoc, updateDo
 import type { StudentOrgUpdate, StudentOrganization } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
@@ -180,7 +180,10 @@ export default function OrgUpdateEditForm({ initialData, onSuccess }: EditOrgUpd
               name="content"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Məzmun (HTML dəstəklənir)</FormLabel>
+                  <FormLabel>Məzmun</FormLabel>
+                  <FormDescription>
+                    Mətni formatlamaq üçün sadə HTML teqlərindən istifadə edə bilərsiniz: `<b>qalın</b>`, `<h2>başlıq</h2>`, `<ul><li>siyahı</li></ul>`.
+                  </FormDescription>
                   <FormControl>
                     <Textarea placeholder="Yeniliyin tam məzmununu buraya daxil edin..." {...field} rows={10} />
                   </FormControl>
