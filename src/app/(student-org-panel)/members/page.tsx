@@ -1,9 +1,8 @@
 'use client';
-import { useAuth, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { StudentOrganization, Student } from '@/types';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { collection, doc, query, where, documentId, updateDoc } from 'firebase/firestore';
+import { collection, doc, query, where, documentId } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -23,22 +22,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
+import { useStudentOrg } from '../layout';
 
 export default function OrganizationMembersPage() {
-  const { user, loading } = useAuth();
-  const router = useRouter();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { organization, isLoading: orgLoading } = useStudentOrg();
 
   const [selectedStudentId, setSelectedStudentId] = useState('');
   const [isAddingMember, setIsAddingMember] = useState(false);
-
-  const ledOrgQuery = useMemoFirebase(
-    () => (user ? query(collection(firestore, 'telebe-teskilatlari'), where('leaderId', '==', user.id), where('status', '==', 'təsdiqlənmiş')) : null),
-    [firestore, user]
-  );
-  const { data: ledOrgs, isLoading: ledOrgsLoading } = useCollection<StudentOrganization>(ledOrgQuery);
-  const organization = ledOrgs?.[0];
 
   const membersQuery = useMemoFirebase(
     () => (organization?.memberIds && organization.memberIds.length > 0 ? query(collection(firestore, 'users'), where(documentId(), 'in', organization.memberIds)) : null),
@@ -61,7 +53,7 @@ export default function OrganizationMembersPage() {
     const orgDocRef = doc(firestore, 'telebe-teskilatlari', organization.id);
     const newMemberIds = [...(organization.memberIds || []), selectedStudentId];
 
-    await updateDoc(orgDocRef, { memberIds: newMemberIds });
+    await updateDocumentNonBlocking(orgDocRef, { memberIds: newMemberIds });
     toast({ title: 'Uğurlu', description: 'Təşkilata yeni üzv əlavə edildi.' });
     setSelectedStudentId('');
     setIsAddingMember(false);
@@ -72,11 +64,11 @@ export default function OrganizationMembersPage() {
     const orgDocRef = doc(firestore, 'telebe-teskilatlari', organization.id);
     const newMemberIds = organization.memberIds.filter(id => id !== memberId);
     
-    await updateDoc(orgDocRef, { memberIds: newMemberIds });
+    await updateDocumentNonBlocking(orgDocRef, { memberIds: newMemberIds });
     toast({ title: 'Uğurlu', description: 'Üzv təşkilatdan çıxarıldı.' });
   }
 
-  if (loading || ledOrgsLoading) {
+  if (orgLoading) {
     return <div className="flex h-screen items-center justify-center">Yüklənir...</div>;
   }
   

@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useAuth, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, doc, serverTimestamp, updateDoc, addDoc, query, where, limit, setDoc } from 'firebase/firestore';
-import type { StudentOrgUpdate, StudentOrganization } from '@/types';
+import { useFirestore, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
+import type { StudentOrgUpdate } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -16,6 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Upload } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+import { useStudentOrg } from '../layout';
 
 const formSchema = z.object({
   title: z.string().min(5, "Başlıq ən azı 5 hərf olmalıdır."),
@@ -36,17 +37,10 @@ export default function OrgUpdateEditForm({ initialData, onSuccess }: EditOrgUpd
   const router = useRouter();
   const { toast } = useToast();
   const firestore = useFirestore();
-  const { user } = useAuth();
+  const { organization } = useStudentOrg();
   
   const isEditMode = !!initialData;
   const coverImageInputRef = useRef<HTMLInputElement>(null);
-
-  const ledOrgQuery = useMemoFirebase(() => 
-    user && firestore ? query(collection(firestore, 'telebe-teskilatlari'), where('leaderId', '==', user.id), limit(1)) : null,
-    [firestore, user]
-  );
-  const { data: ledOrgs } = useCollection<StudentOrganization>(ledOrgQuery);
-  const organization = ledOrgs?.[0];
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -91,38 +85,39 @@ export default function OrgUpdateEditForm({ initialData, onSuccess }: EditOrgUpd
     setIsSaving(true);
 
     try {
-      const updatesCollectionRef = collection(firestore, `telebe-teskilatlari/${organization.id}/updates`);
-      const topLevelUpdatesCollectionRef = collection(firestore, 'student-org-updates');
+      const batch = writeBatch(firestore);
 
       if (isEditMode && initialData) {
-        const updateDocRef = doc(updatesCollectionRef, initialData.id);
-        const topLevelUpdateDocRef = doc(topLevelUpdatesCollectionRef, initialData.id);
-
         const updateData = {
           ...values,
           updatedAt: serverTimestamp(),
         };
+        const subCollectionDocRef = doc(firestore, `telebe-teskilatlari/${organization.id}/updates`, initialData.id);
+        const topLevelDocRef = doc(firestore, 'student-org-updates', initialData.id);
+        
+        batch.update(subCollectionDocRef, updateData);
+        batch.update(topLevelDocRef, updateData);
 
-        await updateDoc(updateDocRef, updateData);
-        await updateDoc(topLevelUpdateDocRef, updateData);
-
+        await batch.commit();
         toast({ title: 'Uğurlu', description: 'Yenilik uğurla yeniləndi.' });
         onSuccess(initialData.id);
+
       } else {
         const newUpdateId = uuidv4();
         const newUpdateData = {
           ...values,
-          id: newUpdateId, // Ensure the same ID is used
+          id: newUpdateId,
           organizationId: organization.id,
           createdAt: serverTimestamp(),
         };
         
-        const newDocRef = doc(updatesCollectionRef, newUpdateId);
-        const newTopLevelDocRef = doc(topLevelUpdatesCollectionRef, newUpdateId);
+        const subCollectionDocRef = doc(firestore, `telebe-teskilatlari/${organization.id}/updates`, newUpdateId);
+        const topLevelDocRef = doc(firestore, 'student-org-updates', newUpdateId);
 
-        await setDoc(newDocRef, newUpdateData);
-        await setDoc(newTopLevelDocRef, newUpdateData);
+        batch.set(subCollectionDocRef, newUpdateData);
+        batch.set(topLevelDocRef, newUpdateData);
 
+        await batch.commit();
         toast({ title: 'Uğurlu', description: 'Yenilik uğurla yaradıldı.' });
         onSuccess(newUpdateId);
       }

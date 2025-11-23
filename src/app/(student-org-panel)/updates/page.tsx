@@ -38,36 +38,30 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import type { StudentOrgUpdate, StudentOrganization } from "@/types";
+import type { StudentOrgUpdate } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth, useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, query, orderBy, doc, where, limit, writeBatch } from "firebase/firestore";
+import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { collection, query, orderBy, doc, writeBatch } from "firebase/firestore";
 import { format } from 'date-fns';
+import { useStudentOrg } from "../layout";
 
 export default function OrgUpdatesPage() {
     const { toast } = useToast();
-    const { user } = useAuth();
     const firestore = useFirestore();
-
-    const ledOrgQuery = useMemoFirebase(() => 
-        user ? query(collection(firestore, 'telebe-teskilatlari'), where('leaderId', '==', user.id), limit(1)) : null,
-        [firestore, user]
-    );
-    const { data: ledOrgs } = useCollection<StudentOrganization>(ledOrgQuery);
-    const organizationId = ledOrgs?.[0]?.id;
+    const { organization } = useStudentOrg();
 
     const updatesQuery = useMemoFirebase(() => 
-        organizationId ? query(collection(firestore, `telebe-teskilatlari/${organizationId}/updates`), orderBy("createdAt", "desc")) : null, 
-        [firestore, organizationId]
+        organization ? query(collection(firestore, `telebe-teskilatlari/${organization.id}/updates`), orderBy("createdAt", "desc")) : null, 
+        [firestore, organization]
     );
     const { data: updates, isLoading } = useCollection<StudentOrgUpdate>(updatesQuery);
 
     const handleDelete = async (updateId: string) => {
-        if (!organizationId || !firestore) return;
+        if (!organization || !firestore) return;
 
         const batch = writeBatch(firestore);
 
-        const subCollectionDocRef = doc(firestore, `telebe-teskilatlari/${organizationId}/updates`, updateId);
+        const subCollectionDocRef = doc(firestore, `telebe-teskilatlari/${organization.id}/updates`, updateId);
         const topLevelDocRef = doc(firestore, 'student-org-updates', updateId);
 
         batch.delete(subCollectionDocRef);
@@ -77,7 +71,7 @@ export default function OrgUpdatesPage() {
             await batch.commit();
             toast({ title: "Yenilik uğurla silindi." });
         } catch (error) {
-            console.error("Failed to delete update:", error);
+            console.error("Yenilik silinərkən xəta:", error);
             toast({ variant: 'destructive', title: "Xəta", description: "Yenilik silinərkən xəta baş verdi." });
         }
     };

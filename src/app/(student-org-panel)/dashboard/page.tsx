@@ -1,13 +1,14 @@
 'use client';
-import { useAuth, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { StudentOrganization, Student } from '@/types';
-import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
 import { collection, query, where, documentId } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { useStudentOrg } from '../layout';
+import { toast } from '@/hooks/use-toast';
 
 const chartConfig = {
   members: {
@@ -17,16 +18,8 @@ const chartConfig = {
 };
 
 export default function OrganizationDashboardPage() {
-  const { user, loading } = useAuth();
-  const router = useRouter();
   const firestore = useFirestore();
-
-  const ledOrgQuery = useMemoFirebase(
-    () => (user ? query(collection(firestore, 'telebe-teskilatlari'), where('leaderId', '==', user.id), where('status', '==', 'təsdiqlənmiş')) : null),
-    [firestore, user]
-  );
-  const { data: ledOrgs, isLoading: ledOrgsLoading } = useCollection<StudentOrganization>(ledOrgQuery);
-  const organization = ledOrgs?.[0];
+  const { organization, isLoading: orgLoading } = useStudentOrg();
 
   const membersQuery = useMemoFirebase(
     () => (organization?.memberIds && organization.memberIds.length > 0 ? query(collection(firestore, 'users'), where(documentId(), 'in', organization.memberIds)) : null),
@@ -38,37 +31,35 @@ export default function OrganizationDashboardPage() {
     if (!members) return [];
     const monthlyData: { [key: string]: number } = {};
     const currentYear = new Date().getFullYear();
-    const monthOrder = ["Yan", "Fev", "Mar", "Apr", "İyn", "İyl", "Avq", "Sen", "Okt", "Noy", "Dek"];
+    const monthOrder = ["Yan", "Fev", "Mar", "Apr", "May", "İyn", "İyl", "Avq", "Sen", "Okt", "Noy", "Dek"];
     
-    // Initialize all months of the current year with 0
     monthOrder.forEach(month => {
         monthlyData[month] = 0;
     });
 
     members.forEach(member => {
-        // Ensure member and member.createdAt exist before proceeding.
         if (!member || !member.createdAt) {
             return; 
         }
 
         let memberDate: Date | null = null;
         try {
-            // Handle different timestamp formats
-            if (typeof member.createdAt.toDate === 'function') {
+            if (member.createdAt.toDate && typeof member.createdAt.toDate === 'function') {
                 memberDate = member.createdAt.toDate();
             } else if (typeof member.createdAt === 'string' || typeof member.createdAt === 'number') {
                 memberDate = new Date(member.createdAt);
+                 if (isNaN(memberDate.getTime())) {
+                    memberDate = null;
+                }
             } else if (member.createdAt instanceof Date) {
                 memberDate = member.createdAt;
             }
         } catch(e) {
-            console.error("Could not parse date for member:", member.id, e);
+            console.error("Tarix formatı ilə bağlı problem:", member.id, member.createdAt, e);
             return;
         }
 
-
-        // Check if a valid date was created and if it's in the current year
-        if (memberDate instanceof Date && !isNaN(memberDate.getTime()) && memberDate.getFullYear() === currentYear) {
+        if (memberDate && memberDate.getFullYear() === currentYear) {
             const monthIndex = memberDate.getMonth();
             const monthName = monthOrder[monthIndex];
             if (monthName) {
@@ -77,12 +68,12 @@ export default function OrganizationDashboardPage() {
         }
     });
 
-    return monthOrder.map(month => ({ month, members: monthlyData[month] }));
+    return monthOrder.map(month => ({ month, members: monthlyData[month] || 0 }));
 
   }, [members]);
 
 
-  if (loading || ledOrgsLoading) {
+  if (orgLoading || membersLoading) {
     return <div className="flex h-screen items-center justify-center">Yüklənir...</div>;
   }
   
@@ -110,7 +101,7 @@ export default function OrganizationDashboardPage() {
                     <p className="text-sm text-muted-foreground">Üzv Sayı</p>
                 </div>
                  <div className="p-4 rounded-lg bg-muted col-span-1 md:col-span-2">
-                     <p className="text-lg font-bold mb-2">Aylara görə yeni üzvlər</p>
+                     <p className="text-lg font-bold mb-2">Aylara görə yeni üzvlər ({new Date().getFullYear()})</p>
                     <ChartContainer config={chartConfig} className="min-h-[100px] w-full">
                         <BarChart accessibilityLayer data={memberJoinData}>
                           <CartesianGrid vertical={false} />

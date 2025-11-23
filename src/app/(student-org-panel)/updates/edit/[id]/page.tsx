@@ -1,34 +1,29 @@
 'use client';
 import { useParams, useRouter } from 'next/navigation';
-import { useDoc, useFirestore, useAuth, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, where, limit } from 'firebase/firestore';
-import { StudentOrgUpdate, StudentOrganization } from '@/types';
+import { useDoc, useFirestore } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { StudentOrgUpdate } from '@/types';
 import OrgUpdateEditForm from '../../edit-form';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useStudentOrg } from '../../../layout';
+import { useMemoFirebase } from '@/firebase/provider';
 
 export default function EditOrgUpdatePage() {
   const { id } = useParams();
   const router = useRouter();
   const firestore = useFirestore();
-  const { user } = useAuth();
+  const { organization, isLoading: orgLoading } = useStudentOrg();
   
-  const ledOrgQuery = useMemoFirebase(() => 
-    user && firestore ? query(collection(firestore, 'telebe-teskilatlari'), where('leaderId', '==', user.id), limit(1)) : null,
-    [firestore, user]
-  );
-  const { data: ledOrgs, isLoading: orgsLoading } = useCollection<StudentOrganization>(ledOrgQuery);
-  const organizationId = ledOrgs?.[0]?.id;
-
   const updateId = typeof id === 'string' ? id : '';
   
   const updateDocRef = useMemoFirebase(() => 
-      organizationId && firestore ? doc(firestore, `telebe-teskilatlari/${organizationId}/updates`, updateId) : null,
-      [firestore, organizationId, updateId]
+      organization && firestore ? doc(firestore, `telebe-teskilatlari/${organization.id}/updates`, updateId) : null,
+      [firestore, organization, updateId]
   );
 
   const { data: updateData, isLoading: updateLoading } = useDoc<StudentOrgUpdate>(updateDocRef);
   
-  const isLoading = orgsLoading || updateLoading;
+  const isLoading = orgLoading || updateLoading;
 
   const handleSuccess = () => {
     router.push('/telebe-teskilati-paneli/updates');
