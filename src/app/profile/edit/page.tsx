@@ -32,6 +32,9 @@ import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase
 import { collection, doc, writeBatch, getDoc, getDocs, query, deleteField } from 'firebase/firestore';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import AvatarEditor from 'react-avatar-editor';
+import { Slider } from '@/components/ui/slider';
 
 
 const skillSchema = z.object({
@@ -94,6 +97,10 @@ function EditProfilePageComponent() {
   
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(1.2);
+  const editorRef = useRef<AvatarEditor>(null);
   
   const userIdFromQuery = searchParams.get('userId');
   const userIdToFetch = currentUser?.role === 'admin' && userIdFromQuery ? userIdFromQuery : currentUser?.id;
@@ -193,7 +200,6 @@ function EditProfilePageComponent() {
     toast({ title: "İstedad Balı Hesablanır...", description: "Profiliniz yenilənir, bu proses digər tələbələrlə müqayisə apardığı üçün bir az vaxt ala bilər." });
 
     try {
-        // 1. Fetch all students' data for context
         const allUsersSnapshot = await getDocs(query(collection(firestore, 'users')));
         
         const allStudentsPromises = allUsersSnapshot.docs.map(async (userDoc) => {
@@ -223,13 +229,11 @@ function EditProfilePageComponent() {
             throw new Error("No students found to compare against.");
         }
         
-        // 2. Call the AI flow with the full context
         const scoreResult = await calculateTalentScore({
             targetStudentId: userId,
             allStudents: allStudents,
         });
         
-        // 3. Update the target student's score
         const targetUserDoc = doc(firestore, 'users', userId);
         await updateDocumentNonBlocking(targetUserDoc, { talentScore: scoreResult.talentScore });
 
@@ -266,13 +270,32 @@ function EditProfilePageComponent() {
     }
   };
 
-  const onProfilePictureChange = async (e: ChangeEvent<HTMLInputElement>) => {
+  const onProfilePictureChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setImageSrc(reader.result as string);
+        setEditorOpen(true);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
-    const url = await handleFileUpload(file, 'sekil');
-    if (url) {
-        setProfileValue('profilePictureUrl', url, { shouldValidate: true, shouldDirty: true });
+  const handleSaveCroppedImage = async () => {
+    if (editorRef.current) {
+      const canvas = editorRef.current.getImageScaledToCanvas();
+      canvas.toBlob(async (blob) => {
+        if (blob) {
+          const file = new File([blob], 'profile.jpg', { type: 'image/jpeg' });
+          const url = await handleFileUpload(file, 'sekil');
+          if (url) {
+            setProfileValue('profilePictureUrl', url, { shouldValidate: true, shouldDirty: true });
+            setEditorOpen(false);
+            setImageSrc(null);
+          }
+        }
+      }, 'image/jpeg');
     }
   };
 
@@ -393,6 +416,51 @@ function EditProfilePageComponent() {
   }
 
   return (
+    <>
+    <Dialog open={editorOpen} onOpenChange={setEditorOpen}>
+        <DialogContent className="max-w-md">
+            <DialogHeader>
+                <DialogTitle>Profil Şəklini Tənzimlə</DialogTitle>
+                <DialogDescription>
+                    Şəkli yaxınlaşdırın və çərçivəyə uyğunlaşdırın.
+                </DialogDescription>
+            </DialogHeader>
+            {imageSrc && (
+                <div className="flex flex-col items-center gap-4">
+                     <AvatarEditor
+                        ref={editorRef}
+                        image={imageSrc}
+                        width={250}
+                        height={250}
+                        border={50}
+                        borderRadius={125}
+                        color={[0, 0, 0, 0.6]} // RGBA
+                        scale={zoom}
+                        rotate={0}
+                    />
+                     <div className="w-full max-w-xs space-y-2">
+                        <Label htmlFor="zoom">Yaxınlaşdırma</Label>
+                        <Slider
+                            id="zoom"
+                            min={1}
+                            max={3}
+                            step={0.1}
+                            value={[zoom]}
+                            onValueChange={(value) => setZoom(value[0])}
+                        />
+                    </div>
+                </div>
+            )}
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setEditorOpen(false)}>Ləğv et</Button>
+                <Button onClick={handleSaveCroppedImage} disabled={isUploading}>
+                    {isUploading ? "Yadda saxlanılır..." : "Yadda Saxla"}
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+
+
     <div className="container mx-auto max-w-4xl py-8 md:py-12 px-4">
       <div className="mb-8">
         <h1 className="text-3xl md:text-4xl font-bold mb-2">Profili Redaktə Et</h1>
@@ -426,7 +494,7 @@ function EditProfilePageComponent() {
                         </Avatar>
                         <Button type="button" onClick={() => profilePictureInputRef.current?.click()} disabled={isUploading}>
                             <Upload className="mr-2 h-4 w-4" />
-                            {isUploading ? 'Yüklənir...' : 'Şəkil Yüklə'}
+                            {isUploading ? 'Yüklənir...' : 'Şəkil Dəyiş'}
                         </Button>
                         <Input 
                             ref={profilePictureInputRef}
@@ -755,6 +823,7 @@ function EditProfilePageComponent() {
 
       </div>
     </div>
+    </>
   );
 }
 
