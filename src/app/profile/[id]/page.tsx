@@ -24,6 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import NextImage from 'next/image';
 import { useDoc, useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, doc, query, where, getDoc, writeBatch } from 'firebase/firestore';
+import Head from 'next/head';
 
 
 function ProfilePageContent() {
@@ -189,8 +190,26 @@ function ProfilePageContent() {
     return { name: 'Təşkilat Layihəsi' };
   };
 
+  const pageTitle = `${student.firstName} ${student.lastName} | İstedad Mərkəzi`;
+  const description = `${student.faculty}, ${student.major} tələbəsi. Bacarıqları: ${student.skills?.map(s => s.name).join(', ')}.`;
+
   return (
     <>
+      <Head>
+        <title>{pageTitle}</title>
+        <meta name="description" content={description} />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={description} />
+        <meta property="og:image" content={student.profilePictureUrl || 'https://i.ibb.co/cXv2KzRR/q2.jpg'} />
+        <meta property="og:type" content="profile" />
+        <meta property="profile:first_name" content={student.firstName} />
+        <meta property="profile:last_name" content={student.lastName} />
+        <meta property="og:url" content={`https://istedadmerkezi.net/profile/${student.id}`} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={pageTitle} />
+        <meta name="twitter:description" content={description} />
+        <meta name="twitter:image" content={student.profilePictureUrl || 'https://i.ibb.co/cXv2KzRR/q2.jpg'} />
+      </Head>
       <main className="flex-1">
         <div className="container mx-auto max-w-6xl py-8 md:py-12 px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

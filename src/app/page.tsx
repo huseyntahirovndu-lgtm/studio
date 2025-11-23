@@ -265,8 +265,8 @@ export default function HomePage() {
             <div className="relative h-full flex items-center">
               <div className="container mx-auto">
                 <div className="max-w-3xl">
-                  <p className="text-xl md:text-2xl font-medium tracking-tight drop-shadow-md text-primary">Naxçıvan Dövlət Universiteti</p>
-                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tighter drop-shadow-lg text-primary mt-1">
+                  <p className="text-xl md:text-2xl font-medium tracking-tight text-primary drop-shadow-md">Naxçıvan Dövlət Universiteti</p>
+                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tighter text-primary drop-shadow-lg mt-1">
                      İstedad Mərkəzi
                   </h1>
                   <p className="mt-6 max-w-2xl text-lg text-primary drop-shadow-md">
