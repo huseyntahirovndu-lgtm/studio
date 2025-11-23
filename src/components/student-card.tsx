@@ -82,7 +82,7 @@ export function StudentCard({ student, className }: StudentCardProps) {
 
 
   return (
-    <Card className={cn("flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group", className)} data-ai-hint="student profile">
+    <Card className={cn("flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group", className)} data-ai-hint="student profile picture">
       <CardHeader className="p-0 relative">
         <div className={`h-2 w-full ${categoryColor}`}></div>
         {organization && (

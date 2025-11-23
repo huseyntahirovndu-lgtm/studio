@@ -40,7 +40,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { StudentOrgUpdate, StudentOrganization } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth, useCollection, useFirestore, useMemoFirebase, deleteDocumentNonBlocking } from "@/firebase";
+import { useAuth, useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, query, orderBy, doc, where, limit, writeBatch } from "firebase/firestore";
 import { format } from 'date-fns';
 
@@ -73,9 +73,13 @@ export default function OrgUpdatesPage() {
         batch.delete(subCollectionDocRef);
         batch.delete(topLevelDocRef);
 
-        await batch.commit();
-
-        toast({ title: "Yenilik uğurla silindi." });
+        try {
+            await batch.commit();
+            toast({ title: "Yenilik uğurla silindi." });
+        } catch (error) {
+            console.error("Failed to delete update:", error);
+            toast({ variant: 'destructive', title: "Xəta", description: "Yenilik silinərkən xəta baş verdi." });
+        }
     };
 
     return (
@@ -128,7 +132,7 @@ export default function OrgUpdatesPage() {
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuLabel>Əməliyyatlar</DropdownMenuLabel>
                                         <DropdownMenuItem asChild>
-                                            <Link href={`/admin/news/edit/${item.id}`}>Redaktə Et</Link>
+                                            <Link href={`/telebe-teskilati-paneli/updates/edit/${item.id}`}>Redaktə Et</Link>
                                         </DropdownMenuItem>
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>

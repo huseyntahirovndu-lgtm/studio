@@ -48,10 +48,11 @@ export default function AdminNewsPage() {
     const { toast } = useToast();
     const firestore = useFirestore();
 
-    const newsQuery = useMemoFirebase(() => query(collection(firestore, "news"), orderBy("createdAt", "desc")), [firestore]);
+    const newsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, "news"), orderBy("createdAt", "desc")) : null, [firestore]);
     const { data: news, isLoading } = useCollection<News>(newsQuery);
 
     const handleDelete = (newsId: string) => {
+        if (!firestore) return;
         const newsDocRef = doc(firestore, 'news', newsId);
         deleteDocumentNonBlocking(newsDocRef);
         toast({ title: "Xəbər uğurla silindi." });

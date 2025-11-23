@@ -38,19 +38,23 @@ export default function OrganizationDashboardPage() {
     if (!members) return [];
     const monthlyData: { [key: string]: number } = {};
     members.forEach(member => {
-        let memberDate;
-        if (member.createdAt && typeof member.createdAt.toDate === 'function') {
-            memberDate = member.createdAt.toDate();
-        } else if (member.createdAt && typeof member.createdAt === 'string') {
-            memberDate = new Date(member.createdAt);
-        } else if (member.createdAt) {
-            memberDate = member.createdAt; // Assume it's already a Date object
+      let memberDate: Date | null = null;
+      if (member.createdAt) {
+        if (typeof member.createdAt.toDate === 'function') {
+          memberDate = member.createdAt.toDate();
+        } else if (typeof member.createdAt === 'string') {
+          memberDate = new Date(member.createdAt);
+        } else if (member.createdAt instanceof Date) {
+          memberDate = member.createdAt;
+        } else if (typeof member.createdAt === 'number') {
+          memberDate = new Date(member.createdAt);
         }
+      }
 
-        if (memberDate instanceof Date && !isNaN(memberDate.getTime())) {
-            const month = memberDate.toLocaleString('default', { month: 'short' });
-            monthlyData[month] = (monthlyData[month] || 0) + 1;
-        }
+      if (memberDate instanceof Date && !isNaN(memberDate.getTime())) {
+          const month = memberDate.toLocaleString('default', { month: 'short' });
+          monthlyData[month] = (monthlyData[month] || 0) + 1;
+      }
     });
     return Object.keys(monthlyData).map(month => ({ month, members: monthlyData[month] }));
   }, [members]);

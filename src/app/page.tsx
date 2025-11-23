@@ -72,8 +72,7 @@ export default function HomePage() {
   
   const studentOrgUpdatesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    const allUpdates: Promise<any>[] = [];
-    return query(collection(firestore, "telebe-teskilatlari"), where("status", "==", "təsdiqlənmiş"));
+    return query(collection(firestore, "student-org-updates"), orderBy('createdAt', 'desc'), limit(3));
   }, [firestore]);
 
   const { data: students, isLoading: studentsLoading } = useCollection<Student>(studentsQuery);
@@ -83,9 +82,8 @@ export default function HomePage() {
   const { data: categories, isLoading: categoriesLoading } = useCollection<CategoryData>(categoriesQuery);
   const { data: achievements, isLoading: achievementsLoading } = useCollection<Achievement>(achievementsQuery);
   const { data: latestNews, isLoading: newsLoading } = useCollection<News>(newsQuery);
-  
-  const [latestOrgUpdates, setLatestOrgUpdates] = useState<StudentOrgUpdate[]>([]);
-  const [orgUpdatesLoading, setOrgUpdatesLoading] = useState(true);
+  const { data: latestOrgUpdates, isLoading: orgUpdatesLoading } = useCollection<StudentOrgUpdate>(studentOrgUpdatesQuery);
+
 
   const [topTalents, setTopTalents] = useState<Student[]>([]);
   const [newMembers, setNewMembers] = useState<Student[]>([]);
@@ -94,29 +92,6 @@ export default function HomePage() {
   const [successStories, setSuccessStories] = useState<SuccessStory[]>([]);
   
   const isLoading = studentsLoading || projectsLoading || orgsLoading || categoriesLoading || achievementsLoading || newsLoading || orgUpdatesLoading;
-
-  useEffect(() => {
-      const fetchOrgUpdates = async () => {
-        if (!firestore) return;
-        setOrgUpdatesLoading(true);
-        const orgsSnapshot = await getDocs(query(collection(firestore, 'telebe-teskilatlari'), where('status', '==', 'təsdiqlənmiş')));
-        const allUpdates: StudentOrgUpdate[] = [];
-
-        for (const orgDoc of orgsSnapshot.docs) {
-            const updatesSnapshot = await getDocs(query(collection(firestore, `telebe-teskilatlari/${orgDoc.id}/updates`), orderBy('createdAt', 'desc'), limit(3)));
-            updatesSnapshot.forEach(updateDoc => {
-                allUpdates.push({ id: updateDoc.id, ...updateDoc.data() } as StudentOrgUpdate);
-            });
-        }
-
-        allUpdates.sort((a, b) => b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime());
-        setLatestOrgUpdates(allUpdates.slice(0, 3));
-        setOrgUpdatesLoading(false);
-    };
-
-    fetchOrgUpdates();
-  }, [firestore]);
-
 
   useEffect(() => {
     if (!students || students.length === 0) return;
@@ -141,20 +116,33 @@ export default function HomePage() {
             .filter(s => s.successStory && s.successStory.trim().length > 10)
             .map(s => ({ id: s.id, firstName: s.firstName, lastName: s.lastName, faculty: s.faculty, successStory: s.successStory!, profilePictureUrl: s.profilePictureUrl }));
         
-        if (storiesToConsider.length > 0) {
-            try {
-                const result = await selectTopStories({ stories: storiesToConsider });
-                setSuccessStories(result.selectedStories.map(s => ({...s, profilePictureUrl: storiesToConsider.find(stc => stc.id === s.studentId)?.profilePictureUrl})));
-            } catch (error) {
-                console.error("AI story selection failed, using fallback:", error);
-                setSuccessStories(storiesToConsider.slice(0, 2).map(s => ({
-                     studentId: s.id,
-                     name: `${s.firstName} ${s.lastName}`,
-                     faculty: s.faculty,
-                     story: s.successStory,
-                     profilePictureUrl: s.profilePictureUrl
-                })));
-            }
+        if (storiesToConsider.length === 0) return;
+
+        // If there are 2 or fewer stories, just use them without calling AI
+        if (storiesToConsider.length <= 2) {
+            setSuccessStories(storiesToConsider.map(s => ({
+                studentId: s.id,
+                name: `${s.firstName} ${s.lastName}`,
+                faculty: s.faculty,
+                story: s.successStory,
+                profilePictureUrl: s.profilePictureUrl
+            })));
+            return;
+        }
+
+        try {
+            const result = await selectTopStories({ stories: storiesToConsider });
+            setSuccessStories(result.selectedStories.map(s => ({...s, profilePictureUrl: storiesToConsider.find(stc => stc.id === s.studentId)?.profilePictureUrl})));
+        } catch (error) {
+            console.error("AI story selection failed, using fallback:", error);
+            // Fallback to the first two stories
+            setSuccessStories(storiesToConsider.slice(0, 2).map(s => ({
+                 studentId: s.id,
+                 name: `${s.firstName} ${s.lastName}`,
+                 faculty: s.faculty,
+                 story: s.successStory,
+                 profilePictureUrl: s.profilePictureUrl
+            })));
         }
     };
     fetchStories();
@@ -185,7 +173,7 @@ export default function HomePage() {
        <main className="flex-1">
         <section className="relative w-full h-screen">
             <Image
-              src="https://i.ibb.co/cXv2KzRR/q2.jpg"
+              src="/banner.jpg"
               alt="Naxçıvan Dövlət Universiteti"
               fill
               className="object-cover"
@@ -193,16 +181,9 @@ export default function HomePage() {
               data-ai-hint="university campus students"
             />
             
-            <div className="relative h-full flex items-center">
+            <div className="relative h-full flex items-center pt-32">
               <div className="container mx-auto">
                 <div className="max-w-3xl">
-                  <p className="text-xl md:text-2xl font-medium tracking-tight text-primary drop-shadow-md">Naxçıvan Dövlət Universiteti</p>
-                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tighter text-primary drop-shadow-lg mt-1">
-                     İstedad Mərkəzi
-                  </h1>
-                  <p className="mt-6 max-w-2xl text-lg text-primary drop-shadow-md">
-                      Tələbələrimizin bacarıqlarını, layihələrini və nailiyyətlərini kəşf edin. Potensialı reallığa çevirən platforma.
-                  </p>
                   <div className="mt-8 flex flex-col sm:flex-row gap-4">
                       <Button asChild size="lg">
                           <Link href="/search">İstedadları Kəşf Et <ArrowRight className="ml-2" /></Link>
