@@ -37,27 +37,44 @@ export default function OrganizationDashboardPage() {
   const memberJoinData = useMemo(() => {
     if (!members) return [];
     const monthlyData: { [key: string]: number } = {};
-    members.forEach(member => {
-      let memberDate: Date | null = null;
-      if (member.createdAt) {
-        if (typeof member.createdAt.toDate === 'function') {
-          memberDate = member.createdAt.toDate();
-        } else if (typeof member.createdAt === 'string') {
-          memberDate = new Date(member.createdAt);
-        } else if (member.createdAt instanceof Date) {
-          memberDate = member.createdAt;
-        } else if (typeof member.createdAt === 'number') {
-          memberDate = new Date(member.createdAt);
-        }
-      }
-
-      if (memberDate instanceof Date && !isNaN(memberDate.getTime())) {
-          const month = memberDate.toLocaleString('default', { month: 'short' });
-          monthlyData[month] = (monthlyData[month] || 0) + 1;
-      }
+    const currentYear = new Date().getFullYear();
+    const monthOrder = ["Yan", "Fev", "Mar", "Apr", "May", "İyn", "İyl", "Avq", "Sen", "Okt", "Noy", "Dek"];
+    
+    // Initialize all months of the current year with 0
+    monthOrder.forEach(month => {
+        monthlyData[month] = 0;
     });
-    return Object.keys(monthlyData).map(month => ({ month, members: monthlyData[month] }));
+
+    members.forEach(member => {
+        // Ensure member and member.createdAt exist before proceeding.
+        if (!member || !member.createdAt) {
+            return; 
+        }
+
+        let memberDate: Date | null = null;
+        // Handle different timestamp formats
+        if (typeof member.createdAt.toDate === 'function') {
+            memberDate = member.createdAt.toDate();
+        } else if (typeof member.createdAt === 'string' || typeof member.createdAt === 'number') {
+            memberDate = new Date(member.createdAt);
+        } else if (member.createdAt instanceof Date) {
+            memberDate = member.createdAt;
+        }
+
+        // Check if a valid date was created and if it's in the current year
+        if (memberDate instanceof Date && !isNaN(memberDate.getTime()) && memberDate.getFullYear() === currentYear) {
+            const monthIndex = memberDate.getMonth();
+            const monthName = monthOrder[monthIndex];
+            if (monthName) {
+                 monthlyData[monthName]++;
+            }
+        }
+    });
+
+    return monthOrder.map(month => ({ month, members: monthlyData[month] }));
+
   }, [members]);
+
 
   if (loading || ledOrgsLoading) {
     return <div className="flex h-screen items-center justify-center">Yüklənir...</div>;
@@ -81,17 +98,17 @@ export default function OrganizationDashboardPage() {
           </div>
         </CardHeader>
         <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                <div className="p-4 rounded-lg bg-muted">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 rounded-lg bg-muted text-center">
                     <p className="text-3xl font-bold">{organization.memberIds?.length || 0}</p>
                     <p className="text-sm text-muted-foreground">Üzv Sayı</p>
                 </div>
-                 <div className="p-4 rounded-lg bg-muted col-span-1 md:col-span-3">
+                 <div className="p-4 rounded-lg bg-muted col-span-1 md:col-span-2">
                      <p className="text-lg font-bold mb-2">Aylara görə yeni üzvlər</p>
                     <ChartContainer config={chartConfig} className="min-h-[100px] w-full">
                         <BarChart accessibilityLayer data={memberJoinData}>
                           <CartesianGrid vertical={false} />
-                          <XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} />
+                          <XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} tickFormatter={(value) => value.slice(0, 3)} />
                           <ChartTooltip content={<ChartTooltipContent />} />
                           <Bar dataKey="members" fill="var(--color-members)" radius={4} />
                         </BarChart>

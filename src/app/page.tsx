@@ -22,7 +22,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, getDocs, orderBy, limit, writeBatch, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, limit, writeBatch, doc, documentId } from 'firebase/firestore';
 import { selectTopStories } from '@/ai/flows/story-selector';
 import { format } from 'date-fns';
 
@@ -59,6 +59,10 @@ const SuccessStoryCard = ({ story }: { story: SuccessStory }) => (
     </Card>
 );
 
+interface EnrichedUpdate extends StudentOrgUpdate {
+    organization?: StudentOrganization;
+}
+
 export default function HomePage() {
   const firestore = useFirestore();
 
@@ -90,8 +94,21 @@ export default function HomePage() {
   const [strongestProjects, setStrongestProjects] = useState<EnrichedProject[]>([]);
   const [popularSkills, setPopularSkills] = useState<string[]>([]);
   const [successStories, setSuccessStories] = useState<SuccessStory[]>([]);
+  const [enrichedOrgUpdates, setEnrichedOrgUpdates] = useState<EnrichedUpdate[]>([]);
   
-  const isLoading = studentsLoading || projectsLoading || orgsLoading || categoriesLoading || achievementsLoading || newsLoading || orgUpdatesLoading;
+  const isLoading = studentsLoading || projectsLoading || orgsLoading || categoriesLoading || achievementsLoading || newsLoading || orgUpdatesLoading || !enrichedOrgUpdates;
+
+  useEffect(() => {
+    if (latestOrgUpdates && studentOrgs) {
+        const orgMap = new Map(studentOrgs.map(org => [org.id, org]));
+        const enriched = latestOrgUpdates.map(update => ({
+            ...update,
+            organization: orgMap.get(update.organizationId)
+        })).filter(update => update.organization); // Filter out updates where the organization wasn't found
+        setEnrichedOrgUpdates(enriched);
+    }
+  }, [latestOrgUpdates, studentOrgs]);
+
 
   useEffect(() => {
     if (!students || students.length === 0) return;
@@ -287,12 +304,12 @@ export default function HomePage() {
              )}
           </section>
 
-            <section className="py-12 bg-muted -mx-4 px-4 rounded-lg">
+             <section className="py-12 bg-muted -mx-4 px-4 rounded-lg">
                <div className="text-center mb-12">
                   <h2 className="text-3xl md:text-4xl font-bold">Təşkilat Yenilikləri</h2>
                   <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Tələbə təşkilatlarımızın fəaliyyətləri və elanları ilə tanış olun.</p>
               </div>
-               {orgUpdatesLoading ? (
+               {isLoading ? (
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                           <Skeleton className="h-64 w-full" />
                           <Skeleton className="h-64 w-full" />
@@ -300,23 +317,22 @@ export default function HomePage() {
                       </div>
                   ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                      {latestOrgUpdates && latestOrgUpdates.length > 0 ? latestOrgUpdates.map(update => (
-                          <Card key={update.id} className="overflow-hidden group">
-                           <Link href={`/telebe-teskilatlari/yenilikler/${update.id}`}>
-                                {update.coverImageUrl && (
-                                     <div className="relative h-56 w-full">
-                                        <Image src={update.coverImageUrl} alt={update.title} fill className="object-cover transition-transform duration-300 group-hover:scale-105"/>
+                      {enrichedOrgUpdates && enrichedOrgUpdates.length > 0 ? enrichedOrgUpdates.map(update => (
+                           <Link key={update.id} href={`/telebe-teskilatlari/yenilikler/${update.id}`} className="block group">
+                                <Card className="overflow-hidden h-full flex flex-col">
+                                    {update.coverImageUrl && (
+                                        <div className="relative h-48 w-full">
+                                            <Image src={update.coverImageUrl} alt={update.title} fill className="object-cover transition-transform duration-300 group-hover:scale-105"/>
+                                        </div>
+                                    )}
+                                    <div className="p-4 flex flex-col flex-grow">
+                                        <p className="text-xs font-semibold text-primary">{update.organization?.name}</p>
+                                        <CardTitle className="text-lg line-clamp-2 mt-1 mb-2 group-hover:text-primary">{update.title}</CardTitle>
+                                        <CardDescription className="text-xs">{update.createdAt ? format(update.createdAt.toDate(), 'dd MMMM, yyyy') : ''}</CardDescription>
+                                        <p className="line-clamp-2 text-sm text-muted-foreground mt-2 flex-grow">{update.content.replace(/<[^>]*>?/gm, '').substring(0, 100)}...</p>
                                     </div>
-                                )}
-                                <CardHeader>
-                                    <CardTitle className="line-clamp-2 group-hover:text-primary">{update.title}</CardTitle>
-                                    <CardDescription>{update.createdAt ? format(update.createdAt.toDate(), 'dd MMMM, yyyy') : ''}</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="line-clamp-3 text-sm text-muted-foreground">{update.content.replace(/<[^>]*>?/gm, '').substring(0, 100)}...</p>
-                                </CardContent>
-                           </Link>
-                        </Card>
+                                </Card>
+                            </Link>
                       )) : (
                           <p className="text-center col-span-full text-muted-foreground">Hazırda təşkilat yeniliyi yoxdur.</p>
                       )}
