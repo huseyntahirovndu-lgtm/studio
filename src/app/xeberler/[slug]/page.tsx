@@ -59,7 +59,7 @@ export default function NewsDetailsPage() {
                 <meta property="og:description" content={description} />
                 <meta property="og:image" content={news.coverImageUrl || 'https://i.ibb.co/cXv2KzRR/q2.jpg'} />
                 <meta property="og:type" content="article" />
-                <meta property="og:url" content={`https://istedadmerkezi.net/məqalələr/${news.slug}`} />
+                <meta property="og:url" content={`https://istedadmerkezi.net/xeberler/${news.slug}`} />
                 <meta name="twitter:card" content="summary_large_image" />
                 <meta name="twitter:title" content={pageTitle} />
                 <meta name="twitter:description" content={description} />

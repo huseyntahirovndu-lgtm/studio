@@ -109,7 +109,7 @@ export default function AdminNewsPage() {
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuLabel>Əməliyyatlar</DropdownMenuLabel>
                                         <DropdownMenuItem asChild>
-                                            <Link href={`/məqalələr/${item.slug}`} target="_blank">Xəbərə Bax</Link>
+                                            <Link href={`/xeberler/${item.slug}`} target="_blank">Xəbərə Bax</Link>
                                         </DropdownMenuItem>
                                         <DropdownMenuItem asChild>
                                             <Link href={`/admin/news/edit/${item.id}`}>Redaktə Et</Link>

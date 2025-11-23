@@ -8,7 +8,7 @@ export default async function sitemap() {
   const { firestore } = initializeServerFirebase();
 
   // Static pages
-  const routes = ['', '/search', '/rankings', '/məqalələr'].map((route) => ({
+  const routes = ['', '/search', '/rankings', '/xeberler'].map((route) => ({
     url: `${BASE_URL}${route}`,
     lastModified: new Date().toISOString(),
   }));
@@ -34,7 +34,7 @@ export default async function sitemap() {
     newsUrls = newsSnapshot.docs.map((doc) => {
       const news = doc.data() as News;
       return {
-        url: `${BASE_URL}/məqalələr/${news.slug}`,
+        url: `${BASE_URL}/xeberler/${news.slug}`,
         lastModified: news.updatedAt?.toDate().toISOString() || news.createdAt.toDate().toISOString(),
       };
     });
