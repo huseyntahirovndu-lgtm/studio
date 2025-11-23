@@ -1,6 +1,15 @@
+'use client';
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb',
+    },
+  },
+};
 
 // Fayl adını təhlükəsiz formata salmaq üçün funksiya
 const slugify = (text: string) => {
