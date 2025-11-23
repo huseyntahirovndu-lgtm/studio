@@ -10,14 +10,11 @@ import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import type { News } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Upload } from 'lucide-react';
-import dynamic from 'next/dynamic';
-
-const RichTextEditor = dynamic(() => import('@/components/ui/rich-text-editor'), { ssr: false });
-
 
 const formSchema = z.object({
   title: z.string().min(5, "Başlıq ən azı 5 hərf olmalıdır."),
@@ -189,8 +186,11 @@ export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormPro
                 <FormItem>
                   <FormLabel>Məzmun</FormLabel>
                   <FormControl>
-                     <RichTextEditor {...field} />
+                     <Textarea {...field} rows={10} />
                   </FormControl>
+                  <FormDescription>
+                    Mətni formatlamaq üçün sadə HTML teqlərindən istifadə edə bilərsiniz (məs: `<b>qalin</b>`, `<h2>başlıq</h2>`, `<ul><li>siyahı</li></ul>`).
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
