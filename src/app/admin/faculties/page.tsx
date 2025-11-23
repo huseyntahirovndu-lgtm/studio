@@ -18,7 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, doc, writeBatch } from 'firebase/firestore';
 import type { FacultyData } from '@/types';
 import { PlusCircle, Trash2 } from 'lucide-react';
@@ -33,6 +33,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 const initialFaculties = [
     "İqtisadiyyat və idarəetmə fakültəsi",
@@ -57,16 +58,23 @@ export default function AdminFacultiesPage() {
   const { data: faculties, isLoading: facultiesLoading } = useCollection<FacultyData>(facultiesQuery);
 
   useEffect(() => {
-    if (firestore && faculties?.length === 0 && !facultiesLoading) {
+    if (firestore && !facultiesLoading && faculties && faculties.length === 0) {
       const seedFaculties = async () => {
+        setIsSaving(true);
         const batch = writeBatch(firestore);
         const facultiesCollectionRef = collection(firestore, 'faculties');
         initialFaculties.forEach(name => {
           const docRef = doc(facultiesCollectionRef);
           batch.set(docRef, { id: docRef.id, name });
         });
-        await batch.commit();
-        toast({ title: 'Fakültələr əlavə edildi', description: 'Başlanğıc fakültə siyahısı sistemə yükləndi.' });
+        try {
+            await batch.commit();
+            toast({ title: 'Fakültələr əlavə edildi', description: 'Başlanğıc fakültə siyahısı sistemə yükləndi.' });
+        } catch(e) {
+            toast({variant: 'destructive', title: 'Xəta', description: 'Fakültələr yüklənərkən xəta baş verdi.'})
+        } finally {
+            setIsSaving(false);
+        }
       };
       seedFaculties();
     }
@@ -80,7 +88,8 @@ export default function AdminFacultiesPage() {
     const facultiesCollectionRef = collection(firestore, 'faculties');
     try {
       const newDoc = doc(facultiesCollectionRef);
-      await addDocumentNonBlocking(newDoc, { name: newFaculty, id: newDoc.id });
+      // Use non-blocking update for better UX
+      addDocumentNonBlocking(newDoc, { name: newFaculty, id: newDoc.id });
       toast({ title: 'Uğurlu', description: 'Yeni fakültə əlavə edildi.' });
       setNewFaculty('');
     } catch (error) {
@@ -92,6 +101,7 @@ export default function AdminFacultiesPage() {
   const handleDeleteFaculty = (facultyId: string) => {
     if (!firestore) return;
     const facultyDocRef = doc(firestore, 'faculties', facultyId);
+    // Use non-blocking delete
     deleteDocumentNonBlocking(facultyDocRef);
     toast({ title: 'Uğurlu', description: 'Fakültə silindi.' });
   };

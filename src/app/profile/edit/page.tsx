@@ -35,6 +35,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import AvatarEditor from 'react-avatar-editor';
 import { Slider } from '@/components/ui/slider';
+import { Label } from '@/components/ui/label';
 
 
 const skillSchema = z.object({
@@ -317,7 +318,13 @@ function EditProfilePageComponent() {
   const onProjectSubmit: SubmitHandler<z.infer<typeof projectSchema>> = (data) => {
     if (!targetUser || !firestore) return;
     const projectCollectionRef = collection(firestore, `users/${targetUser.id}/projects`);
-    addDocumentNonBlocking(projectCollectionRef, { ...data, studentId: targetUser.id, teamMemberIds: [], invitedStudentIds: [] });
+    addDocumentNonBlocking(projectCollectionRef, { 
+      ...data, 
+      ownerId: targetUser.id, 
+      ownerType: 'student',
+      teamMemberIds: [], 
+      invitedStudentIds: [] 
+    });
     projectForm.reset();
     triggerTalentScoreUpdate(targetUser.id); 
     toast({ title: "Layihə əlavə edildi" });

@@ -13,7 +13,7 @@ import { StatCard } from '@/components/stat-card';
 import { StudentCard } from '@/components/student-card';
 import { CategoryPieChart } from '@/components/charts/category-pie-chart';
 import { FacultyBarChart } from '@/components/charts/faculty-bar-chart';
-import { Student, Project, Organization, FacultyData, CategoryData, Achievement, News, StudentOrganization, Invitation } from '@/types';
+import { Student, Project, Organization, FacultyData, CategoryData, Achievement, News, StudentOrganization, StudentOrgUpdate } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -29,10 +29,6 @@ import { format } from 'date-fns';
 
 interface EnrichedProject extends Project {
     student?: Student;
-}
-
-interface OrgProject extends Project {
-    organization: Organization;
 }
 
 interface SuccessStory {
@@ -63,121 +59,34 @@ const SuccessStoryCard = ({ story }: { story: SuccessStory }) => (
     </Card>
 );
 
-const OrganizationProjectCard = ({ project }: { project: OrgProject }) => {
-    const { user } = useAuth();
-    const { toast } = useToast();
-    const firestore = useFirestore();
-    const student = user as Student;
-
-    const [isApplied, setIsApplied] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-
-    useEffect(() => {
-        if (student && project.applicantIds?.includes(student.id)) {
-            setIsApplied(true);
-        }
-    }, [student, project]);
-
-    const handleApply = async () => {
-        if (!user || user.role !== 'student') {
-            toast({ variant: 'destructive', title: "Xəta", description: "Müraciət etmək üçün tələbə kimi daxil olmalısınız." });
-            return;
-        }
-
-        const isAlreadyMember = (project.teamMemberIds || []).includes(user.id);
-        if(isAlreadyMember) {
-            toast({ variant: 'destructive', title: "Xəta", description: "Siz artıq bu layihənin üzvüsünüz." });
-            return;
-        }
-
-        if(isApplied) {
-            toast({ title: "Müraciətiniz Qeydə Alınıb", description: "Bu layihəyə artıq müraciət etmisiniz." });
-            return;
-        }
-
-        setIsLoading(true);
-
-        const batch = writeBatch(firestore);
-
-        const projectRef = doc(firestore, 'projects', project.id);
-        const newApplicants = [...(project.applicantIds || []), student.id];
-        batch.update(projectRef, { applicantIds: newApplicants });
-        
-        const invitationRef = doc(collection(firestore, 'invitations'));
-        const newInvitation: Invitation = {
-            id: invitationRef.id,
-            organizationId: project.organization.id,
-            studentId: student.id,
-            projectId: project.id,
-            status: 'müraciət',
-            createdAt: new Date(),
-        };
-        batch.set(invitationRef, newInvitation);
-
-        try {
-            await batch.commit();
-            setIsApplied(true);
-            toast({ title: "Müraciət Göndərildi", description: `"${project.title}" layihəsinə müraciətiniz uğurla göndərildi.` });
-        } catch (error) {
-            console.error(error);
-            toast({ variant: 'destructive', title: "Xəta", description: "Müraciət göndərilərkən xəta baş verdi." });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    return (
-        <Card className="flex flex-col">
-            <CardHeader>
-                 <div className="flex items-center gap-3 mb-2">
-                    <Avatar className="h-10 w-10">
-                        <AvatarImage src={project.organization.logoUrl} />
-                        <AvatarFallback>{project.organization.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                        <CardTitle className="text-lg">{project.title}</CardTitle>
-                        <CardDescription>{project.organization.name}</CardDescription>
-                    </div>
-                </div>
-            </CardHeader>
-            <CardContent className="flex-grow">
-                <p className="text-sm text-muted-foreground line-clamp-3 mb-4">{project.description}</p>
-            </CardContent>
-            <CardFooter>
-                <Button onClick={handleApply} disabled={isApplied || isLoading} className="w-full">
-                    {isLoading ? 'Göndərilir...' : (isApplied ? 'Müraciət Edilib' : 'Müraciət Et')}
-                </Button>
-            </CardFooter>
-        </Card>
-    );
-};
-
-
 export default function HomePage() {
   const firestore = useFirestore();
 
   const studentsQuery = useMemoFirebase(() => query(collection(firestore, "users"), where("status", "==", "təsdiqlənmiş"), where("role", "==", "student")), [firestore]);
   const projectsQuery = useMemoFirebase(() => collection(firestore, "projects"), [firestore]);
   const organizationsQuery = useMemoFirebase(() => query(collection(firestore, "users"), where("role", "==", "organization")), [firestore]);
+  const studentOrgsQuery = useMemoFirebase(() => query(collection(firestore, "telebe-teskilatlari"), where("status", "==", "təsdiqlənmiş")), [firestore]);
   const categoriesQuery = useMemoFirebase(() => collection(firestore, "categories"), [firestore]);
   const achievementsQuery = useMemoFirebase(() => collection(firestore, "achievements"), [firestore]);
   const newsQuery = useMemoFirebase(() => query(collection(firestore, 'news'), orderBy('createdAt', 'desc'), limit(3)), [firestore]);
+  const studentOrgUpdatesQuery = useMemoFirebase(() => query(collection(firestore, 'student-org-updates'), orderBy('createdAt', 'desc'), limit(3)), [firestore]);
   
   const { data: students, isLoading: studentsLoading } = useCollection<Student>(studentsQuery);
   const { data: projects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
   const { data: organizations, isLoading: orgsLoading } = useCollection<Organization>(organizationsQuery);
+  const { data: studentOrgs } = useCollection<StudentOrganization>(studentOrgsQuery);
   const { data: categories, isLoading: categoriesLoading } = useCollection<CategoryData>(categoriesQuery);
   const { data: achievements, isLoading: achievementsLoading } = useCollection<Achievement>(achievementsQuery);
   const { data: latestNews, isLoading: newsLoading } = useCollection<News>(newsQuery);
+  const { data: latestOrgUpdates, isLoading: orgUpdatesLoading } = useCollection<StudentOrgUpdate>(studentOrgUpdatesQuery);
   
   const [topTalents, setTopTalents] = useState<Student[]>([]);
   const [newMembers, setNewMembers] = useState<Student[]>([]);
   const [strongestProjects, setStrongestProjects] = useState<EnrichedProject[]>([]);
-  const [organizationProjects, setOrganizationProjects] = useState<OrgProject[]>([]);
   const [popularSkills, setPopularSkills] = useState<string[]>([]);
   const [successStories, setSuccessStories] = useState<SuccessStory[]>([]);
   
-  const isLoading = studentsLoading || projectsLoading || orgsLoading || categoriesLoading || achievementsLoading || newsLoading;
+  const isLoading = studentsLoading || projectsLoading || orgsLoading || categoriesLoading || achievementsLoading || newsLoading || orgUpdatesLoading;
 
   useEffect(() => {
     if (!students || students.length === 0) return;
@@ -223,30 +132,22 @@ export default function HomePage() {
   }, [students]);
 
    useEffect(() => {
-    if (!projects || !students || !organizations) return;
+    if (!projects || !students) return;
     
-    const studentProjects = projects.filter(p => students.some(s => s.id === p.studentId));
+    const studentOwnedProjects = projects.filter(p => p.ownerType === 'student' && students.some(s => s.id === p.ownerId));
     
     const enrichProjects = async () => {
-        const enriched = await Promise.all(studentProjects.map(async p => {
+        const enriched = await Promise.all(studentOwnedProjects.map(async p => {
             return {
                 ...p,
-                student: students.find(s => s.id === p.studentId)
+                student: students.find(s => s.id === p.ownerId)
             }
         }));
          setStrongestProjects(enriched.slice(0, 3));
     }
     enrichProjects();
     
-
-    const orgProjects = projects.filter(p => organizations.some(o => o.id === p.studentId));
-    const enrichedOrgProjects = orgProjects.map(p => ({
-        ...p,
-        organization: organizations.find(o => o.id === p.studentId)!
-    })).slice(0, 3);
-    setOrganizationProjects(enrichedOrgProjects);
-
-   }, [projects, students, organizations, firestore]);
+   }, [projects, students]);
 
 
   return (
@@ -294,8 +195,8 @@ export default function HomePage() {
                 icon={Users}
               />
               <StatCard
-                title="Aktiv Təşkilat"
-                value={isLoading ? '...' : (organizations?.length.toString() ?? '0')}
+                title="Tələbə Təşkilatları"
+                value={isLoading ? '...' : (studentOrgs?.length.toString() ?? '0')}
                 icon={Building}
               />
               <StatCard
@@ -316,7 +217,7 @@ export default function HomePage() {
                 <h2 className="text-3xl md:text-4xl font-bold">Son Xəbərlər</h2>
                 <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Universitet və tələbə həyatı ilə bağlı ən son yeniliklər.</p>
             </div>
-            {isLoading ? (
+            {newsLoading ? (
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <Skeleton className="h-96 w-full" />
                     <Skeleton className="h-96 w-full" />
@@ -375,23 +276,38 @@ export default function HomePage() {
              )}
           </section>
 
-          <section className="py-12 bg-muted -mx-4 px-4 rounded-lg">
+            <section className="py-12 bg-muted -mx-4 px-4 rounded-lg">
                <div className="text-center mb-12">
-                  <h2 className="text-3xl md:text-4xl font-bold">Aktiv Təşkilat Layihələri</h2>
-                  <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Tərəfdaş təşkilatlarımızın təqdim etdiyi layihələrə qoşulun və real təcrübə qazanın.</p>
+                  <h2 className="text-3xl md:text-4xl font-bold">Təşkilat Yenilikləri</h2>
+                  <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Tələbə təşkilatlarımızın fəaliyyətləri və elanları ilə tanış olun.</p>
               </div>
-               {isLoading ? (
+               {orgUpdatesLoading ? (
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                          <Skeleton className="h-48 w-full" />
-                          <Skeleton className="h-48 w-full" />
-                          <Skeleton className="h-48 w-full" />
+                          <Skeleton className="h-64 w-full" />
+                          <Skeleton className="h-64 w-full" />
+                          <Skeleton className="h-64 w-full" />
                       </div>
                   ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                      {organizationProjects.length > 0 ? organizationProjects.map(project => (
-                          <OrganizationProjectCard key={project.id} project={project} />
+                      {latestOrgUpdates && latestOrgUpdates.length > 0 ? latestOrgUpdates.map(update => (
+                          <Card key={update.id} className="overflow-hidden group">
+                           <Link href={`/telebe-teskilatlari/yenilikler/${update.id}`}>
+                                {update.coverImageUrl && (
+                                     <div className="relative h-56 w-full">
+                                        <Image src={update.coverImageUrl} alt={update.title} fill className="object-cover transition-transform duration-300 group-hover:scale-105"/>
+                                    </div>
+                                )}
+                                <CardHeader>
+                                    <CardTitle className="line-clamp-2 group-hover:text-primary">{update.title}</CardTitle>
+                                    <CardDescription>{update.createdAt ? format(update.createdAt.toDate(), 'dd MMMM, yyyy') : ''}</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="line-clamp-3 text-sm text-muted-foreground">{update.content.replace(/<[^>]*>?/gm, '').substring(0, 100)}...</p>
+                                </CardContent>
+                           </Link>
+                        </Card>
                       )) : (
-                          <p className="text-center col-span-full text-muted-foreground">Hazırda aktiv təşkilat layihəsi yoxdur.</p>
+                          <p className="text-center col-span-full text-muted-foreground">Hazırda təşkilat yeniliyi yoxdur.</p>
                       )}
                   </div>
               )}

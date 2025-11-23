@@ -32,7 +32,8 @@ export interface Skill {
 
 export interface Project {
   id: string;
-  studentId: string; // Owner ID (can be student or organization)
+  ownerId: string; // Owner ID (can be student or organization)
+  ownerType: 'student' | 'organization';
   title: string;
   description: string;
   role: string;
