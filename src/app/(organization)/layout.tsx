@@ -11,14 +11,14 @@ import {
   TooltipTrigger,
   TooltipProvider
 } from "@/components/ui/tooltip"
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import type { StudentOrganization } from "@/types";
 import { collection, query, where } from "firebase/firestore";
 
 const NAV_LINKS = [
-    { href: "/organization-panel/dashboard", icon: Home, label: "Panel", exact: true },
-    { href: "/organization-panel/members", icon: Users, label: "Üzvlər" },
-    { href: "/organization-panel/updates", icon: Newspaper, label: "Yeniliklər" },
+    { href: "/organization/dashboard", icon: Home, label: "Panel", exact: true },
+    { href: "/organization/members", icon: Users, label: "Üzvlər" },
+    { href: "/organization/updates", icon: Newspaper, label: "Yeniliklər" },
 ];
 
 export default function StudentOrganizationLayout({
@@ -50,9 +50,7 @@ export default function StudentOrganizationLayout({
   }
   
   const isActive = (href: string, exact?: boolean) => {
-    // Correctly match the dashboard route and its children
-    const adjustedHref = href.replace('-panel', '');
-    return exact ? pathname === adjustedHref : pathname.startsWith(adjustedHref);
+    return exact ? pathname === href : pathname.startsWith(href);
   }
 
   return (
@@ -72,7 +70,7 @@ export default function StudentOrganizationLayout({
                 <Tooltip key={link.href}>
                     <TooltipTrigger asChild>
                     <Link
-                        href={link.href.replace('-panel', '')}
+                        href={link.href}
                         className={cn("flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8",
                             isActive(link.href, link.exact) && "bg-accent text-accent-foreground"
                         )}

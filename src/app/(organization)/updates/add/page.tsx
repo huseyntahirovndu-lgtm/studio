@@ -6,7 +6,7 @@ export default function AddOrgUpdatePage() {
   const router = useRouter();
 
   const handleSuccess = (id: string) => {
-    router.push('/organization-panel/updates');
+    router.push('/organization/updates');
   };
 
   return (

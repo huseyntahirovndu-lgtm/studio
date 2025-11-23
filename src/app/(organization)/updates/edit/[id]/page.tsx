@@ -13,20 +13,25 @@ export default function EditOrgUpdatePage() {
   const { user } = useAuth();
   
   const ledOrgQuery = useMemoFirebase(() => 
-    user ? query(collection(firestore, 'telebe-teskilatlari'), where('leaderId', '==', user.id), limit(1)) : null,
+    user && firestore ? query(collection(firestore, 'telebe-teskilatlari'), where('leaderId', '==', user.id), limit(1)) : null,
     [firestore, user]
   );
   const { data: ledOrgs, isLoading: orgsLoading } = useCollection<StudentOrganization>(ledOrgQuery);
   const organizationId = ledOrgs?.[0]?.id;
 
   const updateId = typeof id === 'string' ? id : '';
-  const updateDocRef = organizationId ? doc(firestore, `telebe-teskilatlari/${organizationId}/updates`, updateId) : null;
+  
+  const updateDocRef = useMemoFirebase(() => 
+      organizationId && firestore ? doc(firestore, `telebe-teskilatlari/${organizationId}/updates`, updateId) : null,
+      [firestore, organizationId, updateId]
+  );
+
   const { data: updateData, isLoading: updateLoading } = useDoc<StudentOrgUpdate>(updateDocRef);
   
   const isLoading = orgsLoading || updateLoading;
 
   const handleSuccess = () => {
-    router.push('/organization-panel/updates');
+    router.push('/organization/updates');
   };
   
   if(isLoading) {

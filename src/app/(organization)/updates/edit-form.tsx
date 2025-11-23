@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useAuth, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { collection, doc, serverTimestamp, query, where, limit } from 'firebase/firestore';
+import { useAuth, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, doc, serverTimestamp, query, where, limit, addDoc, updateDoc } from 'firebase/firestore';
 import type { StudentOrgUpdate, StudentOrganization } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -52,7 +52,7 @@ export default function OrgUpdateEditForm({ initialData, onSuccess }: EditOrgUpd
   });
 
   const onSubmit: SubmitHandler<FormData> = async (values) => {
-    if (!user || !organizationId) {
+    if (!user || !organizationId || !firestore) {
       toast({ variant: 'destructive', title: 'Səlahiyyət Xətası', description: "Bu əməliyyatı etmək üçün təşkilat rəhbəri olmalısınız." });
       return;
     }
@@ -65,7 +65,7 @@ export default function OrgUpdateEditForm({ initialData, onSuccess }: EditOrgUpd
       if (isEditMode && initialData) {
         // Update existing update
         const updateDocRef = doc(updatesCollectionRef, initialData.id);
-        await updateDocumentNonBlocking(updateDocRef, {
+        await updateDoc(updateDocRef, {
           ...values,
           updatedAt: serverTimestamp(),
         });
@@ -78,7 +78,7 @@ export default function OrgUpdateEditForm({ initialData, onSuccess }: EditOrgUpd
           organizationId: organizationId,
           createdAt: serverTimestamp(),
         };
-        const newDocRef = await addDocumentNonBlocking(updatesCollectionRef, newUpdateData);
+        const newDocRef = await addDoc(updatesCollectionRef, newUpdateData);
         toast({ title: 'Uğurlu', description: 'Yenilik uğurla yaradıldı.' });
         if (newDocRef) {
           onSuccess(newDocRef.id);

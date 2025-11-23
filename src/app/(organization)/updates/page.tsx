@@ -63,13 +63,11 @@ export default function OrgUpdatesPage() {
     const { data: updates, isLoading } = useCollection<StudentOrgUpdate>(updatesQuery);
 
     const handleDelete = (updateId: string) => {
-        if (!organizationId) return;
+        if (!organizationId || !firestore) return;
         const updateDocRef = doc(firestore, `telebe-teskilatlari/${organizationId}/updates`, updateId);
         deleteDocumentNonBlocking(updateDocRef);
         toast({ title: "Yenilik uğurla silindi." });
     };
-    
-    const basePath = `/organization-panel`;
 
     return (
         <Card>
@@ -82,7 +80,7 @@ export default function OrgUpdatesPage() {
                         </CardDescription>
                     </div>
                     <Button asChild>
-                        <Link href={`${basePath}/updates/add`}>
+                        <Link href="/organization/updates/add">
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Yeni Yenilik Yarat
                         </Link>
@@ -108,7 +106,7 @@ export default function OrgUpdatesPage() {
                         <TableRow key={item.id}>
                             <TableCell className="font-medium">{item.title}</TableCell>
                             <TableCell className="hidden md:table-cell">
-                               {item.createdAt ? format(item.createdAt.toDate(), 'dd.MM.yyyy') : '-'}
+                               {item.createdAt?.toDate ? format(item.createdAt.toDate(), 'dd.MM.yyyy') : '-'}
                             </TableCell>
                             <TableCell className="text-right">
                                <DropdownMenu>
@@ -121,7 +119,7 @@ export default function OrgUpdatesPage() {
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuLabel>Əməliyyatlar</DropdownMenuLabel>
                                         <DropdownMenuItem asChild>
-                                            <Link href={`${basePath}/updates/edit/${item.id}`}>Redaktə Et</Link>
+                                            <Link href={`/organization/updates/edit/${item.id}`}>Redaktə Et</Link>
                                         </DropdownMenuItem>
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
