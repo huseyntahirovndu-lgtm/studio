@@ -9,7 +9,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -39,55 +38,58 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Organization, AppUser } from "@/types";
+import type { StudentOrgUpdate } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { useCollection, useFirestore, useMemoFirebase, deleteDocumentNonBlocking } from "@/firebase";
-import { collection, query, where, doc } from "firebase/firestore";
-import { useMemo } from "react";
+import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { collection, query, orderBy, doc, writeBatch } from "firebase/firestore";
+import { format } from 'date-fns';
+import { useStudentOrg } from "../layout";
 
-export default function AdminOrganizationsPage() {
+export default function OrgUpdatesPage() {
     const { toast } = useToast();
     const firestore = useFirestore();
+    const { organization } = useStudentOrg();
 
-    const allUsersQuery = useMemoFirebase(
-      () => (firestore) 
-        ? collection(firestore, "users")
-        : null, 
-      [firestore]
+    const updatesQuery = useMemoFirebase(() => 
+        organization ? query(collection(firestore, `student-organizations/${organization.id}/updates`), orderBy("createdAt", "desc")) : null, 
+        [firestore, organization]
     );
+    const { data: updates, isLoading } = useCollection<StudentOrgUpdate>(updatesQuery);
 
-    const { data: allUsers, isLoading } = useCollection<AppUser>(allUsersQuery);
+    const handleDelete = async (updateId: string) => {
+        if (!organization || !firestore) return;
 
-    const organizations = useMemo(() => {
-        if (!allUsers) return [];
-        return allUsers.filter(user => user.role === 'organization') as Organization[];
-    }, [allUsers]);
+        const batch = writeBatch(firestore);
 
-    const handleDelete = (orgId: string) => {
-        if (!firestore) return;
-        const orgDocRef = doc(firestore, 'users', orgId);
-        deleteDocumentNonBlocking(orgDocRef);
-        toast({ title: "Təşkilat uğurla silindi." });
+        const subCollectionDocRef = doc(firestore, `student-organizations/${organization.id}/updates`, updateId);
+        const topLevelDocRef = doc(firestore, 'student-org-updates', updateId);
+
+        batch.delete(subCollectionDocRef);
+        batch.delete(topLevelDocRef);
+
+        try {
+            await batch.commit();
+            toast({ title: "Yenilik uğurla silindi." });
+        } catch (error) {
+            console.error("Yenilik silinərkən xəta:", error);
+            toast({ variant: 'destructive', title: "Xəta", description: "Yenilik silinərkən xəta baş verdi." });
+        }
     };
-
-    if (isLoading) {
-      return <div className="text-center py-10">Yüklənir...</div>
-    }
 
     return (
         <Card>
             <CardHeader>
                 <div className="flex justify-between items-start">
                     <div>
-                        <CardTitle>Təşkilatlar</CardTitle>
+                        <CardTitle>Təşkilat Yenilikləri</CardTitle>
                         <CardDescription>
-                            Platformadakı partnyor təşkilatları idarə edin.
+                            Təşkilatınızın fəaliyyəti haqqında yenilikləri və elanları idarə edin.
                         </CardDescription>
                     </div>
-                     <Button asChild>
-                        <Link href="/admin/organizations/add">
+                    <Button asChild>
+                        <Link href="/telebe-teskilati-paneli/updates/add">
                             <PlusCircle className="mr-2 h-4 w-4" />
-                            Yeni Təşkilat Yarat
+                            Yeni Yenilik Yarat
                         </Link>
                     </Button>
                 </div>
@@ -96,30 +98,22 @@ export default function AdminOrganizationsPage() {
                 <Table>
                 <TableHeader>
                     <TableRow>
-                    <TableHead>Təşkilat Adı</TableHead>
-                    <TableHead className="hidden md:table-cell">
-                        Sektor
-                    </TableHead>
-                    <TableHead className="hidden md:table-cell">
-                        Qoşulma Tarixi
-                    </TableHead>
+                    <TableHead>Başlıq</TableHead>
+                    <TableHead className="hidden md:table-cell">Yaradılma Tarixi</TableHead>
                     <TableHead className="text-right">Əməliyyatlar</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                     {isLoading ? (
+                    {isLoading ? (
                          <TableRow>
-                            <TableCell colSpan={4} className="h-24 text-center">Yüklənir...</TableCell>
+                            <TableCell colSpan={3} className="h-24 text-center">Yüklənir...</TableCell>
                         </TableRow>
-                    ) : organizations && organizations.length > 0 ? (
-                        organizations.map((org) => (
-                        <TableRow key={org.id}>
-                            <TableCell className="font-medium">{org.name}</TableCell>
+                    ) : updates && updates.length > 0 ? (
+                        updates.map((item) => (
+                        <TableRow key={item.id}>
+                            <TableCell className="font-medium">{item.title}</TableCell>
                             <TableCell className="hidden md:table-cell">
-                                {org.sector}
-                            </TableCell>
-                            <TableCell className="hidden md:table-cell">
-                                {org.createdAt ? new Date(org.createdAt).toLocaleDateString() : '-'}
+                               {item.createdAt?.toDate ? format(item.createdAt.toDate(), 'dd.MM.yyyy') : '-'}
                             </TableCell>
                             <TableCell className="text-right">
                                <DropdownMenu>
@@ -131,8 +125,8 @@ export default function AdminOrganizationsPage() {
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuLabel>Əməliyyatlar</DropdownMenuLabel>
-                                         <DropdownMenuItem asChild>
-                                            <Link href={`/admin/organizations/edit/${org.id}`}>Redaktə Et</Link>
+                                        <DropdownMenuItem asChild>
+                                            <Link href={`/telebe-teskilatlari/updates/edit/${item.id}`}>Redaktə Et</Link>
                                         </DropdownMenuItem>
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
@@ -142,12 +136,12 @@ export default function AdminOrganizationsPage() {
                                                 <AlertDialogHeader>
                                                     <AlertDialogTitle>Silməni təsdiq edirsiniz?</AlertDialogTitle>
                                                     <AlertDialogDescription>
-                                                        Bu əməliyyat geri qaytarılmazdır. "{org.name}" təşkilatı sistemdən həmişəlik silinəcək.
+                                                        Bu əməliyyat geri qaytarılmazdır. "{item.title}" başlıqlı yenilik sistemdən həmişəlik silinəcək.
                                                     </AlertDialogDescription>
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
                                                     <AlertDialogCancel>Ləğv et</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => handleDelete(org.id)} className="bg-destructive hover:bg-destructive/90">Bəli, sil</AlertDialogAction>
+                                                    <AlertDialogAction onClick={() => handleDelete(item.id)} className="bg-destructive hover:bg-destructive/90">Bəli, sil</AlertDialogAction>
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
@@ -157,19 +151,13 @@ export default function AdminOrganizationsPage() {
                         </TableRow>
                         ))
                     ) : (
-                         <TableRow>
-                            <TableCell colSpan={4} className="h-24 text-center">Heç bir təşkilat tapılmadı.</TableCell>
+                        <TableRow>
+                            <TableCell colSpan={3} className="h-24 text-center">Heç bir yenilik tapılmadı.</TableCell>
                         </TableRow>
                     )}
                 </TableBody>
                 </Table>
             </CardContent>
-            <CardFooter>
-                <div className="text-xs text-muted-foreground">
-                Göstərilir <strong>1-{organizations?.length ?? 0}</strong> / <strong>{organizations?.length ?? 0}</strong>{" "}
-                təşkilat
-                </div>
-            </CardFooter>
         </Card>
     )
 }

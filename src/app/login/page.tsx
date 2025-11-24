@@ -50,7 +50,7 @@ export default function LoginPage() {
   useEffect(() => {
     if (!loading && user) {
         if (user.role === 'student') router.push('/student-dashboard');
-        else if (user.role === 'organization') router.push('/organization-dashboard');
+        else if (user.role === 'student-organization') router.push('/telebe-teskilati-paneli/dashboard');
         else if (user.role === 'admin') router.push('/admin/dashboard');
         else router.push('/');
     }
@@ -127,7 +127,7 @@ export default function LoginPage() {
         <p>
             Hesabınız yoxdur?{' '}
             <Button variant="link" asChild className="p-0">
-               <Link href="/register-student">Qeydiyyat</Link>
+               <Link href="/register-student">Tələbə kimi qeydiyyat</Link>
             </Button>
         </p>
       </CardFooter>

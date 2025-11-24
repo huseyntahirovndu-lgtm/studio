@@ -15,10 +15,11 @@ import { collection, query, where } from 'firebase/firestore';
 import type { Student, StudentOrganization, FacultyData } from '@/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Combobox } from '@/components/ui/combobox';
-import { Switch } from '@/components/ui/switch';
 
 const formSchema = z.object({
   name: z.string().min(3, "Ad ən azı 3 hərf olmalıdır."),
+  email: z.string().email("Etibarlı e-poçt daxil edin."),
+  password: z.string().min(6, "Şifrə ən azı 6 simvol olmalıdır.").optional(),
   description: z.string().min(10, "Təsvir ən azı 10 hərf olmalıdır."),
   faculty: z.string().min(1, "Fakültə seçmək mütləqdir."),
   leaderId: z.string().min(1, "Rəhbər seçmək mütləqdir."),
@@ -30,7 +31,7 @@ type FormData = z.infer<typeof formSchema>;
 
 interface OrgFormProps {
   initialData?: StudentOrganization;
-  onSave: (data: FormData) => Promise<boolean>;
+  onSave: (data: Omit<FormData, 'password'>, password?: string) => Promise<boolean>;
 }
 
 export default function OrgForm({ initialData, onSave }: OrgFormProps) {
@@ -52,6 +53,7 @@ export default function OrgForm({ initialData, onSave }: OrgFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: initialData || {
       name: '',
+      email: '',
       description: '',
       faculty: '',
       leaderId: '',
@@ -62,18 +64,28 @@ export default function OrgForm({ initialData, onSave }: OrgFormProps) {
 
   const onSubmit: SubmitHandler<FormData> = async (values) => {
     setIsSaving(true);
-    const success = await onSave(values);
+    // On edit, password is not required/changed.
+    // On create, it is. The form validation handles this.
+    const { password, ...restOfValues } = values;
+    const success = await onSave(restOfValues, password);
     if (!success) {
       setIsSaving(false);
     }
   };
+  
+  // Make password required only in create mode
+  if (!isEditMode) {
+      formSchema.extend({
+          password: z.string().min(6, "Şifrə ən azı 6 simvol olmalıdır."),
+      });
+  }
 
   return (
     <Card className="max-w-3xl mx-auto">
       <CardHeader>
         <CardTitle>{isEditMode ? 'Tələbə Təşkilatını Redaktə Et' : 'Yeni Tələbə Təşkilatı Yarat'}</CardTitle>
         <CardDescription>
-          Universitet daxilində fəaliyyət göstərən tələbə təşkilatının məlumatlarını daxil edin.
+          Təşkilat üçün məlumatları və giriş detallarını daxil edin.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -92,6 +104,37 @@ export default function OrgForm({ initialData, onSave }: OrgFormProps) {
                 </FormItem>
               )}
             />
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Giriş E-poçtu</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="teskilat@ndu.edu.az" {...field} disabled={isEditMode} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                {!isEditMode && (
+                    <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Şifrə</FormLabel>
+                        <FormControl>
+                            <Input type="password" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                )}
+             </div>
+
              <FormField
               control={form.control}
               name="description"

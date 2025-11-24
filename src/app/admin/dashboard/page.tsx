@@ -1,7 +1,7 @@
 'use client';
 import {
   ArrowUpRight,
-  Building,
+  Library,
   Users,
 } from "lucide-react"
 
@@ -23,7 +23,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import Link from "next/link";
-import { Student, Organization } from "@/types";
+import { Student, StudentOrganization } from "@/types";
 import { useCollection, useFirestore, useMemoFirebase, useAuth } from "@/firebase";
 import { collection, query, where, orderBy, limit } from "firebase/firestore";
 
@@ -36,8 +36,8 @@ export default function AdminDashboard() {
     [firestore, adminUser]
   );
   
-  const organizationsQuery = useMemoFirebase(
-    () => (firestore && adminUser?.role === 'admin') ? query(collection(firestore, "users"), where("role", "==", "organization")) : null,
+  const studentOrgsQuery = useMemoFirebase(
+    () => (firestore && adminUser?.role === 'admin') ? query(collection(firestore, "student-organizations")) : null,
     [firestore, adminUser]
   );
   
@@ -52,7 +52,7 @@ export default function AdminDashboard() {
   );
 
   const { data: students, isLoading: studentsLoading } = useCollection<Student>(studentsQuery);
-  const { data: organizations, isLoading: orgsLoading } = useCollection<Organization>(organizationsQuery);
+  const { data: studentOrgs, isLoading: orgsLoading } = useCollection<StudentOrganization>(studentOrgsQuery);
   const { data: recentStudents, isLoading: recentStudentsLoading } = useCollection<Student>(recentStudentsQuery);
 
   const isLoading = studentsLoading || orgsLoading || recentStudentsLoading || adminLoading;
@@ -69,7 +69,7 @@ export default function AdminDashboard() {
   }
   
   const totalStudents = students?.length ?? 0;
-  const totalOrganizations = organizations?.length ?? 0;
+  const totalStudentOrgs = studentOrgs?.length ?? 0;
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -92,14 +92,14 @@ export default function AdminDashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                <Link href="/admin/organizations">Ümumi Təşkilat</Link>
+                <Link href="/admin/telebe-teskilatlari">Tələbə Təşkilatları</Link>
               </CardTitle>
-              <Building className="h-4 w-4 text-muted-foreground" />
+              <Library className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalOrganizations}</div>
+              <div className="text-2xl font-bold">{totalStudentOrgs}</div>
               <p className="text-xs text-muted-foreground">
-                Platformadakı partnyor təşkilat sayı
+                Platformadakı tələbə təşkilatlarının sayı
               </p>
             </CardContent>
           </Card>

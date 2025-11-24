@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { User, ClipboardList, Edit, Mail, Check, X, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { Student, Invitation, Project, Organization as OrgType } from '@/types';
+import { Student, Invitation, Project, StudentOrganization as OrgType } from '@/types';
 import { Progress } from '@/components/ui/progress';
 import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
@@ -95,7 +95,7 @@ export default function StudentDashboard() {
         }
     }, [user, loading, router]);
     
-    const invitationsQuery = useMemoFirebase(() => studentProfile ? query(collection(firestore, `invitations`), where('studentId', '==', studentProfile.id), where('status', '==', 'gözləyir')) : null, [firestore, studentProfile]);
+    const invitationsQuery = useMemoFirebase(() => studentProfile ? query(collection(firestore, `users/${studentProfile.id}/invitations`), where('status', '==', 'gözləyir')) : null, [firestore, studentProfile]);
     const { data: invitations, isLoading: invitationsLoading } = useCollection<Invitation>(invitationsQuery as any);
     const [enrichedInvitations, setEnrichedInvitations] = useState<EnrichedInvitation[]>([]);
 
@@ -104,7 +104,7 @@ export default function StudentDashboard() {
             const enrich = async () => {
                 const enriched = await Promise.all(invitations.map(async (inv) => {
                     const projectDoc = await getDoc(doc(firestore, 'projects', inv.projectId));
-                    const orgDoc = await getDoc(doc(firestore, 'users', inv.organizationId));
+                    const orgDoc = await getDoc(doc(firestore, 'student-organizations', inv.organizationId));
                     return {
                         ...inv,
                         project: projectDoc.exists() ? { id: projectDoc.id, ...projectDoc.data() } as Project : undefined,
@@ -120,7 +120,7 @@ export default function StudentDashboard() {
     const handleInvitation = async (invitation: EnrichedInvitation, status: 'qəbul edildi' | 'rədd edildi') => {
         if (!invitation.project || !studentProfile) return;
         
-        const invitationDocRef = doc(firestore, `invitations`, invitation.id);
+        const invitationDocRef = doc(firestore, `users/${studentProfile.id}/invitations`, invitation.id);
         
         try {
              const batch = writeBatch(firestore);

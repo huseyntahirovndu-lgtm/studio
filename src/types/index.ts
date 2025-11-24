@@ -65,7 +65,7 @@ export interface Certificate {
   level: CertificateLevel;
 }
 
-export type UserRole = 'student' | 'organization' | 'admin';
+export type UserRole = 'student' | 'student-organization' | 'admin';
 
 export interface BaseUser {
     id: string;
@@ -104,16 +104,6 @@ export interface Student extends BaseUser {
   successStory?: string;
 }
 
-export interface Organization extends BaseUser {
-    role: 'organization';
-    name: string;
-    companyName: string;
-    sector: string;
-    logoUrl?: string;
-    savedStudentIds: string[];
-    projectIds?: string[];
-}
-
 export interface Admin extends BaseUser {
     role: 'admin';
     firstName: string;
@@ -121,8 +111,8 @@ export interface Admin extends BaseUser {
 }
 
 export type StudentOrganizationStatus = 'təsdiqlənmiş' | 'gözləyir' | 'arxivlənmiş';
-export interface StudentOrganization {
-  id: string;
+export interface StudentOrganization extends BaseUser {
+  role: 'student-organization';
   name: string;
   description: string;
   logoUrl?: string;
@@ -174,4 +164,4 @@ export interface Invitation {
     createdAt: Date;
 }
 
-export type AppUser = Student | Organization | Admin;
+export type AppUser = Student | StudentOrganization | Admin;

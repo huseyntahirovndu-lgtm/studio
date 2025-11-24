@@ -8,7 +8,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
-import type { AppUser, Student, StudentOrganization, Organization } from '@/types';
+import type { AppUser, Student, StudentOrganization } from '@/types';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
@@ -43,7 +43,7 @@ export function Header() {
   const getDisplayName = (user: AppUser | null) => {
     if(!user) return '';
     if(user.role === 'student' || user.role === 'admin') return `${user.firstName} ${user.lastName}`;
-    if(user.role === 'organization') return user.name;
+    if(user.role === 'student-organization') return user.name;
     return user.email;
   }
 
@@ -59,13 +59,13 @@ export function Header() {
   const getProfilePicture = (user: AppUser | null): string | undefined => {
       if (!user) return undefined;
       if (user.role === 'student') return user.profilePictureUrl;
-      if (user.role === 'organization') return user.logoUrl;
+      if (user.role === 'student-organization') return user.logoUrl;
       return undefined;
   }
 
   const getDashboardLink = () => {
     if (!appUser) return '/';
-    if (appUser.role === 'organization') return '/organization-dashboard';
+    if (appUser.role === 'student-organization') return '/telebe-teskilati-paneli/dashboard';
     if (appUser.role === 'student') return '/student-dashboard';
     if (appUser.role === 'admin') return '/admin/dashboard';
     return `/`; 
@@ -137,9 +137,9 @@ export function Header() {
                     <Link href="/telebe-teskilati-paneli/dashboard">Təşkilat Paneli</Link>
                    </DropdownMenuItem>
                  )}
-                 {appUser.role === 'organization' && (
+                 {appUser.role === 'student-organization' && (
                   <DropdownMenuItem asChild>
-                    <Link href="/organization-profile/edit">Profili redaktə et</Link>
+                    <Link href="/profile/edit">Profili redaktə et</Link>
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />

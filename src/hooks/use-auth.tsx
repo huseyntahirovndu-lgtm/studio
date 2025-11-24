@@ -4,7 +4,7 @@ import React, { createContext, useContext, ReactNode, useEffect, useState } from
 import { useRouter } from 'next/navigation';
 import { collection, query, where, getDocs, doc, setDoc, getDoc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
-import type { AppUser, Student, Organization, Admin } from '@/types';
+import type { AppUser, Student, StudentOrganization, Admin } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 
 interface AuthContextType {
@@ -13,8 +13,9 @@ interface AuthContextType {
   login: (email: string, pass: string) => Promise<boolean>;
   logout: () => void;
   register: (
-    user: Omit<Student, 'id' | 'createdAt' | 'status'> | Omit<Organization, 'id' | 'createdAt'>,
-    pass: string
+    user: Omit<Student, 'id' | 'createdAt' | 'status'> | Omit<StudentOrganization, 'id' | 'createdAt'>,
+    pass: string,
+    skipRedirect?: boolean
   ) => Promise<boolean>;
   updateUser: (updatedData: Partial<AppUser>) => void;
 }
@@ -46,13 +47,22 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
         setUser(adminUserObject);
       } else if (userId && firestore) {
         try {
-          const userDocRef = doc(firestore, 'users', userId);
-          const userSnap = await getDoc(userDocRef);
+          // Check students/admins in 'users' collection
+          let userDocRef = doc(firestore, 'users', userId);
+          let userSnap = await getDoc(userDocRef);
+
           if (userSnap.exists()) {
             setUser(userSnap.data() as AppUser);
           } else {
-            localStorage.removeItem('userId');
-            setUser(null);
+            // Check student organizations in 'student-organizations' collection
+            userDocRef = doc(firestore, 'student-organizations', userId);
+            userSnap = await getDoc(userDocRef);
+             if (userSnap.exists()) {
+                setUser(userSnap.data() as AppUser);
+             } else {
+                localStorage.removeItem('userId');
+                setUser(null);
+             }
           }
         } catch (e) {
           console.error("Failed to restore session from Firestore", e);
@@ -65,7 +75,6 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     };
     
-    // Run only when firestore is available to prevent race conditions
     if(firestore) {
       checkUserSession();
     }
@@ -87,31 +96,48 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     if (!firestore) return false;
 
     try {
+      // Search in 'users' collection (for students)
       const usersRef = collection(firestore, "users");
-      const q = query(usersRef, where("email", "==", email));
-      const querySnapshot = await getDocs(q);
+      const qUsers = query(usersRef, where("email", "==", email));
+      const userSnapshot = await getDocs(qUsers);
 
-      if (querySnapshot.empty) {
-        console.log("No user found with this email.");
-        setLoading(false);
-        return false;
-      }
-      
-      const userDoc = querySnapshot.docs[0];
-      const userData = userDoc.data() as AppUser;
-      
-      if (userData) {
+      if (!userSnapshot.empty) {
+        const userDoc = userSnapshot.docs[0];
+        const userData = userDoc.data() as AppUser;
+        
         setUser(userData);
         localStorage.setItem('userId', userData.id);
         
         if (userData.role === 'student') router.push('/student-dashboard');
-        else if (userData.role === 'organization') router.push('/organization-dashboard');
-        else if (userData.role === 'admin') router.push('/admin/dashboard');
         else router.push('/');
 
         setLoading(false);
         return true;
       }
+      
+      // Search in 'student-organizations' collection
+      const orgsRef = collection(firestore, "student-organizations");
+      const qOrgs = query(orgsRef, where("email", "==", email));
+      const orgSnapshot = await getDocs(qOrgs);
+
+      if (!orgSnapshot.empty) {
+        const orgDoc = orgSnapshot.docs[0];
+        const orgData = orgDoc.data() as AppUser;
+
+        setUser(orgData);
+        localStorage.setItem('userId', orgData.id);
+
+        if (orgData.role === 'student-organization') router.push('/telebe-teskilati-paneli/dashboard');
+        else router.push('/');
+
+        setLoading(false);
+        return true;
+      }
+      
+      console.log("No user or organization found with this email.");
+      setLoading(false);
+      return false;
+
     } catch (error) {
       console.error("Login failed:", error);
     }
@@ -127,8 +153,9 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const register = async (
-    newUser: Omit<Student, 'id' | 'createdAt' | 'status'> | Omit<Organization, 'id' | 'createdAt'>,
-    pass: string
+    newUser: Omit<Student, 'id' | 'createdAt' | 'status'> | Omit<StudentOrganization, 'id' | 'createdAt'>,
+    pass: string,
+    skipRedirect = false
   ): Promise<boolean> => {
      setLoading(true);
      await new Promise(res => setTimeout(res, FAKE_AUTH_DELAY));
@@ -140,29 +167,34 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      const usersRef = collection(firestore, "users");
-      const q = query(usersRef, where("email", "==", newUser.email));
+      const collectionName = newUser.role === 'student' ? 'users' : 'student-organizations';
+      const collectionRef = collection(firestore, collectionName);
+
+      const q = query(collectionRef, where("email", "==", newUser.email));
       const querySnapshot = await getDocs(q);
 
       if (!querySnapshot.empty) {
-        console.log("User with this email already exists.");
+        console.log(`User with this email already exists in ${collectionName}.`);
         setLoading(false);
         return false;
       }
 
       const newUserId = uuidv4();
-      const userDocRef = doc(firestore, 'users', newUserId);
+      const userDocRef = doc(firestore, collectionName, newUserId);
       
       const userWithId = {
           ...newUser,
           id: newUserId,
-          role: newUser.role,
           createdAt: new Date().toISOString(),
-          status: newUser.role === 'student' ? 'gözləyir' : undefined,
+          status: newUser.role === 'student' ? 'gözləyir' : newUser.status,
       };
 
       await setDoc(userDocRef, userWithId);
       setLoading(false);
+
+      if (!skipRedirect) {
+          router.push('/login');
+      }
       return true;
     } catch (error) {
       console.error('Registration failed:', error);
@@ -177,7 +209,8 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     setUser(newUserData);
     
     if (firestore && user.id !== 'admin_user') {
-        const userDocRef = doc(firestore, 'users', newUserData.id);
+        const collectionName = user.role === 'student' ? 'users' : 'student-organizations';
+        const userDocRef = doc(firestore, collectionName, newUserData.id);
         setDoc(userDocRef, updatedData, { merge: true }).catch(err => {
             console.error("Failed to update user in Firestore:", err);
         });

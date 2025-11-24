@@ -48,12 +48,14 @@ export default function AdminStudentOrgsPage() {
     const { toast } = useToast();
     const firestore = useFirestore();
 
-    const orgsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, "telebe-teskilatlari")) : null, [firestore]);
+    const orgsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, "student-organizations")) : null, [firestore]);
     const { data: organizations, isLoading } = useCollection<StudentOrganization>(orgsQuery);
 
     const handleDelete = (orgId: string) => {
         if (!firestore) return;
-        const orgDocRef = doc(firestore, 'telebe-teskilatlari', orgId);
+        const orgDocRef = doc(firestore, 'student-organizations', orgId);
+        // Also need to handle deletion from auth, but this is a mock.
+        // In a real scenario, you'd call a Cloud Function to delete the auth user.
         deleteDocumentNonBlocking(orgDocRef);
         toast({ title: "Təşkilat uğurla silindi." });
     };
@@ -87,6 +89,7 @@ export default function AdminStudentOrgsPage() {
                 <TableHeader>
                     <TableRow>
                     <TableHead>Təşkilat Adı</TableHead>
+                    <TableHead>E-poçt</TableHead>
                     <TableHead className="hidden md:table-cell">
                         Fakültə
                     </TableHead>
@@ -99,12 +102,13 @@ export default function AdminStudentOrgsPage() {
                 <TableBody>
                      {isLoading ? (
                          <TableRow>
-                            <TableCell colSpan={4} className="h-24 text-center">Yüklənir...</TableCell>
+                            <TableCell colSpan={5} className="h-24 text-center">Yüklənir...</TableCell>
                         </TableRow>
                     ) : organizations && organizations.length > 0 ? (
                         organizations.map((org) => (
                         <TableRow key={org.id}>
                             <TableCell className="font-medium">{org.name}</TableCell>
+                            <TableCell>{org.email}</TableCell>
                             <TableCell className="hidden md:table-cell">
                                 {org.faculty}
                             </TableCell>
@@ -150,7 +154,7 @@ export default function AdminStudentOrgsPage() {
                         ))
                     ) : (
                          <TableRow>
-                            <TableCell colSpan={4} className="h-24 text-center">Heç bir təşkilat tapılmadı.</TableCell>
+                            <TableCell colSpan={5} className="h-24 text-center">Heç bir təşkilat tapılmadı.</TableCell>
                         </TableRow>
                     )}
                 </TableBody>

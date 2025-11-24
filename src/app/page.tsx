@@ -4,7 +4,7 @@ import Image from 'next/image';
 import {
   ArrowRight,
   Users,
-  Building,
+  Library,
   Trophy,
   Lightbulb,
 } from 'lucide-react';
@@ -13,7 +13,7 @@ import { StatCard } from '@/components/stat-card';
 import { StudentCard } from '@/components/student-card';
 import { CategoryPieChart } from '@/components/charts/category-pie-chart';
 import { FacultyBarChart } from '@/components/charts/faculty-bar-chart';
-import { Student, Project, Organization, CategoryData, Achievement, News, StudentOrganization, StudentOrgUpdate } from '@/types';
+import { Student, Project, CategoryData, Achievement, News, StudentOrganization, StudentOrgUpdate } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -65,8 +65,7 @@ export default function HomePage() {
 
   const studentsQuery = useMemoFirebase(() => query(collection(firestore, "users"), where("status", "==", "təsdiqlənmiş"), where("role", "==", "student")), [firestore]);
   const projectsQuery = useMemoFirebase(() => collection(firestore, "projects"), [firestore]);
-  const organizationsQuery = useMemoFirebase(() => query(collection(firestore, "users"), where("role", "==", "organization")), [firestore]);
-  const studentOrgsQuery = useMemoFirebase(() => query(collection(firestore, "telebe-teskilatlari"), where("status", "==", "təsdiqlənmiş")), [firestore]);
+  const studentOrgsQuery = useMemoFirebase(() => query(collection(firestore, "student-organizations"), where("status", "==", "təsdiqlənmiş")), [firestore]);
   const categoriesQuery = useMemoFirebase(() => collection(firestore, "categories"), [firestore]);
   const achievementsQuery = useMemoFirebase(() => collection(firestore, "achievements"), [firestore]);
   const newsQuery = useMemoFirebase(() => query(collection(firestore, 'news'), orderBy('createdAt', 'desc'), limit(3)), [firestore]);
@@ -78,7 +77,6 @@ export default function HomePage() {
 
   const { data: students, isLoading: studentsLoading } = useCollection<Student>(studentsQuery);
   const { data: projects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
-  const { data: organizations, isLoading: orgsLoading } = useCollection<Organization>(organizationsQuery);
   const { data: studentOrgs, isLoading: studentOrgsLoading } = useCollection<StudentOrganization>(studentOrgsQuery);
   const { data: categories, isLoading: categoriesLoading } = useCollection<CategoryData>(categoriesQuery);
   const { data: achievements, isLoading: achievementsLoading } = useCollection<Achievement>(achievementsQuery);
@@ -93,7 +91,7 @@ export default function HomePage() {
   const [successStories, setSuccessStories] = useState<SuccessStory[]>([]);
   const [enrichedOrgUpdates, setEnrichedOrgUpdates] = useState<EnrichedUpdate[]>([]);
   
-  const isLoading = studentsLoading || projectsLoading || orgsLoading || categoriesLoading || achievementsLoading || newsLoading || orgUpdatesLoading || !enrichedOrgUpdates;
+  const isLoading = studentsLoading || projectsLoading || studentOrgsLoading || categoriesLoading || achievementsLoading || newsLoading || orgUpdatesLoading || !enrichedOrgUpdates;
 
   useEffect(() => {
     if (latestOrgUpdates && studentOrgs) {
@@ -193,7 +191,7 @@ export default function HomePage() {
               data-ai-hint="university campus students"
             />
             <div className="relative z-10 h-full flex items-center">
-              {/* Content removed */}
+             
             </div>
         </section>
 
@@ -208,7 +206,7 @@ export default function HomePage() {
               <StatCard
                 title="Tələbə Təşkilatları"
                 value={isLoading ? '...' : (studentOrgs?.length.toString() ?? '0')}
-                icon={Building}
+                icon={Library}
               />
               <StatCard
                 title="Aktiv Layihələr"

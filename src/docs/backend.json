@@ -233,44 +233,6 @@
         "url"
       ]
     },
-    "Organization": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Organization",
-      "type": "object",
-      "description": "Represents an organization that can search for and connect with students.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Organization entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The name of the organization."
-        },
-        "email": {
-          "type": "string",
-          "description": "The email address of the organization.",
-          "format": "email"
-        },
-        "sector": {
-          "type": "string",
-          "description": "The sector the organization operates in."
-        },
-        "savedStudentIds": {
-          "type": "array",
-          "description": "References to Students that are saved by the Organization. (Relationship: Organization N:N Student)",
-          "items": {
-            "type": "string"
-          }
-        }
-      },
-      "required": [
-        "id",
-        "name",
-        "email",
-        "sector"
-      ]
-    },
     "Category": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Category",
@@ -315,11 +277,16 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "StudentOrganization",
       "type": "object",
-      "description": "Represents a student-led organization within the university.",
+      "description": "Represents a student-led organization within the university, which can also act as a user.",
       "properties": {
         "id": {
           "type": "string",
           "description": "Unique identifier for the Student Organization entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address used for logging into the platform.",
+          "format": "email"
         },
         "name": {
           "type": "string",
@@ -356,6 +323,7 @@
       },
       "required": [
         "id",
+        "email",
         "name",
         "description",
         "faculty",
@@ -405,32 +373,32 @@
   "firestore": {
     "structure": [
       {
-        "path": "/students/{studentId}",
+        "path": "/users/{userId}",
         "definition": {
           "entityName": "Student",
           "schema": {
             "$ref": "#/backend/entities/Student"
           },
-          "description": "Stores student profile information.  Includes denormalized 'studentId' parameter for authorization independence.",
+          "description": "Stores user profile information. The `role` field determines if it's a student or another user type. This collection holds all users.",
           "params": [
             {
-              "name": "studentId",
-              "description": "The unique identifier for the student."
+              "name": "userId",
+              "description": "The unique identifier for the user."
             }
           ]
         }
       },
       {
-        "path": "/students/{studentId}/projects/{projectId}",
+        "path": "/users/{userId}/projects/{projectId}",
         "definition": {
           "entityName": "Project",
           "schema": {
             "$ref": "#/backend/entities/Project"
           },
-          "description": "Stores project information for a specific student.  Includes denormalized 'studentId' parameter for authorization independence.",
+          "description": "Stores project information for a specific student.",
           "params": [
             {
-              "name": "studentId",
+              "name": "userId",
               "description": "The unique identifier for the student."
             },
             {
@@ -441,16 +409,16 @@
         }
       },
       {
-        "path": "/students/{studentId}/achievements/{achievementId}",
+        "path": "/users/{userId}/achievements/{achievementId}",
         "definition": {
           "entityName": "Achievement",
           "schema": {
             "$ref": "#/backend/entities/Achievement"
           },
-          "description": "Stores achievement information for a specific student. Includes denormalized 'studentId' parameter for authorization independence.",
+          "description": "Stores achievement information for a specific student.",
           "params": [
             {
-              "name": "studentId",
+              "name": "userId",
               "description": "The unique identifier for the student."
             },
             {
@@ -460,22 +428,22 @@
           ]
         }
       },
-      {
-        "path": "/students/{studentId}/socialLinks/{socialLinkId}",
+       {
+        "path": "/users/{userId}/invitations/{invitationId}",
         "definition": {
-          "entityName": "SocialLink",
-          "schema": {
-            "$ref": "#/backend/entities/SocialLink"
+          "entityName": "Invitation",
+           "schema": {
+            "$ref": "#/backend/entities/Invitation"
           },
-          "description": "Stores social link information for a specific student. Includes denormalized 'studentId' parameter for authorization independence.",
+          "description": "Stores invitations for a student from organizations.",
           "params": [
             {
-              "name": "studentId",
+              "name": "userId",
               "description": "The unique identifier for the student."
             },
             {
-              "name": "socialLinkId",
-              "description": "The unique identifier for the social link."
+                "name": "invitationId",
+                "description": "The unique identifier for the invitation."
             }
           ]
         }
@@ -492,22 +460,6 @@
             {
               "name": "skillId",
               "description": "The unique identifier for the skill."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/organizations/{organizationId}",
-        "definition": {
-          "entityName": "Organization",
-          "schema": {
-            "$ref": "#/backend/entities/Organization"
-          },
-          "description": "Stores information about organizations.",
-          "params": [
-            {
-              "name": "organizationId",
-              "description": "The unique identifier for the organization."
             }
           ]
         }
@@ -551,7 +503,7 @@
           "schema": {
             "$ref": "#/backend/entities/StudentOrganization"
           },
-          "description": "Stores information about student-led organizations.",
+          "description": "Stores information about student-led organizations. These are also users.",
           "params": [
             {
               "name": "orgId",
@@ -582,24 +534,7 @@
             { "name": "newsId", "description": "The unique identifier for the news post." }
           ]
         }
-      },
-      {
-        "path": "/roles_admin/{userId}",
-        "definition": {
-          "entityName": "roles_admin",
-          "schema": {
-            "$ref": "#/backend/entities/Organization"
-          },
-          "description": "Stores user IDs who are admins. Existence of document grants admin role.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier for the admin user."
-            }
-          ]
-        }
       }
-    ],
-    "reasoning": "The Firestore data structure is designed to support the İstedad Mərkəzi (Talent Bank) platform, prioritizing security, scalability, and ease of debugging. The structure emphasizes authorization independence by denormalizing authorization data and segregating data based on access requirements. The user request specified a need for a student talent bank for the Naxçıvan Dövlət Universiteti, and the structure accommodates the described entities and application requirements, focusing on student profiles, skill management, organization interaction, and administrative oversight. I have not considered any requirements for the UI for messaging between students and organizations or any AI integrations. I have optimized the structure to best reflect the data models in the prompt. \n\n**Authorization Independence (CRITICAL):**\nTo achieve authorization independence and eliminate `get()` calls in security rules, the structure denormalizes authorization context. For instance, the `Project`, `Achievement`, and `SocialLink` subcollections under each student document inherently inherit the student's ownership. While not explicitly collaborative, if collaboration were introduced, membership maps (`members: {uid1: \"role\", uid2: \"role\"}`) would be denormalized into relevant subcollections to avoid hierarchical dependencies. This approach ensures that atomic operations (transactions/batches) are not broken and simplifies debugging.\n\n**Structural Segregation (Homogeneous Security Posture):**\nThe structure ensures that all documents within a collection share the same security requirements. For example, student profiles are stored in `/students/{studentId}`, while organization profiles are stored in `/organizations/{organizationId}`. There is no need to store draft and public student profiles in the same collection, removing the need for complex security rules that differentiate access based on document content. This segregation simplifies rules and enhances security.\n\n**Access Modeling (Standardization and Consistency):**\nThe structure uses consistent patterns for authorization:\n*   **Private Data:** User-owned data like projects, achievements, and social links are stored in hierarchical paths under the `/students/{studentId}` collection, enabling path-based ownership. For example, `/students/{studentId}/projects/{projectId}` ensures that only the student can manage their projects.\n*   **Collaborative Data:** If collaborative features were to be added (e.g., team projects), the Membership Map (`members: {uid1: \"role\", uid2: \"role\"}`) pattern would be used. This map would be denormalized into subcollections as needed.\n*   **Global Roles (DBAC):** Administrative roles are managed via existence checks in dedicated collections like `/roles_admin/{uid}`, allowing simple and efficient security rules based on role membership.\n\n**QAPs (Rules are not Filters):**\nThe structure supports secure `list` operations by ensuring that security rules do not act as filters. Segregation of data based on access needs and the use of membership maps (when needed) allow for efficient and secure listing of resources without exposing unauthorized data.\n\n**Invariants:**\nThe structure supports the integrity of ownership, timestamps, and denormalized data by enforcing strict naming conventions and predictable schemas. For example, all user-owned entities use `studentId` to denote ownership. The structure can be extended to support timestamps (e.g., `createdAt`, `updatedAt`) if required by the application."
+    ]
   }
 }
