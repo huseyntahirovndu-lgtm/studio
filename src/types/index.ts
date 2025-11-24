@@ -116,8 +116,8 @@ export interface StudentOrganization extends BaseUser {
   name: string;
   description: string;
   logoUrl?: string;
-  faculty: string;
-  leaderId: string; // student id
+  faculty?: string;
+  leaderId?: string; // student id
   memberIds: string[]; // array of student ids
   status: StudentOrganizationStatus;
 }

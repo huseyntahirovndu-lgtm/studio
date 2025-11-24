@@ -10,22 +10,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
-import type { Student, StudentOrganization, FacultyData } from '@/types';
+import type { StudentOrganization } from '@/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Combobox } from '@/components/ui/combobox';
 
 const formSchema = z.object({
   name: z.string().min(3, "Ad ən azı 3 hərf olmalıdır."),
   email: z.string().email("Etibarlı e-poçt daxil edin."),
   password: z.string().min(6, "Şifrə ən azı 6 simvol olmalıdır.").optional(),
   description: z.string().min(10, "Təsvir ən azı 10 hərf olmalıdır."),
-  faculty: z.string().min(1, "Fakültə seçmək mütləqdir."),
-  leaderId: z.string().min(1, "Rəhbər seçmək mütləqdir."),
   logoUrl: z.string().url().or(z.literal('')).optional(),
   status: z.enum(['təsdiqlənmiş', 'gözləyir', 'arxivlənmiş']),
 });
+
+// Create a separate schema for creation mode
+const createFormSchema = formSchema.extend({
+    password: z.string().min(6, "Şifrə ən azı 6 simvol olmalıdır."),
+});
+
 
 type FormData = z.infer<typeof formSchema>;
 
@@ -37,26 +38,15 @@ interface OrgFormProps {
 export default function OrgForm({ initialData, onSave }: OrgFormProps) {
   const [isSaving, setIsSaving] = useState(false);
   const router = useRouter();
-  const firestore = useFirestore();
 
   const isEditMode = !!initialData;
   
-  const studentsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, "users"), where("role", "==", "student")) : null, [firestore]);
-  const facultiesQuery = useMemoFirebase(() => firestore ? collection(firestore, "faculties") : null, [firestore]);
-  
-  const { data: students } = useCollection<Student>(studentsQuery);
-  const { data: faculties } = useCollection<FacultyData>(facultiesQuery);
-
-  const studentOptions = students?.map(s => ({ value: s.id, label: `${s.firstName} ${s.lastName}` })) || [];
-
   const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(isEditMode ? formSchema : createFormSchema),
     defaultValues: initialData || {
       name: '',
       email: '',
       description: '',
-      faculty: '',
-      leaderId: '',
       logoUrl: '',
       status: 'gözləyir',
     },
@@ -72,13 +62,6 @@ export default function OrgForm({ initialData, onSave }: OrgFormProps) {
       setIsSaving(false);
     }
   };
-  
-  // Make password required only in create mode
-  if (!isEditMode) {
-      formSchema.extend({
-          password: z.string().min(6, "Şifrə ən azı 6 simvol olmalıdır."),
-      });
-  }
 
   return (
     <Card className="max-w-3xl mx-auto">
@@ -148,51 +131,7 @@ export default function OrgForm({ initialData, onSave }: OrgFormProps) {
                 </FormItem>
               )}
             />
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                control={form.control}
-                name="faculty"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Əsas Fakültə</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Fakültə seçin" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {faculties?.map(faculty => (
-                          <SelectItem key={faculty.id} value={faculty.name}>
-                            {faculty.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-               <FormField
-                  control={form.control}
-                  name="leaderId"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Təşkilat Rəhbəri</FormLabel>
-                      <Combobox
-                          options={studentOptions}
-                          value={field.value}
-                          onChange={field.onChange}
-                          placeholder="Rəhbər seçin..."
-                          searchPlaceholder="Tələbə axtar..."
-                          notFoundText="Tələbə tapılmadı."
-                      />
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-             </div>
-
+            
             <FormField
               control={form.control}
               name="logoUrl"

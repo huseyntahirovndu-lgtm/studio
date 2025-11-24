@@ -41,7 +41,7 @@ export default function AdminLayout({
         description: "Bu səhifəyə yalnız adminlər daxil ola bilər.",
         variant: "destructive",
       });
-      router.push('/');
+      router.push('/login');
     }
   }, [user, loading, router, toast]);
 
@@ -50,6 +50,8 @@ export default function AdminLayout({
     return exact ? pathname === href : pathname.startsWith(href);
   }
 
+  // While loading or if user is not an admin, show a loading/permission check screen.
+  // This prevents child components from rendering with incorrect auth state.
   if (loading || user?.role !== 'admin') {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -61,6 +63,7 @@ export default function AdminLayout({
     );
   }
 
+  // Once auth check is complete and user is an admin, render the actual layout.
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
       <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">

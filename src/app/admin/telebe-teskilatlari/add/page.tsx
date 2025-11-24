@@ -1,16 +1,15 @@
 'use client';
 import OrgForm from '../form';
 import { useRouter } from 'next/navigation';
-import { useFirestore, useAuth } from '@/firebase';
-import { collection, doc, setDoc } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { v4 as uuidv4 } from 'uuid';
 import type { StudentOrganization } from '@/types';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function AddStudentOrgPage() {
     const router = useRouter();
     const firestore = useFirestore();
-    const { register } = useAuth(); // Use the unified register function
+    const { register } = useAuth();
     const { toast } = useToast();
 
     const handleSave = async (data: any, pass: string) => {
@@ -19,19 +18,16 @@ export default function AddStudentOrgPage() {
             return false;
         }
 
-        const newOrgData: Omit<StudentOrganization, 'id' | 'createdAt'> = {
+        const newOrgData: Omit<StudentOrganization, 'id' | 'createdAt' | 'leaderId' | 'faculty' | 'memberIds' > = {
             role: 'student-organization',
             name: data.name,
             email: data.email,
             description: data.description,
             logoUrl: data.logoUrl,
-            faculty: data.faculty,
-            leaderId: data.leaderId,
-            memberIds: [],
             status: data.status,
         };
 
-        const success = await register(newOrgData, pass, true); // Pass true to skip redirection
+        const success = await register(newOrgData as any, pass, true);
 
         if (success) {
             toast({ title: 'Uğurlu', description: 'Tələbə təşkilatı uğurla yaradıldı.' });

@@ -301,14 +301,6 @@
           "description": "URL of the organization's logo.",
           "format": "uri"
         },
-        "faculty": {
-          "type": "string",
-          "description": "The faculty the student organization is primarily associated with."
-        },
-        "leaderId": {
-          "type": "string",
-          "description": "The ID of the student who is the leader of the organization."
-        },
         "memberIds": {
           "type": "array",
           "description": "An array of student IDs who are members of the organization.",
@@ -326,8 +318,6 @@
         "email",
         "name",
         "description",
-        "faculty",
-        "leaderId",
         "status"
       ]
     },

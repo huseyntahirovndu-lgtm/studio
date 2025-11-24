@@ -46,7 +46,7 @@ export default function StudentOrganizationsPage() {
                   </Avatar>
                   <div>
                     <CardTitle className="group-hover:text-primary">{org.name}</CardTitle>
-                    <CardDescription>{org.faculty}</CardDescription>
+                    {org.faculty && <CardDescription>{org.faculty}</CardDescription>}
                   </div>
                 </CardHeader>
                 <CardContent>

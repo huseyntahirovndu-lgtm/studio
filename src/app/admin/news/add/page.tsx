@@ -14,7 +14,7 @@ export default function AddNewsPage() {
     router.push('/admin/news');
   };
 
-  const isLoading = authLoading || !firestore;
+  const isLoading = authLoading || !firestore || !user;
 
   if (isLoading) {
     return (
@@ -26,9 +26,10 @@ export default function AddNewsPage() {
         </div>
     );
   }
-  
-  if (!user) {
-    return <p>Bu əməliyyatı etmək üçün giriş etməlisiniz.</p>;
+
+  // This check is secondary because the layout already protects the route.
+  if (user.role !== 'admin') {
+    return <p>Bu əməliyyatı etmək üçün admin səlahiyyəti lazımdır.</p>;
   }
 
   return (
