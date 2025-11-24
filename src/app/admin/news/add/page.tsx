@@ -34,9 +34,4 @@ export default function AddNewsPage() {
 
   return (
     <NewsEditForm 
-      onSuccess={handleSuccess}
-      firestore={firestore}
-      user={user}
-    />
-  );
-}
+      onSuccess={handleSuccess
