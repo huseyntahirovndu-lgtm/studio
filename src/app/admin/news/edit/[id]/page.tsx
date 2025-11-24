@@ -1,6 +1,6 @@
 'use client';
 import { useParams, useRouter } from 'next/navigation';
-import { useDoc, useFirestore } from '@/firebase';
+import { useDoc, useFirestore, useAuth } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { News } from '@/types';
 import NewsEditForm from '../../edit-form';
@@ -10,14 +10,17 @@ export default function EditNewsPage() {
   const { id } = useParams();
   const router = useRouter();
   const firestore = useFirestore();
+  const { user, loading: userLoading } = useAuth();
   
   const newsId = typeof id === 'string' ? id : '';
   const newsDocRef = doc(firestore, 'news', newsId);
-  const { data: newsData, isLoading } = useDoc<News>(newsDocRef);
+  const { data: newsData, isLoading: newsLoading } = useDoc<News>(newsDocRef);
   
   const handleSuccess = () => {
     router.push('/admin/news');
   };
+  
+  const isLoading = newsLoading || userLoading || !firestore;
   
   if(isLoading) {
     return (
@@ -34,10 +37,16 @@ export default function EditNewsPage() {
     return <p>Xəbər tapılmadı.</p>
   }
 
+  if (!user) {
+    return <p>Bu səhifəyə baxmaq üçün səlahiyyətiniz yoxdur.</p>
+  }
+
   return (
     <NewsEditForm 
       onSuccess={handleSuccess}
       initialData={newsData}
+      firestore={firestore}
+      user={user}
     />
   );
 }

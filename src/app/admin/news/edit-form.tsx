@@ -5,9 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useAuth, useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { collection, doc, serverTimestamp } from 'firebase/firestore';
-import type { News, Admin } from '@/types';
+import { Firestore, collection, doc, serverTimestamp } from 'firebase/firestore';
+import { AppUser, News, Admin } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -16,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Upload } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 
 const formSchema = z.object({
   title: z.string().min(5, "Başlıq ən azı 5 hərf olmalıdır."),
@@ -28,6 +28,8 @@ type FormData = z.infer<typeof formSchema>;
 interface EditNewsFormProps {
   initialData?: News | null;
   onSuccess: (id: string) => void;
+  firestore: Firestore;
+  user: AppUser;
 }
 
 const generateSlug = (title: string) => {
@@ -37,13 +39,11 @@ const generateSlug = (title: string) => {
     .replace(/[^\w-]+/g, '');
 };
 
-export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormProps) {
+export default function NewsEditForm({ initialData, onSuccess, firestore, user }: EditNewsFormProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
-  const firestore = useFirestore();
-  const { user } = useAuth();
   
   const isEditMode = !!initialData;
   const coverImageInputRef = useRef<HTMLInputElement>(null);
@@ -85,12 +85,6 @@ export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormPro
 
   const onSubmit: SubmitHandler<FormData> = async (values) => {
     setIsSaving(true);
-    
-    if (!firestore || !user) {
-      toast({ variant: 'destructive', title: 'Xəta', description: 'Giriş edilməyib və ya verilənlər bazası tapılmadı.' });
-      setIsSaving(false);
-      return;
-    }
 
     try {
       const adminUser = user as Admin;
@@ -106,8 +100,7 @@ export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormPro
         onSuccess(initialData.id);
       } else {
         const newDocId = uuidv4();
-        const newDocRef = doc(firestore, 'news', newDocId);
-        const newNewsData: News = {
+        const newNewsData: Omit<News, 'id'> & { id: string } = {
             id: newDocId,
             title: values.title,
             content: values.content,
@@ -118,7 +111,8 @@ export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormPro
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
         };
-        addDocumentNonBlocking(collection(firestore, 'news'), newNewsData);
+        const newsCollectionRef = collection(firestore, 'news');
+        await addDocumentNonBlocking(newsCollectionRef, newNewsData);
         toast({ title: 'Uğurlu', description: 'Xəbər uğurla yaradıldı.' });
         onSuccess(newDocId);
       }
@@ -134,7 +128,7 @@ export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormPro
     setIsSaving(false);
   };
 
-  const isSubmitDisabled = isSaving || isUploading || !user || !firestore;
+  const isSubmitDisabled = isSaving || isUploading;
 
   return (
     <Card>

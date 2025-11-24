@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useFirestore, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
-import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
-import type { StudentOrgUpdate } from '@/types';
+import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { Firestore, collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
+import type { StudentOrgUpdate, StudentOrganization } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -16,7 +16,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Upload } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { useStudentOrg } from '../layout';
 
 const formSchema = z.object({
   title: z.string().min(5, "Başlıq ən azı 5 hərf olmalıdır."),
@@ -29,15 +28,15 @@ type FormData = z.infer<typeof formSchema>;
 interface EditOrgUpdateFormProps {
   initialData?: StudentOrgUpdate | null;
   onSuccess: (id: string) => void;
+  organization: StudentOrganization;
+  firestore: Firestore;
 }
 
-export default function OrgUpdateEditForm({ initialData, onSuccess }: EditOrgUpdateFormProps) {
+export default function OrgUpdateEditForm({ initialData, onSuccess, organization, firestore }: EditOrgUpdateFormProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
-  const firestore = useFirestore();
-  const { organization } = useStudentOrg();
   
   const isEditMode = !!initialData;
   const coverImageInputRef = useRef<HTMLInputElement>(null);
@@ -77,11 +76,6 @@ export default function OrgUpdateEditForm({ initialData, onSuccess }: EditOrgUpd
 
 
   const onSubmit: SubmitHandler<FormData> = async (values) => {
-    if (!organization || !firestore) {
-      toast({ variant: 'destructive', title: 'Səlahiyyət Xətası', description: "Bu əməliyyatı etmək üçün təşkilat rəhbəri olmalısınız." });
-      return;
-    }
-    
     setIsSaving(true);
 
     try {
@@ -132,6 +126,8 @@ export default function OrgUpdateEditForm({ initialData, onSuccess }: EditOrgUpd
 
     setIsSaving(false);
   };
+
+  const isSubmitDisabled = isSaving || isUploading;
 
   return (
     <Card>
@@ -203,7 +199,7 @@ export default function OrgUpdateEditForm({ initialData, onSuccess }: EditOrgUpd
                 <Button variant="outline" type="button" onClick={() => router.back()}>
                     Ləğv et
                 </Button>
-                <Button type="submit" disabled={isSaving || isUploading}>
+                <Button type="submit" disabled={isSubmitDisabled}>
                     {isSaving ? 'Yadda saxlanılır...' : (isEditMode ? 'Yenilə' : 'Yarat')}
                 </Button>
             </div>
