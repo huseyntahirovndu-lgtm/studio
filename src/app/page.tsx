@@ -192,17 +192,8 @@ export default function HomePage() {
               priority
               data-ai-hint="university campus students"
             />
-            <div className="relative z-10 h-full flex items-center bg-black/50">
-              <div className="container mx-auto px-4">
-                <div className="max-w-3xl text-white">
-                  <h1 className="text-4xl md:text-6xl font-extrabold !leading-tight tracking-tight">
-                    Naxçıvan Dövlət Universiteti <span className="text-primary">İstedad Mərkəzi</span>
-                  </h1>
-                  <p className="mt-6 text-lg md:text-xl text-white/80">
-                    Potensialı reallığa çevirən platforma. Universitetimizin parlaq tələbələrini kəşf edin, layihələrini izləyin və onlarla əlaqə qurun.
-                  </p>
-                </div>
-              </div>
+            <div className="relative z-10 h-full flex items-center">
+              {/* Content removed */}
             </div>
         </section>
 
