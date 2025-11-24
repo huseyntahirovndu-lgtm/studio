@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { format } from 'date-fns';
 import Image from 'next/image';
 import MembersList from './members-list';
+import { useAuth } from '@/hooks/use-auth';
 
 
 function OrgDetailsLoading() {
@@ -33,6 +34,7 @@ function OrgDetailsLoading() {
 export default function StudentOrgDetailsPage() {
   const { id } = useParams();
   const firestore = useFirestore();
+  const { user: currentUser } = useAuth();
 
   const orgId = typeof id === 'string' ? id : '';
 
@@ -40,7 +42,7 @@ export default function StudentOrgDetailsPage() {
   const { data: organization, isLoading: orgLoading } = useDoc<StudentOrganization>(orgDocRef);
   
   const updatesQuery = useMemoFirebase(
-    () => (firestore && orgId ? query(collection(firestore, `student-org-updates`), where('organizationId', '==', orgId), orderBy('createdAt', 'desc')) : null),
+    () => (firestore && orgId ? query(collection(firestore, `student-organizations/${orgId}/updates`), orderBy('createdAt', 'desc')) : null),
     [firestore, orgId]
   );
   const { data: updates, isLoading: updatesLoading } = useCollection<StudentOrgUpdate>(updatesQuery);
