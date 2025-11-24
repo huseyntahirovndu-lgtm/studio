@@ -24,10 +24,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import NextImage from 'next/image';
 import { useDoc, useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, doc, query, where, getDoc, writeBatch } from 'firebase/firestore';
-import Head from 'next/head';
 
 
-function ProfilePageContent() {
+function SocialLink({ href, icon: Icon, text }: { href: string; icon: React.ElementType; text: string }) {
+    if (!href) return null;
+    return (
+        <a href={href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-sm text-muted-foreground hover:text-primary transition-colors">
+            <Icon className="w-5 h-5" />
+            <span>{text}</span>
+        </a>
+    );
+}
+
+export default function ProfilePage() {
   const { id } = useParams();
   const { user: currentUser } = useAuth();
   const firestore = useFirestore();
@@ -56,17 +65,21 @@ function ProfilePageContent() {
   const isLoading = studentLoading || projectsLoading || achievementsLoading || certificatesLoading;
 
   useEffect(() => {
-    if (projectsData) {
+    if (projectsData && firestore) {
       const fetchTeamMembers = async () => {
         const enrichedProjects = await Promise.all(
           projectsData.map(async (project) => {
             if (project.teamMemberIds && project.teamMemberIds.length > 0) {
               const memberNames = await Promise.all(
                 project.teamMemberIds.map(async (memberId) => {
-                  const userDoc = await getDoc(doc(firestore, 'users', memberId));
-                  if (userDoc.exists()) {
-                    const userData = userDoc.data() as Student; // Assuming team members are students
-                    return `${userData.firstName} ${userData.lastName}`;
+                  try {
+                    const userDoc = await getDoc(doc(firestore, 'users', memberId));
+                    if (userDoc.exists()) {
+                      const userData = userDoc.data() as Student;
+                      return `${userData.firstName} ${userData.lastName}`;
+                    }
+                  } catch (e) {
+                     console.error("Error fetching team member:", e);
                   }
                   return 'Naməlum Üzv';
                 })
@@ -79,6 +92,8 @@ function ProfilePageContent() {
         setProjects(enrichedProjects);
       };
       fetchTeamMembers();
+    } else if (projectsData) {
+        setProjects(projectsData);
     }
   }, [projectsData, firestore]);
 
@@ -190,26 +205,8 @@ function ProfilePageContent() {
     return { name: 'Təşkilat Layihəsi' };
   };
 
-  const pageTitle = `${student.firstName} ${student.lastName} | İstedad Mərkəzi`;
-  const description = `${student.faculty}, ${student.major} tələbəsi. Bacarıqları: ${student.skills?.map(s => s.name).join(', ')}.`;
 
   return (
-    <>
-      <Head>
-        <title>{pageTitle}</title>
-        <meta name="description" content={description} />
-        <meta property="og:title" content={pageTitle} />
-        <meta property="og:description" content={description} />
-        <meta property="og:image" content={student.profilePictureUrl || 'https://i.ibb.co/cXv2KzRR/q2.jpg'} />
-        <meta property="og:type" content="profile" />
-        <meta property="profile:first_name" content={student.firstName} />
-        <meta property="profile:last_name" content={student.lastName} />
-        <meta property="og:url" content={`https://istedadmerkezi.net/profile/${student.id}`} />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={pageTitle} />
-        <meta name="twitter:description" content={description} />
-        <meta name="twitter:image" content={student.profilePictureUrl || 'https://i.ibb.co/cXv2KzRR/q2.jpg'} />
-      </Head>
       <main className="flex-1">
         <div className="container mx-auto max-w-6xl py-8 md:py-12 px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -301,13 +298,13 @@ function ProfilePageContent() {
                       <CardTitle>Sosial Hesablar</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                      {student.linkedInURL && <SocialLink href={student.linkedInURL} icon={Linkedin} text="LinkedIn" />}
-                      {student.githubURL && <SocialLink href={student.githubURL} icon={Github} text="GitHub" />}
-                      {student.behanceURL && <SocialLink href={student.behanceURL} icon={Dribbble} text="Behance" />}
-                      {student.instagramURL && <SocialLink href={student.instagramURL} icon={Instagram} text="Instagram" />}
-                      {student.portfolioURL && <SocialLink href={student.portfolioURL} icon={LinkIcon} text="Portfolio" />}
-                      {student.googleScholarURL && <SocialLink href={student.googleScholarURL} icon={Book} text="Google Scholar" />}
-                      {student.youtubeURL && <SocialLink href={student.youtubeURL} icon={Youtube} text="YouTube" />}
+                      <SocialLink href={student.linkedInURL} icon={Linkedin} text="LinkedIn" />
+                      <SocialLink href={student.githubURL} icon={Github} text="GitHub" />
+                      <SocialLink href={student.behanceURL} icon={Dribbble} text="Behance" />
+                      <SocialLink href={student.instagramURL} icon={Instagram} text="Instagram" />
+                      <SocialLink href={student.portfolioURL} icon={LinkIcon} text="Portfolio" />
+                      <SocialLink href={student.googleScholarURL} icon={Book} text="Google Scholar" />
+                      <SocialLink href={student.youtubeURL} icon={Youtube} text="YouTube" />
                        {!student.linkedInURL && !student.githubURL && !student.behanceURL && !student.instagramURL && !student.portfolioURL && !student.googleScholarURL && !student.youtubeURL && <p className="text-sm text-muted-foreground">Heç bir sosial hesab qeyd edilməyib.</p>}
                   </CardContent>
               </Card>
@@ -381,7 +378,7 @@ function ProfilePageContent() {
                                 <a key={cert.id} href={cert.certificateURL} target="_blank" rel="noopener noreferrer" className="block border rounded-lg overflow-hidden hover:opacity-80 transition-opacity group">
                                    <div className="bg-muted h-24 flex items-center justify-center relative">
                                       {cert.certificateURL.match(/\.(jpeg|jpg|gif|png)$/) != null ? (
-                                        <NextImage src={cert.certificateURL} alt={cert.name} layout="fill" objectFit="cover" />
+                                        <NextImage src={cert.certificateURL} alt={cert.name} fill objectFit="cover" />
                                       ) : (
                                         <FileText className="w-8 h-8 text-muted-foreground" />
                                       )}
@@ -396,22 +393,5 @@ function ProfilePageContent() {
           </div>
         </div>
       </main>
-    </>
   );
-}
-
-
-export default function ProfilePage() {
-    return (
-        <ProfilePageContent />
-    )
-}
-
-function SocialLink({ href, icon: Icon, text }: { href: string; icon: React.ElementType; text: string }) {
-    return (
-        <a href={href} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-sm text-muted-foreground hover:text-primary transition-colors">
-            <Icon className="w-5 h-5" />
-            <span>{text}</span>
-        </a>
-    );
 }
