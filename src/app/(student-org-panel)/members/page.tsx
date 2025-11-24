@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
-import { useStudentOrg } from '../layout';
+import { useStudentOrg } from '@/app/(student-org-panel)/layout';
 
 export default function OrganizationMembersPage() {
   const firestore = useFirestore();

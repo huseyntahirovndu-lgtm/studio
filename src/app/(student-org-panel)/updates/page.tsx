@@ -43,7 +43,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, query, orderBy, doc, writeBatch } from "firebase/firestore";
 import { format } from 'date-fns';
-import { useStudentOrg } from "../layout";
+import { useStudentOrg } from '@/app/(student-org-panel)/layout';
 
 export default function OrgUpdatesPage() {
     const { toast } = useToast();
