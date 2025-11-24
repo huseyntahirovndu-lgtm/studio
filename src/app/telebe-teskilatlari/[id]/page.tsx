@@ -10,6 +10,7 @@ import { Building, Users, Newspaper } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import Image from 'next/image';
+import { useAuth } from '@/hooks/use-auth';
 
 function OrgDetailsLoading() {
   return (
@@ -31,17 +32,26 @@ function OrgDetailsLoading() {
 export default function StudentOrgDetailsPage() {
   const { id } = useParams();
   const firestore = useFirestore();
+  const { user: currentUser } = useAuth(); // Get the currently logged-in user
 
   const orgId = typeof id === 'string' ? id : '';
 
   const orgDocRef = useMemoFirebase(() => (firestore && orgId ? doc(firestore, 'student-organizations', orgId) : null), [firestore, orgId]);
   const { data: organization, isLoading: orgLoading } = useDoc<StudentOrganization>(orgDocRef);
   
+  // Conditionally create the members query only if a user is logged in
   const membersQuery = useMemoFirebase(
-    () => (firestore && organization?.memberIds && organization.memberIds.length > 0 ? query(collection(firestore, 'users'), where(documentId(), 'in', organization.memberIds)) : null),
-    [firestore, organization]
+    () => (
+        firestore && 
+        organization?.memberIds && 
+        organization.memberIds.length > 0 &&
+        currentUser // <-- CRITICAL CHECK: only run if user is authenticated
+        ? query(collection(firestore, 'users'), where(documentId(), 'in', organization.memberIds)) 
+        : null
+    ),
+    [firestore, organization, currentUser] // Add currentUser to dependency array
   );
-  const { data: members } = useCollection<Student>(membersQuery);
+  const { data: members, isLoading: membersLoading } = useCollection<Student>(membersQuery);
   
   const updatesQuery = useMemoFirebase(
     () => (firestore && orgId ? query(collection(firestore, `student-org-updates`), where('organizationId', '==', orgId), orderBy('createdAt', 'desc')) : null),
@@ -49,7 +59,7 @@ export default function StudentOrgDetailsPage() {
   );
   const { data: updates, isLoading: updatesLoading } = useCollection<StudentOrgUpdate>(updatesQuery);
 
-  const isLoading = orgLoading || updatesLoading;
+  const isLoading = orgLoading || updatesLoading || (currentUser && organization?.memberIds && organization.memberIds.length > 0 && membersLoading);
 
   if (isLoading) {
     return <OrgDetailsLoading />;
@@ -82,9 +92,10 @@ export default function StudentOrgDetailsPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-xl"><Users /> Üzvlər</CardTitle>
+              {!currentUser && <CardDescription className="text-xs">Üzv siyahısını görmək üçün giriş edin.</CardDescription>}
             </CardHeader>
             <CardContent className="space-y-4">
-              {members && members.length > 0 && (
+              {currentUser && members && members.length > 0 ? (
                 <div>
                   <h4 className="font-semibold text-sm mb-2 mt-4">Aktiv Üzvlər</h4>
                   <div className="space-y-3">
@@ -99,7 +110,9 @@ export default function StudentOrgDetailsPage() {
                     ))}
                   </div>
                 </div>
-              )}
+              ) : currentUser && (!members || members.length === 0) ? (
+                 <p className="text-sm text-muted-foreground">Bu təşkilatın heç bir üzvü yoxdur.</p>
+              ) : null}
             </CardContent>
           </Card>
         </aside>
