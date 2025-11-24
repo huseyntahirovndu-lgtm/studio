@@ -17,7 +17,7 @@ export default function EditOrgUpdatePage() {
   const updateId = typeof id === 'string' ? id : '';
   
   const updateDocRef = useMemoFirebase(() => 
-      organization && firestore ? doc(firestore, `telebe-teskilatlari/${organization.id}/updates`, updateId) : null,
+      organization && firestore ? doc(firestore, `users/${organization.id}/updates`, updateId) : null,
       [firestore, organization, updateId]
   );
 
@@ -29,7 +29,7 @@ export default function EditOrgUpdatePage() {
     router.push('/telebe-teskilati-paneli/updates');
   };
   
-  if(isLoading) {
+  if(isLoading || !organization || !firestore) {
     return (
         <div className="space-y-4">
             <Skeleton className="h-8 w-1/4" />
@@ -48,6 +48,8 @@ export default function EditOrgUpdatePage() {
     <OrgUpdateEditForm 
       onSuccess={handleSuccess}
       initialData={updateData}
+      organization={organization}
+      firestore={firestore}
     />
   );
 }

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/logo';
-import { Menu, ShieldCheck } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
@@ -11,8 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import type { AppUser, Student, StudentOrganization } from '@/types';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, limit } from 'firebase/firestore';
+import { useState } from 'react';
 
 const navLinks = [
   { href: '/', label: 'Ana Səhifə' },
@@ -26,15 +25,7 @@ export function Header() {
   const { user, loading, logout } = useAuth();
   const appUser = user as AppUser | null;
   const pathname = usePathname();
-  const firestore = useFirestore();
-
-  const ledOrgQuery = useMemoFirebase(() => 
-    user && user.role === 'student' ? query(collection(firestore, 'student-organizations'), where('leaderId', '==', user.id), limit(1)) : null,
-    [firestore, user]
-  );
-  const { data: ledOrgs } = useCollection<StudentOrganization>(ledOrgQuery);
-  const isOrgLeader = ledOrgs && ledOrgs.length > 0;
-
+  const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     logout();
@@ -132,11 +123,6 @@ export function Header() {
                     </DropdownMenuItem>
                   </>
                 )}
-                 {isOrgLeader && (
-                   <DropdownMenuItem asChild>
-                    <Link href="/telebe-teskilati-paneli/dashboard">Təşkilat Paneli</Link>
-                   </DropdownMenuItem>
-                 )}
                  {appUser.role === 'student-organization' && (
                   <DropdownMenuItem asChild>
                     <Link href="/profile/edit">Profili redaktə et</Link>
@@ -159,7 +145,7 @@ export function Header() {
             </div>
           )}
 
-          <Sheet>
+          <Sheet open={isMobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden hover:bg-primary/80">
                 <Menu className="h-5 w-5" />
@@ -168,7 +154,7 @@ export function Header() {
             </SheetTrigger>
             <SheetContent side="left">
                <div className="flex items-center p-4 border-b">
-                   <Link href="/" className="flex items-center space-x-3">
+                   <Link href="/" className="flex items-center space-x-3" onClick={() => setMobileMenuOpen(false)}>
                     <Logo className="h-10 w-auto" />
                     <span className="font-bold text-base">
                       İstedad Mərkəzi
@@ -180,6 +166,7 @@ export function Header() {
                     <Link
                       key={link.href}
                       href={link.href}
+                      onClick={() => setMobileMenuOpen(false)}
                       className={cn(
                         "transition-colors hover:text-foreground/80",
                         pathname === link.href ? "text-foreground" : "text-foreground/60"
@@ -193,10 +180,10 @@ export function Header() {
                    {!user && !loading && (
                      <>
                       <Button variant="outline" className="w-full" asChild>
-                        <Link href="/login">Giriş</Link>
+                        <Link href="/login" onClick={() => setMobileMenuOpen(false)}>Giriş</Link>
                       </Button>
                       <Button className="w-full" asChild>
-                        <Link href="/register-student">Qeydiyyat</Link>
+                        <Link href="/register-student" onClick={() => setMobileMenuOpen(false)}>Qeydiyyat</Link>
                       </Button>
                      </>
                    )}

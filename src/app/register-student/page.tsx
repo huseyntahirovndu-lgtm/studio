@@ -283,7 +283,7 @@ export default function RegisterStudentPage() {
                     Aid olduğunuz bir və ya bir neçə kateqoriyanı seçin.
                   </FormDescription>
                   {categoriesLoading ? <p>Yüklənir...</p> : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 py-2">
                   {categories?.map((item) => (
                     <FormField
                       key={item.id}

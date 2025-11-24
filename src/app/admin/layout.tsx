@@ -110,15 +110,16 @@ export default function AdminLayout({
                 <span className="sr-only">Menyunu aç/bağla</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="flex flex-col">
+            <SheetContent side="left" className="flex flex-col p-0">
               <nav className="grid gap-3 text-lg font-medium">
                 <Link
                   href="/"
-                  className="flex items-center gap-2 text-lg font-semibold mb-4"
+                  className="flex items-center gap-2 text-lg font-semibold border-b px-4 py-3.5"
                 >
                   <Logo className="h-8 w-auto" />
                   <span className="sr-only">İstedad Mərkəzi</span>
                 </Link>
+                <div className="px-4">
                 {NAV_LINKS.map(link => (
                    <Link
                     key={link.href}
@@ -132,6 +133,7 @@ export default function AdminLayout({
                     {link.label}
                   </Link>
                 ))}
+                </div>
               </nav>
             </SheetContent>
           </Sheet>

@@ -2,19 +2,15 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Home, Newspaper, Settings, Users, Library } from "lucide-react"
-import { useAuth, useCollection, useFirestore, useMemoFirebase } from "@/firebase"
+import { Home, Newspaper, Settings, Users, Library, Menu } from "lucide-react"
+import { useAuth } from "@/hooks/use-auth"
 import { cn } from "@/lib/utils"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  TooltipProvider
-} from "@/components/ui/tooltip"
 import { useEffect, createContext, useContext } from "react";
 import type { StudentOrganization } from "@/types";
-import { collection, query, where, limit } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/logo";
 
 const NAV_LINKS = [
     { href: "/telebe-teskilati-paneli/dashboard", icon: Home, label: "Panel", exact: true },
@@ -45,27 +41,24 @@ export default function StudentOrganizationLayout({
   const pathname = usePathname();
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const firestore = useFirestore();
   const { toast } = useToast();
 
-  const ledOrgQuery = useMemoFirebase(() => 
-    user ? query(collection(firestore, 'telebe-teskilatlari'), where('leaderId', '==', user.id), where('status', '==', 'təsdiqlənmiş'), limit(1)) : null,
-    [firestore, user]
-  );
-  const { data: ledOrgs, isLoading: orgsLoading } = useCollection<StudentOrganization>(ledOrgQuery);
-
-  const organization = ledOrgs?.[0] || null;
-  const isOrgLeader = !!organization;
-  const isLoading = authLoading || orgsLoading;
+  const organization = user as StudentOrganization | null;
+  const isLoading = authLoading;
 
   useEffect(() => {
-    if (!isLoading && !isOrgLeader) {
-        toast({ title: "Səlahiyyət Xətası", description: "Bu səhifəyə yalnız təsdiqlənmiş təşkilat rəhbərləri daxil ola bilər.", variant: "destructive"});
-        router.push('/');
+    if (!isLoading && user?.role !== 'student-organization') {
+        toast({ title: "Səlahiyyət Xətası", description: "Bu səhifəyə yalnız təşkilat hesabları daxil ola bilər.", variant: "destructive"});
+        router.push('/login');
     }
-  }, [isLoading, isOrgLeader, router, toast]);
+     if (!isLoading && user?.role === 'student-organization' && (user as StudentOrganization).status !== 'təsdiqlənmiş') {
+        toast({ title: "Gözləmədə Olan Hesab", description: "Təşkilat hesabınız hələ admin tərəfindən təsdiqlənməyib.", variant: "destructive"});
+        router.push('/');
+     }
 
-  if (isLoading || !isOrgLeader) {
+  }, [isLoading, user, router, toast]);
+
+  if (isLoading || user?.role !== 'student-organization' || (user as StudentOrganization).status !== 'təsdiqlənmiş') {
       return <div className="flex h-screen items-center justify-center">Yüklənir və ya səlahiyyət yoxlanılır...</div>;
   }
   
@@ -74,58 +67,94 @@ export default function StudentOrganizationLayout({
   }
 
   return (
-    <StudentOrgContext.Provider value={{ organization, isLoading: orgsLoading }}>
-        <div className="flex min-h-screen w-full flex-col bg-muted/40">
-        <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
-            <TooltipProvider>
-                <nav className="flex flex-col items-center gap-4 px-2 sm:py-5">
+    <StudentOrgContext.Provider value={{ organization, isLoading: authLoading }}>
+       <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+      <div className="hidden border-r bg-muted/40 md:block">
+        <div className="flex h-full max-h-screen flex-col gap-2">
+          <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+            <Link href="/" className="flex items-center gap-2 font-semibold">
+              <Library className="h-6 w-6" />
+              <span className="">Təşkilat Paneli</span>
+            </Link>
+          </div>
+          <div className="flex-1">
+            <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
+              {NAV_LINKS.map(link => (
                 <Link
-                    href="/"
-                    className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                    isActive(link.href, link.exact) && "bg-muted text-primary"
+                  )}
                 >
-                    <Library className="h-4 w-4 transition-all group-hover:scale-110" />
-                    <span className="sr-only">Tələbə Təşkilatı Paneli</span>
+                  <link.icon className="h-4 w-4" />
+                  {link.label}
                 </Link>
-
+              ))}
+            </nav>
+          </div>
+          <div className="mt-auto p-4 border-t">
+            <Link href="/profile/edit">
+              <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
+                <Settings className="h-4 w-4" /> Profil Ayarları
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-col">
+        <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="shrink-0 md:hidden"
+              >
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Menyunu aç/bağla</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="flex flex-col p-0">
+               <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+                 <Link href="/" className="flex items-center gap-2 font-semibold">
+                    <Logo className="h-8 w-auto" />
+                    <span className="">İstedad Mərkəzi</span>
+                  </Link>
+               </div>
+              <nav className="grid gap-2 text-base font-medium p-4">
                 {NAV_LINKS.map(link => (
-                    <Tooltip key={link.href}>
-                        <TooltipTrigger asChild>
-                        <Link
-                            href={link.href}
-                            className={cn("flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8",
-                                isActive(link.href, link.exact) && "bg-accent text-accent-foreground"
-                            )}
-                        >
-                            <link.icon className="h-5 w-5" />
-                            <span className="sr-only">{link.label}</span>
-                        </Link>
-                        </TooltipTrigger>
-                        <TooltipContent side="right">{link.label}</TooltipContent>
-                    </Tooltip>
+                   <Link
+                    key={link.href}
+                    href={link.href}
+                    className={cn(
+                      "flex items-center gap-4 rounded-lg px-3 py-2 text-muted-foreground hover:text-primary",
+                      isActive(link.href, link.exact) && "bg-accent text-accent-foreground"
+                    )}
+                  >
+                    <link.icon className="h-5 w-5" />
+                    {link.label}
+                  </Link>
                 ))}
-                </nav>
-                <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-5">
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                    <Link
-                        href="/profile/edit"
-                        className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
-                    >
-                        <Settings className="h-5 w-5" />
-                        <span className="sr-only">Profil Ayarları</span>
-                    </Link>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">Profil Ayarları</TooltipContent>
-                </Tooltip>
-                </nav>
-            </TooltipProvider>
-        </aside>
-        <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14">
-            <main className="flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
-                {children}
-            </main>
-        </div>
-        </div>
+              </nav>
+                <div className="mt-auto p-4 border-t">
+                  <Link href="/profile/edit">
+                    <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
+                      <Settings className="h-4 w-4" /> Profil Ayarları
+                    </Button>
+                  </Link>
+                </div>
+            </SheetContent>
+          </Sheet>
+           <div className="w-full flex-1" />
+           <p className="text-sm text-muted-foreground">{organization.name}</p>
+        </header>
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+          {children}
+        </main>
+      </div>
+    </div>
     </StudentOrgContext.Provider>
   )
 }
