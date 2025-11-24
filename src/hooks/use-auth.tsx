@@ -17,7 +17,7 @@ interface AuthContextType {
     pass: string,
     skipRedirect?: boolean
   ) => Promise<boolean>;
-  updateUser: (updatedData: Partial<AppUser>) => void;
+  updateUser: (updatedData: Partial<AppUser>) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -134,7 +134,6 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
         return true;
       }
       
-      console.log("No user or organization found with this email.");
       setLoading(false);
       return false;
 
@@ -203,7 +202,7 @@ export const SessionProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateUser = (updatedData: Partial<AppUser>) => {
+  const updateUser = (updatedData: Partial<AppUser>): boolean => {
     if (!user) return false;
     const newUserData = { ...user, ...updatedData };
     setUser(newUserData);
