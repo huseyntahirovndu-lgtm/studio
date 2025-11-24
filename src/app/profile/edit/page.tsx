@@ -101,6 +101,7 @@ function EditProfilePageComponent() {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1.2);
   
+  const editorRef = useRef<AvatarEditor>(null);
   const userIdFromQuery = searchParams.get('userId');
   const userIdToFetch = currentUser?.role === 'admin' && userIdFromQuery ? userIdFromQuery : currentUser?.id;
   
