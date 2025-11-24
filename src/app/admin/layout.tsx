@@ -1,9 +1,9 @@
 'use client';
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { BarChart, Home, Package, Settings, ShieldCheck, ShoppingCart, Users2, ListTree, Building, Library, Newspaper, School } from "lucide-react"
-
+import { useAuth } from "@/hooks/use-auth"
 import { cn } from "@/lib/utils"
 import {
   Tooltip,
@@ -11,6 +11,8 @@ import {
   TooltipTrigger,
   TooltipProvider
 } from "@/components/ui/tooltip"
+import { useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 const NAV_LINKS = [
     { href: "/admin/dashboard", icon: Home, label: "Panel", exact: true },
@@ -29,9 +31,35 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, loading } = useAuth();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (!loading && user?.role !== 'admin') {
+      toast({
+        title: "Səlahiyyət Xətası",
+        description: "Bu səhifəyə yalnız adminlər daxil ola bilər.",
+        variant: "destructive",
+      });
+      router.push('/');
+    }
+  }, [user, loading, router, toast]);
+
   
   const isActive = (href: string, exact?: boolean) => {
     return exact ? pathname === href : pathname.startsWith(href);
+  }
+
+  if (loading || user?.role !== 'admin') {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p>Yoxlanılır...</p>
+        </div>
+      </div>
+    );
   }
 
   return (

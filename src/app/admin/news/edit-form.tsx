@@ -15,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Upload } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { addDocumentNonBlocking, updateDocumentNonBlocking, useAuth, useFirestore } from '@/firebase';
 
 const formSchema = z.object({
   title: z.string().min(5, "Başlıq ən azı 5 hərf olmalıdır."),
@@ -28,8 +28,6 @@ type FormData = z.infer<typeof formSchema>;
 interface EditNewsFormProps {
   initialData?: News | null;
   onSuccess: (id: string) => void;
-  firestore: Firestore;
-  user: AppUser;
 }
 
 const generateSlug = (title: string) => {
@@ -39,11 +37,13 @@ const generateSlug = (title: string) => {
     .replace(/[^\w-]+/g, '');
 };
 
-export default function NewsEditForm({ initialData, onSuccess, firestore, user }: EditNewsFormProps) {
+export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const firestore = useFirestore();
+  const { user } = useAuth();
   
   const isEditMode = !!initialData;
   const coverImageInputRef = useRef<HTMLInputElement>(null);
@@ -84,6 +84,15 @@ export default function NewsEditForm({ initialData, onSuccess, firestore, user }
 
 
   const onSubmit: SubmitHandler<FormData> = async (values) => {
+    if (!user || !firestore) {
+        toast({
+            variant: 'destructive',
+            title: 'Xəta',
+            description: 'Giriş edilməyib və ya verilənlər bazası tapılmadı. Zəhmət olmasa, səhifəni yeniləyib yenidən cəhd edin.',
+        });
+        return;
+    }
+
     setIsSaving(true);
 
     try {
@@ -99,9 +108,9 @@ export default function NewsEditForm({ initialData, onSuccess, firestore, user }
         toast({ title: 'Uğurlu', description: 'Xəbər uğurla yeniləndi.' });
         onSuccess(initialData.id);
       } else {
-        const newDocId = uuidv4();
-        const newNewsData: Omit<News, 'id'> & { id: string } = {
-            id: newDocId,
+        const newDocRef = doc(collection(firestore, 'news'));
+        const newNewsData: News = {
+            id: newDocRef.id,
             title: values.title,
             content: values.content,
             coverImageUrl: values.coverImageUrl,
@@ -111,10 +120,9 @@ export default function NewsEditForm({ initialData, onSuccess, firestore, user }
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
         };
-        const newsCollectionRef = collection(firestore, 'news');
-        await addDocumentNonBlocking(newsCollectionRef, newNewsData);
+        await addDocumentNonBlocking(newDocRef, newNewsData);
         toast({ title: 'Uğurlu', description: 'Xəbər uğurla yaradıldı.' });
-        onSuccess(newDocId);
+        onSuccess(newDocRef.id);
       }
     } catch (error: any) {
       console.error("Xəbər yaradılarkən/yenilənərkən xəta:", error);
@@ -128,7 +136,7 @@ export default function NewsEditForm({ initialData, onSuccess, firestore, user }
     setIsSaving(false);
   };
 
-  const isSubmitDisabled = isSaving || isUploading;
+  const isSubmitDisabled = isSaving || isUploading || !firestore || !user;
 
   return (
     <Card>
