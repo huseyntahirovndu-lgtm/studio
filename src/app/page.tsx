@@ -13,7 +13,7 @@ import { StatCard } from '@/components/stat-card';
 import { StudentCard } from '@/components/student-card';
 import { CategoryPieChart } from '@/components/charts/category-pie-chart';
 import { FacultyBarChart } from '@/components/charts/faculty-bar-chart';
-import { Student, Project, CategoryData, Achievement, News } from '@/types';
+import { Student, Project, CategoryData, Achievement, News, StudentOrganization } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';

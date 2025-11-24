@@ -69,7 +69,7 @@ export default function AdminStudentOrgsPage() {
     return (
         <Card>
             <CardHeader>
-                <div className="flex justify-between items-start">
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
                     <div>
                         <CardTitle>Tələbə Təşkilatları</CardTitle>
                         <CardDescription>

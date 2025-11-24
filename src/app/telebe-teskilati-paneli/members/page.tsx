@@ -1,6 +1,6 @@
 'use client';
 import { useFirestore, useCollection, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
-import { StudentOrganization, Student } from '@/types';
+import { Student } from '@/types';
 import { useState } from 'react';
 import { collection, doc, query, where, documentId } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
-import { useStudentOrg } from '../layout';
+import { useStudentOrg } from '@/app/(student-org-panel)/layout';
 
 export default function OrganizationMembersPage() {
   const firestore = useFirestore();
@@ -50,7 +50,7 @@ export default function OrganizationMembersPage() {
   const handleAddMember = async () => {
     if (!organization || !selectedStudentId) return;
     setIsAddingMember(true);
-    const orgDocRef = doc(firestore, 'student-organizations', organization.id);
+    const orgDocRef = doc(firestore, 'users', organization.id);
     const newMemberIds = [...(organization.memberIds || []), selectedStudentId];
 
     await updateDocumentNonBlocking(orgDocRef, { memberIds: newMemberIds });
@@ -61,7 +61,7 @@ export default function OrganizationMembersPage() {
   
   const handleRemoveMember = async (memberId: string) => {
     if(!organization) return;
-    const orgDocRef = doc(firestore, 'student-organizations', organization.id);
+    const orgDocRef = doc(firestore, 'users', organization.id);
     const newMemberIds = organization.memberIds.filter(id => id !== memberId);
     
     await updateDocumentNonBlocking(orgDocRef, { memberIds: newMemberIds });
@@ -83,7 +83,7 @@ export default function OrganizationMembersPage() {
         <CardDescription>Təşkilatınızın üzvlərini idarə edin.</CardDescription>
       </CardHeader>
       <CardContent>
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex flex-col sm:flex-row items-center gap-2 mb-4">
               <Combobox
                   options={studentOptions}
                   value={selectedStudentId}
@@ -92,7 +92,7 @@ export default function OrganizationMembersPage() {
                   searchPlaceholder="Tələbə axtar..."
                   notFoundText="Tələbə tapılmadı."
               />
-              <Button onClick={handleAddMember} disabled={!selectedStudentId || isAddingMember}>
+              <Button onClick={handleAddMember} disabled={!selectedStudentId || isAddingMember} className="w-full sm:w-auto">
                   <PlusCircle className="mr-2 h-4 w-4" />
                   {isAddingMember ? 'Əlavə edilir...' : 'Əlavə Et'}
               </Button>
@@ -103,8 +103,8 @@ export default function OrganizationMembersPage() {
                   <TableHeader>
                       <TableRow>
                           <TableHead>Ad Soyad</TableHead>
-                          <TableHead>Fakültə</TableHead>
-                           <TableHead>İxtisas</TableHead>
+                          <TableHead className="hidden md:table-cell">Fakültə</TableHead>
+                           <TableHead className="hidden lg:table-cell">İxtisas</TableHead>
                           <TableHead className="text-right">Əməliyyat</TableHead>
                       </TableRow>
                   </TableHeader>
@@ -123,8 +123,8 @@ export default function OrganizationMembersPage() {
                                         <div className="font-medium group-hover:underline">{`${member.firstName} ${member.lastName}`}</div>
                                     </Link>
                                  </TableCell>
-                                 <TableCell>{member.faculty}</TableCell>
-                                  <TableCell>{member.major}</TableCell>
+                                 <TableCell className="hidden md:table-cell">{member.faculty}</TableCell>
+                                  <TableCell className="hidden lg:table-cell">{member.major}</TableCell>
                                  <TableCell className="text-right">
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>
