@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Firestore, collection, doc, serverTimestamp } from 'firebase/firestore';
+import { Firestore, collection, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { AppUser, News, Admin } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,7 +34,14 @@ interface EditNewsFormProps {
 const generateSlug = (title: string) => {
   return title
     .toLowerCase()
-    .replace(/ /g, '-')
+    .replace(/ə/g, 'e')
+    .replace(/ı/g, 'i')
+    .replace(/ö/g, 'o')
+    .replace(/ü/g, 'u')
+    .replace(/ğ/g, 'g')
+    .replace(/ş/g, 's')
+    .replace(/ç/g, 'c')
+    .replace(/\s+/g, '-')
     .replace(/[^\w-]+/g, '');
 };
 
@@ -92,12 +99,14 @@ export default function NewsEditForm({ initialData, onSuccess, firestore, user }
 
     try {
       if (isEditMode && initialData?.id) {
+        const updatedSlug = generateSlug(values.title);
         const updateData = {
           ...values,
+          slug: `${updatedSlug}-${initialData.id.substring(0,5)}`,
           updatedAt: serverTimestamp(),
         };
         const newsDocRef = doc(firestore, 'news', initialData.id);
-        updateDocumentNonBlocking(newsDocRef, updateData);
+        await updateDocumentNonBlocking(newsDocRef, updateData);
         toast({ title: 'Uğurlu', description: 'Xəbər uğurla yeniləndi.' });
         onSuccess(initialData.id);
       } else {
@@ -105,17 +114,21 @@ export default function NewsEditForm({ initialData, onSuccess, firestore, user }
         const newsCollectionRef = collection(firestore, 'news');
         const newNewsData = {
           ...values,
-          slug,
           authorId: user.id,
           authorName: `${(user as Admin).firstName} ${(user as Admin).lastName}`,
           createdAt: serverTimestamp(),
         };
+        // Add doc first to get an ID
         const newDocRef = await addDocumentNonBlocking(newsCollectionRef, newNewsData);
         if (newDocRef) {
-            updateDocumentNonBlocking(newDocRef, {id: newDocRef.id, slug: `${slug}-${newDocRef.id.substring(0,5)}`})
+            // Now update it with the unique slug
+            const uniqueSlug = `${slug}-${newDocRef.id.substring(0,5)}`;
+            await updateDoc(newDocRef, { id: newDocRef.id, slug: uniqueSlug });
+            toast({ title: 'Uğurlu', description: 'Xəbər uğurla yaradıldı.' });
+            onSuccess(newDocRef.id);
+        } else {
+            throw new Error("Sənəd yaradıla bilmədi.");
         }
-        toast({ title: 'Uğurlu', description: 'Xəbər uğurla yaradıldı.' });
-        onSuccess(newDocRef?.id || '');
       }
     } catch (error: any) {
       console.error("Xəbər yaradılarkən/yenilənərkən xəta:", error);
