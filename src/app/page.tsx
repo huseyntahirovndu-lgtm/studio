@@ -181,7 +181,7 @@ export default function HomePage() {
   return (
     <div className="flex flex-col">
        <main className="flex-1">
-        <section className="relative w-full h-screen">
+        <section className="relative w-full h-[60vh] md:h-screen">
             <Image
               src="/banner.jpg"
               alt="Naxçıvan Dövlət Universiteti"
@@ -262,10 +262,10 @@ export default function HomePage() {
           </section>
 
           <section className="py-12">
+             <div className="text-center mb-12">
+                <h2 className="text-3xl md:text-4xl font-bold">Top 10 İstedad</h2>
+             </div>
             <div className="flex justify-between items-center mb-8">
-              <h2 className="text-3xl md:text-4xl font-bold">
-                Top 10 İstedad
-              </h2>
               <Button variant="ghost" asChild>
                 <Link href="/rankings">
                   Bütün reytinqlərə bax <ArrowRight className="ml-2 h-4 w-4" />
