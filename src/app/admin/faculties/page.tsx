@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, doc, writeBatch } from 'firebase/firestore';
+import { collection, doc, writeBatch, updateDoc } from 'firebase/firestore';
 import type { FacultyData } from '@/types';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import {
@@ -87,9 +87,10 @@ export default function AdminFacultiesPage() {
     
     const facultiesCollectionRef = collection(firestore, 'faculties');
     try {
-      const newDoc = doc(facultiesCollectionRef);
-      // Use non-blocking update for better UX
-      addDocumentNonBlocking(newDoc, { name: newFaculty, id: newDoc.id });
+      const newDocRef = await addDocumentNonBlocking(facultiesCollectionRef, { name: newFaculty });
+      if (newDocRef) {
+        await updateDoc(newDocRef, { id: newDocRef.id });
+      }
       toast({ title: 'Uğurlu', description: 'Yeni fakültə əlavə edildi.' });
       setNewFaculty('');
     } catch (error) {
