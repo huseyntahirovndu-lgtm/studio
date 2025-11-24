@@ -8,7 +8,7 @@ export default async function sitemap() {
   const { firestore } = initializeServerFirebase();
 
   // Static pages
-  const routes = ['', '/search', '/rankings'].map((route) => ({
+  const routes = ['', '/search', '/rankings', '/telebe-teskilatlari'].map((route) => ({
     url: `${BASE_URL}${route}`,
     lastModified: new Date().toISOString(),
   }));

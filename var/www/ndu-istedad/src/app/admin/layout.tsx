@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Home, Users2, Library, School, ListTree, Settings, ShieldCheck } from "lucide-react"
+import { Home, Users2, Library, School, ListTree, ShieldCheck } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { cn } from "@/lib/utils"
 import {

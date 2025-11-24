@@ -125,6 +125,7 @@ export interface StudentOrganization extends BaseUser {
 export interface StudentOrgUpdate {
   id: string;
   organizationId: string;
+  organizationName: string;
   title: string;
   content: string;
   coverImageUrl?: string;
