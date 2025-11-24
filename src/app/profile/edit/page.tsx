@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from '@/components/ui/badge';
 import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, doc, writeBatch, getDocs, query, setDoc } from 'firebase/firestore';
+import { collection, doc, writeBatch, getDocs, query, setDoc, where } from 'firebase/firestore';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -48,7 +48,7 @@ const profileSchema = z.object({
   lastName: z.string().min(2, "Soyad ən azı 2 hərf olmalıdır."),
   profilePictureUrl: z.string().url("Etibarlı bir URL daxil edin.").or(z.literal('')).optional(),
   major: z.string().min(2, "İxtisas boş ola bilməz."),
-  courseYear: z.coerce.number().min(1).max(6),
+  courseYear: z.coerce.number().min(1, "Təhsil ilini seçin.").max(6),
   educationForm: z.string().optional(),
   gpa: z.coerce.number({invalid_type_error: "ÜOMG mütləq qeyd edilməlidir."}).min(0, "ÜOMG 0-dan az ola bilməz.").max(100, "ÜOMG 100-dən çox ola bilməz."),
   skills: z.array(skillSchema).optional(),
@@ -59,7 +59,7 @@ const profileSchema = z.object({
   instagramURL: z.string().url().or(z.literal('')).optional(),
   portfolioURL: z.string().url().or(z.literal('')).optional(),
   googleScholarURL: z.string().url().or(z.literal('')).optional(),
-  youtubeURL: z.string().url().or(z.literal('')).optional(),
+  youtubeURL: zstring().url().or(z.literal('')).optional(),
 });
 
 const projectSchema = z.object({
@@ -213,7 +213,7 @@ function EditProfilePageComponent() {
         lastName: targetUser.lastName || '',
         profilePictureUrl: targetUser.profilePictureUrl || '',
         major: targetUser.major || '',
-        courseYear: targetUser.courseYear || 1,
+        courseYear: targetUser.courseYear || undefined,
         educationForm: targetUser.educationForm || '',
         gpa: targetUser.gpa || 0,
         skills: targetUser.skills || [],
@@ -518,14 +518,16 @@ function EditProfilePageComponent() {
                         <FormItem><FormLabel>İxtisas</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
                      <FormField name="courseYear" control={profileForm.control} render={({ field }) => (
-                        <FormItem><FormLabel>Təhsil ili</FormLabel>
-                        <Select onValueChange={(value) => field.onChange(parseInt(value))} value={String(field.value)}>
-                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                            <SelectContent>
-                                {[1,2,3,4,5,6].map(y => <SelectItem key={y} value={String(y)}>{y}-ci kurs</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                        <FormMessage /></FormItem>
+                        <FormItem>
+                            <FormLabel>Təhsil ili</FormLabel>
+                            <Select onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} value={field.value ? String(field.value) : ""}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Təhsil ilini seçin" /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                    {[1, 2, 3, 4, 5, 6].map(y => <SelectItem key={y} value={String(y)}>{y}-ci kurs</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
                     )} />
                  </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -818,7 +820,7 @@ function EditProfilePageComponent() {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Silməni təsdiq edirsiniz?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Bu əməliyyat geri qaytarıla bilməz. "{c.name}" adlı sertifikat profilinizdən həmişəlik silinəcək.
+                          Bu əməliyyat geri qaytarılmazdır. "{c.name}" adlı sertifikat profilinizdən həmişəlik silinəcək.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
