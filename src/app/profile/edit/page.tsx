@@ -59,7 +59,7 @@ const profileSchema = z.object({
   instagramURL: z.string().url().or(z.literal('')).optional(),
   portfolioURL: z.string().url().or(z.literal('')).optional(),
   googleScholarURL: z.string().url().or(z.literal('')).optional(),
-  youtubeURL: zstring().url().or(z.literal('')).optional(),
+  youtubeURL: z.string().url().or(z.literal('')).optional(),
 });
 
 const projectSchema = z.object({
