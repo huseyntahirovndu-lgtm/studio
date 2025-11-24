@@ -43,13 +43,19 @@ import { useToast } from "@/hooks/use-toast";
 import { useCollection, useFirestore, useMemoFirebase, deleteDocumentNonBlocking } from "@/firebase";
 import { collection, query, orderBy, doc } from "firebase/firestore";
 import { format } from 'date-fns';
+import { useAuth } from "@/hooks/use-auth";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AdminNewsPage() {
     const { toast } = useToast();
     const firestore = useFirestore();
+    const { user, loading: authLoading } = useAuth();
 
-    const newsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, "news"), orderBy("createdAt", "desc")) : null, [firestore]);
-    const { data: news, isLoading } = useCollection<News>(newsQuery);
+    const newsQuery = useMemoFirebase(() => 
+        firestore ? query(collection(firestore, "news"), orderBy("createdAt", "desc")) : null, 
+        [firestore]
+    );
+    const { data: news, isLoading: newsLoading } = useCollection<News>(newsQuery);
 
     const handleDelete = (newsId: string) => {
         if (!firestore) return;
@@ -57,6 +63,8 @@ export default function AdminNewsPage() {
         deleteDocumentNonBlocking(newsDocRef);
         toast({ title: "Xəbər uğurla silindi." });
     };
+
+    const isLoading = authLoading || newsLoading;
 
     return (
         <Card>
@@ -89,7 +97,13 @@ export default function AdminNewsPage() {
                 <TableBody>
                     {isLoading ? (
                          <TableRow>
-                            <TableCell colSpan={4} className="h-24 text-center">Yüklənir...</TableCell>
+                            <TableCell colSpan={4}>
+                                <div className="space-y-2">
+                                    <Skeleton className="h-4 w-full" />
+                                    <Skeleton className="h-4 w-full" />
+                                    <Skeleton className="h-4 w-3/4" />
+                                </div>
+                            </TableCell>
                         </TableRow>
                     ) : news && news.length > 0 ? (
                         news.map((item) => (
@@ -97,7 +111,7 @@ export default function AdminNewsPage() {
                             <TableCell className="font-medium">{item.title}</TableCell>
                             <TableCell className="hidden md:table-cell">{item.authorName}</TableCell>
                             <TableCell className="hidden md:table-cell">
-                               {item.createdAt ? format(item.createdAt.toDate(), 'dd.MM.yyyy') : '-'}
+                               {item.createdAt?.toDate ? format(item.createdAt.toDate(), 'dd.MM.yyyy') : '-'}
                             </TableCell>
                             <TableCell className="text-right">
                                <DropdownMenu>

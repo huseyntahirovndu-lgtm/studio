@@ -14,8 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Upload } from 'lucide-react';
-import { v4 as uuidv4 } from 'uuid';
-import { addDocumentNonBlocking, updateDocumentNonBlocking, useAuth, useFirestore } from '@/firebase';
+import { addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 
 const formSchema = z.object({
   title: z.string().min(5, "Başlıq ən azı 5 hərf olmalıdır."),
@@ -28,6 +27,8 @@ type FormData = z.infer<typeof formSchema>;
 interface EditNewsFormProps {
   initialData?: News | null;
   onSuccess: (id: string) => void;
+  firestore: Firestore;
+  user: AppUser;
 }
 
 const generateSlug = (title: string) => {
@@ -37,13 +38,11 @@ const generateSlug = (title: string) => {
     .replace(/[^\w-]+/g, '');
 };
 
-export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormProps) {
+export default function NewsEditForm({ initialData, onSuccess, firestore, user }: EditNewsFormProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
-  const firestore = useFirestore();
-  const { user } = useAuth();
   
   const isEditMode = !!initialData;
   const coverImageInputRef = useRef<HTMLInputElement>(null);
@@ -84,19 +83,11 @@ export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormPro
 
 
   const onSubmit: SubmitHandler<FormData> = async (values) => {
-    if (!user || !firestore) {
-        toast({
-            variant: 'destructive',
-            title: 'Xəta',
-            description: 'Giriş edilməyib və ya verilənlər bazası tapılmadı. Zəhmət olmasa, səhifəni yeniləyib yenidən cəhd edin.',
-        });
-        return;
-    }
-
     setIsSaving(true);
 
     try {
       const adminUser = user as Admin;
+      const authorName = adminUser?.firstName && adminUser?.lastName ? `${adminUser.firstName} ${adminUser.lastName}` : "Admin";
 
       if (isEditMode && initialData) {
         const newsDocRef = doc(firestore, 'news', initialData.id);
@@ -116,7 +107,7 @@ export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormPro
             coverImageUrl: values.coverImageUrl,
             slug: generateSlug(values.title),
             authorId: user.id,
-            authorName: adminUser?.firstName && adminUser?.lastName ? `${adminUser.firstName} ${adminUser.lastName}` : "Admin",
+            authorName: authorName,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
         };
@@ -136,7 +127,7 @@ export default function NewsEditForm({ initialData, onSuccess }: EditNewsFormPro
     setIsSaving(false);
   };
 
-  const isSubmitDisabled = isSaving || isUploading || !firestore || !user;
+  const isSubmitDisabled = isSaving || isUploading;
 
   return (
     <Card>
