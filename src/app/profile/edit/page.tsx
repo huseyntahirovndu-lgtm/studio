@@ -124,25 +124,32 @@ function EditProfilePageComponent() {
   const certificateFileInputRef = useRef<HTMLInputElement>(null);
 
   const triggerTalentScoreUpdate = useCallback(async (userId: string) => {
+    if (!firestore) return;
     setIsSaving(true);
     toast({ title: "İstedad Balı Hesablanır...", description: "Profiliniz yenilənir, bu proses bir az vaxt ala bilər." });
 
     try {
-        const allUsersSnapshot = await getDocs(query(collection(firestore, 'users')));
+        const allUsersSnapshot = await getDocs(query(collection(firestore, 'users'), where('role', '==', 'student')));
         
-        const allStudentsContext = allUsersSnapshot.docs.map(doc => {
-            const data = doc.data() as Student;
+        const allStudentsContext = await Promise.all(allUsersSnapshot.docs.map(async (userDoc) => {
+            const data = userDoc.data() as Student;
+            const studentId = userDoc.id;
+
+            const projectsSnap = await getDocs(collection(firestore, `users/${studentId}/projects`));
+            const achievementsSnap = await getDocs(collection(firestore, `users/${studentId}/achievements`));
+            const certificatesSnap = await getDocs(collection(firestore, `users/${studentId}/certificates`));
+
             return {
-                id: doc.id,
+                id: studentId,
                 talentScore: data.talentScore || 0,
                 skills: data.skills || [],
                 gpa: data.gpa || 0,
                 courseYear: data.courseYear || 1,
-                projects: data.projectIds?.length || 0,
-                achievements: data.achievementIds?.length || 0,
-                certificates: data.certificateIds?.length || 0,
+                projects: projectsSnap.docs.map(d => d.data()),
+                achievements: achievementsSnap.docs.map(d => d.data()),
+                certificates: certificatesSnap.docs.map(d => d.data()),
             };
-        });
+        }));
 
         if (allStudentsContext.length === 0) {
             throw new Error("No students found to compare against.");
