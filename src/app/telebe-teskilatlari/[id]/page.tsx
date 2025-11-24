@@ -6,7 +6,7 @@ import { doc, collection, query, orderBy, where, documentId } from 'firebase/fir
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building, User, Users, Newspaper } from 'lucide-react';
+import { Building, Users, Newspaper } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import Image from 'next/image';
@@ -34,11 +34,8 @@ export default function StudentOrgDetailsPage() {
 
   const orgId = typeof id === 'string' ? id : '';
 
-  const orgDocRef = useMemoFirebase(() => (firestore && orgId ? doc(firestore, 'telebe-teskilatlari', orgId) : null), [firestore, orgId]);
+  const orgDocRef = useMemoFirebase(() => (firestore && orgId ? doc(firestore, 'student-organizations', orgId) : null), [firestore, orgId]);
   const { data: organization, isLoading: orgLoading } = useDoc<StudentOrganization>(orgDocRef);
-
-  const leaderQuery = useMemoFirebase(() => (firestore && organization?.leaderId ? doc(firestore, 'users', organization.leaderId) : null), [firestore, organization]);
-  const { data: leader } = useDoc<Student>(leaderQuery);
   
   const membersQuery = useMemoFirebase(
     () => (firestore && organization?.memberIds && organization.memberIds.length > 0 ? query(collection(firestore, 'users'), where(documentId(), 'in', organization.memberIds)) : null),
@@ -47,7 +44,7 @@ export default function StudentOrgDetailsPage() {
   const { data: members } = useCollection<Student>(membersQuery);
   
   const updatesQuery = useMemoFirebase(
-    () => (firestore && orgId ? query(collection(firestore, `telebe-teskilatlari/${orgId}/updates`), orderBy('createdAt', 'desc')) : null),
+    () => (firestore && orgId ? query(collection(firestore, `student-organizations/${orgId}/updates`), orderBy('createdAt', 'desc')) : null),
     [firestore, orgId]
   );
   const { data: updates, isLoading: updatesLoading } = useCollection<StudentOrgUpdate>(updatesQuery);
@@ -76,7 +73,6 @@ export default function StudentOrgDetailsPage() {
                 </AvatarFallback>
               </Avatar>
               <CardTitle className="text-2xl text-center">{organization.name}</CardTitle>
-              <CardDescription className="text-center">{organization.faculty}</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">{organization.description}</p>
@@ -88,22 +84,6 @@ export default function StudentOrgDetailsPage() {
               <CardTitle className="flex items-center gap-2 text-xl"><Users /> Üzvlər</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {leader && (
-                <div>
-                  <h4 className="font-semibold text-sm mb-2">Rəhbər</h4>
-                  <Link href={`/profile/${leader.id}`} className="flex items-center gap-3 group">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={leader.profilePictureUrl} alt={`${leader.firstName} ${leader.lastName}`} />
-                      <AvatarFallback>{leader.firstName?.charAt(0)}{leader.lastName?.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium group-hover:underline">{`${leader.firstName} ${leader.lastName}`}</p>
-                      <p className="text-xs text-muted-foreground">{leader.major}</p>
-                    </div>
-                  </Link>
-                </div>
-              )}
-
               {members && members.length > 0 && (
                 <div>
                   <h4 className="font-semibold text-sm mb-2 mt-4">Aktiv Üzvlər</h4>
