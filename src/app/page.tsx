@@ -19,7 +19,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useAuth } from '@/firebase';
 import { collection, query, where, orderBy, limit } from 'firebase/firestore';
 import { selectTopStories } from '@/app/actions';
 import { format } from 'date-fns';
@@ -58,6 +58,7 @@ const SuccessStoryCard = ({ story }: { story: SuccessStory }) => (
 
 export default function HomePage() {
   const firestore = useFirestore();
+  const { user } = useAuth();
 
   const studentsQuery = useMemoFirebase(() => query(collection(firestore, "users"), where("status", "==", "təsdiqlənmiş"), where("role", "==", "student")), [firestore]);
   const projectsQuery = useMemoFirebase(() => collection(firestore, "projects"), [firestore]);
@@ -157,7 +158,7 @@ export default function HomePage() {
   return (
     <div className="flex flex-col">
        <main className="flex-1">
-        <section className="relative w-full h-[60vh]">
+        <section className="relative w-full h-[50vh] md:h-[60vh]">
             <Image
               src="/banner.jpg"
               alt="Naxçıvan Dövlət Universiteti"
@@ -379,5 +380,3 @@ export default function HomePage() {
     </div>
   );
 }
-
-    
