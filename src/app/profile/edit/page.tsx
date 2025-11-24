@@ -6,7 +6,7 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Student, Project, Achievement, Certificate, AchievementLevel, Skill, SkillLevel } from '@/types';
-import { calculateTalentScore } from '@/ai/flows/talent-scoring';
+import { calculateTalentScore } from '@/app/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';

@@ -21,7 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, limit, doc, getDocs, documentId } from 'firebase/firestore';
-import { selectTopStories } from '@/ai/flows/story-selector';
+import { selectTopStories } from '@/app/actions';
 import { format } from 'date-fns';
 
 interface EnrichedProject extends Project {

@@ -10,7 +10,7 @@ import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { getProfileRecommendations } from '@/ai/flows/profile-optimizer';
+import { getProfileRecommendations } from '@/app/actions';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, doc, getDoc, getDocs, updateDoc, writeBatch } from 'firebase/firestore';
 
