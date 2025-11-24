@@ -29,7 +29,7 @@ export function Header() {
   const firestore = useFirestore();
 
   const ledOrgQuery = useMemoFirebase(() => 
-    user && user.role === 'student' ? query(collection(firestore, 'telebe-teskilatlari'), where('leaderId', '==', user.id), limit(1)) : null,
+    user && user.role === 'student' ? query(collection(firestore, 'student-organizations'), where('leaderId', '==', user.id), limit(1)) : null,
     [firestore, user]
   );
   const { data: ledOrgs } = useCollection<StudentOrganization>(ledOrgQuery);

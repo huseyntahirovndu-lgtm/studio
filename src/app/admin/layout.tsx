@@ -41,7 +41,7 @@ export default function AdminLayout({
         description: "Bu səhifəyə yalnız adminlər daxil ola bilər.",
         variant: "destructive",
       });
-      router.push('/login');
+      router.push('/');
     }
   }, [user, loading, router, toast]);
 
