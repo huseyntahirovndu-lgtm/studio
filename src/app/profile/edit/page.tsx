@@ -475,7 +475,7 @@ function EditProfilePageComponent() {
           <CardContent>
             <Form {...profileForm}>
               <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField name="firstName" control={profileForm.control} render={({ field }) => (
                     <FormItem><FormLabel>Ad</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                   )} />
@@ -506,7 +506,7 @@ function EditProfilePageComponent() {
                 </FormItem>
 
 
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                      <FormField name="major" control={profileForm.control} render={({ field }) => (
                         <FormItem><FormLabel>İxtisas</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
@@ -521,7 +521,7 @@ function EditProfilePageComponent() {
                         <FormMessage /></FormItem>
                     )} />
                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField name="educationForm" control={profileForm.control} render={({ field }) => (
                       <FormItem><FormLabel>Təhsil Forması</FormLabel><FormControl><Input {...field} placeholder="Əyani / Qiyabi" /></FormControl><FormMessage /></FormItem>
                     )} />
@@ -536,23 +536,26 @@ function EditProfilePageComponent() {
                  <FormField name="skills" control={profileControl} render={() => (
                     <FormItem>
                         <FormLabel>Bacarıqlar</FormLabel>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-col sm:flex-row items-center gap-2">
                             <Input
                                 ref={skillInputRef}
                                 value={skillInput}
                                 onChange={(e) => setSkillInput(e.target.value)}
                                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSkillAdd(); } }}
                                 placeholder="Bacarıq adı"
+                                className="w-full"
                             />
-                            <Select value={skillLevel} onValueChange={(value: SkillLevel) => setSkillLevel(value)}>
-                                <SelectTrigger className="w-[180px]">
-                                    <SelectValue placeholder="Səviyyə seçin" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {SKILL_LEVELS.map(level => <SelectItem key={level} value={level}>{level}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                            <Button type="button" onClick={handleSkillAdd}>Əlavə et</Button>
+                            <div className="flex w-full sm:w-auto gap-2 mt-2 sm:mt-0">
+                                <Select value={skillLevel} onValueChange={(value: SkillLevel) => setSkillLevel(value)}>
+                                    <SelectTrigger className="w-full sm:w-[150px]">
+                                        <SelectValue placeholder="Səviyyə seçin" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {SKILL_LEVELS.map(level => <SelectItem key={level} value={level}>{level}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                                <Button type="button" onClick={handleSkillAdd} className="w-full sm:w-auto">Əlavə et</Button>
+                            </div>
                         </div>
                         <FormMessage />
                         <div className="flex flex-wrap gap-2 pt-2">
@@ -635,7 +638,7 @@ function EditProfilePageComponent() {
                         <FormField name="teamMembers" control={projectForm.control} render={({ field }) => (
                             <FormItem><FormLabel>Komanda Üzvləri</FormLabel><FormControl><Input {...field} value={Array.isArray(field.value) ? field.value.join(', ') : ''} placeholder="Adları vergül ilə ayırın" /></FormControl><FormMessage /></FormItem>
                         )} />
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <FormField name="role" control={projectForm.control} render={({ field }) => (
                                 <FormItem><FormLabel>Rolunuz</FormLabel><FormControl><Input {...field} placeholder="Məs: Developer, Dizayner" /></FormControl><FormMessage /></FormItem>
                             )} />
@@ -702,7 +705,7 @@ function EditProfilePageComponent() {
                         <FormField name="description" control={achievementForm.control} render={({ field }) => (
                             <FormItem><FormLabel>Təsvir (Könüllü)</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <FormField name="position" control={achievementForm.control} render={({ field }) => (
                                 <FormItem><FormLabel>Tutduğunuz Yer/Dərəcə</FormLabel><FormControl><Input {...field} placeholder="Məs: 1-ci yer, Qızıl medal" /></FormControl><FormMessage /></FormItem>
                             )} />
@@ -717,7 +720,7 @@ function EditProfilePageComponent() {
                                 <FormMessage /></FormItem>
                             )} />
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <FormField name="date" control={achievementForm.control} render={({ field }) => (
                                 <FormItem><FormLabel>Tarix</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>
                             )} />

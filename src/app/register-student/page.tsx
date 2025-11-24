@@ -147,7 +147,7 @@ export default function RegisterStudentPage() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="firstName"
@@ -176,7 +176,7 @@ export default function RegisterStudentPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="email"
@@ -205,7 +205,7 @@ export default function RegisterStudentPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="faculty"
@@ -283,7 +283,7 @@ export default function RegisterStudentPage() {
                     Aid olduğunuz bir və ya bir neçə kateqoriyanı seçin.
                   </FormDescription>
                   {categoriesLoading ? <p>Yüklənir...</p> : (
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 py-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-2">
                   {categories?.map((item) => (
                     <FormField
                       key={item.id}
