@@ -25,9 +25,18 @@ export default function RankingsPage() {
   const [facultyFilter, setFacultyFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
 
-  const studentsQuery = useMemoFirebase(() => query(collection(firestore, "users"), where("status", "==", "təsdiqlənmiş"), where("role", "==", "student")), [firestore]);
-  const facultiesQuery = useMemoFirebase(() => collection(firestore, "faculties"), [firestore]);
-  const categoriesQuery = useMemoFirebase(() => collection(firestore, "categories"), [firestore]);
+  const studentsQuery = useMemoFirebase(() => 
+    firestore ? query(collection(firestore, "users"), where("status", "==", "təsdiqlənmiş"), where("role", "==", "student")) : null, 
+    [firestore]
+  );
+  const facultiesQuery = useMemoFirebase(() => 
+    firestore ? collection(firestore, "faculties") : null, 
+    [firestore]
+  );
+  const categoriesQuery = useMemoFirebase(() => 
+    firestore ? collection(firestore, "categories") : null, 
+    [firestore]
+  );
 
   const { data: students, isLoading: studentsLoading } = useCollection<Student>(studentsQuery);
   const { data: faculties, isLoading: facultiesLoading } = useCollection<FacultyData>(facultiesQuery);
@@ -40,7 +49,7 @@ export default function RankingsPage() {
     return students
       .filter(student => {
         const facultyMatch = facultyFilter === 'all' || student.faculty === facultyFilter;
-        const categoryMatch = categoryFilter === 'all' || student.category.includes(categoryFilter);
+        const categoryMatch = categoryFilter === 'all' || (student.category && student.category.includes(categoryFilter));
         return facultyMatch && categoryMatch;
       })
       .sort((a, b) => (b.talentScore || 0) - (a.talentScore || 0));
