@@ -63,7 +63,8 @@ export default function StudentOrganizationLayout({
   }
   
   const isActive = (href: string, exact?: boolean) => {
-    return exact ? pathname === href : pathname.startsWith(href);
+    const cleanPathname = pathname.replace('/(student-org-panel)', '/telebe-teskilati-paneli');
+    return exact ? cleanPathname === href : cleanPathname.startsWith(href);
   }
 
   return (
