@@ -28,7 +28,7 @@ export default function StudentOrgUpdateDetailsPage() {
 
     // Step 2: Once the update is fetched, use its organizationId to fetch the organization.
     const orgDocRef = useMemoFirebase(() =>
-      firestore && update?.organizationId ? doc(firestore, 'telebe-teskilatlari', update.organizationId) : null,
+      firestore && update?.organizationId ? doc(firestore, 'student-organizations', update.organizationId) : null,
       [firestore, update]
     );
     const { data: orgData, isLoading: isOrgLoading } = useDoc<StudentOrganization>(orgDocRef);
