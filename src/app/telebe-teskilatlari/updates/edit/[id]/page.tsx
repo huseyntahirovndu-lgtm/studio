@@ -2,17 +2,18 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useDoc, useFirestore } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { StudentOrgUpdate } from '@/types';
+import { StudentOrganization, StudentOrgUpdate } from '@/types';
 import OrgUpdateEditForm from '../../edit-form';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useStudentOrg } from '../../../layout';
+import { useAuth } from '@/hooks/use-auth';
 import { useMemoFirebase } from '@/firebase/provider';
 
 export default function EditOrgUpdatePage() {
   const { id } = useParams();
   const router = useRouter();
   const firestore = useFirestore();
-  const { organization, isLoading: orgLoading } = useStudentOrg();
+  const { user, loading: orgLoading } = useAuth();
+  const organization = user as StudentOrganization | null;
   
   const updateId = typeof id === 'string' ? id : '';
   

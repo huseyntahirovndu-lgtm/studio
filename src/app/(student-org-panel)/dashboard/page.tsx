@@ -1,13 +1,13 @@
 'use client';
 import { useFirestore, useMemoFirebase, useCollection } from '@/firebase';
-import { Student } from '@/types';
+import { Student, StudentOrganization } from '@/types';
 import { useMemo } from 'react';
 import { collection, query, where, documentId } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { useStudentOrg } from '../(student-org-panel)/layout';
+import { useAuth } from '@/hooks/use-auth';
 
 const chartConfig = {
   members: {
@@ -18,7 +18,9 @@ const chartConfig = {
 
 export default function OrganizationDashboardPage() {
   const firestore = useFirestore();
-  const { organization, isLoading: orgLoading } = useStudentOrg();
+  const { user, loading: orgLoading } = useAuth();
+  const organization = user as StudentOrganization | null;
+
 
   const membersQuery = useMemoFirebase(
     () => (organization?.memberIds && organization.memberIds.length > 0 ? query(collection(firestore, 'users'), where(documentId(), 'in', organization.memberIds)) : null),

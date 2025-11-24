@@ -38,17 +38,18 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import type { StudentOrgUpdate } from "@/types";
+import type { StudentOrganization, StudentOrgUpdate } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, query, orderBy, doc, writeBatch } from "firebase/firestore";
 import { format } from 'date-fns';
-import { useStudentOrg } from "../layout";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function OrgUpdatesPage() {
     const { toast } = useToast();
     const firestore = useFirestore();
-    const { organization } = useStudentOrg();
+    const { user } = useAuth();
+    const organization = user as StudentOrganization | null;
 
     const updatesQuery = useMemoFirebase(() => 
         organization ? query(collection(firestore, `student-organizations/${organization.id}/updates`), orderBy("createdAt", "desc")) : null, 
@@ -79,14 +80,14 @@ export default function OrgUpdatesPage() {
     return (
         <Card>
             <CardHeader>
-                <div className="flex justify-between items-start">
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                     <div>
                         <CardTitle>Təşkilat Yenilikləri</CardTitle>
                         <CardDescription>
                             Təşkilatınızın fəaliyyəti haqqında yenilikləri və elanları idarə edin.
                         </CardDescription>
                     </div>
-                    <Button asChild>
+                    <Button asChild className="w-full sm:w-auto">
                         <Link href="/telebe-teskilati-paneli/updates/add">
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Yeni Yenilik Yarat
@@ -126,7 +127,7 @@ export default function OrgUpdatesPage() {
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuLabel>Əməliyyatlar</DropdownMenuLabel>
                                         <DropdownMenuItem asChild>
-                                            <Link href={`/telebe-teskilatlari/updates/edit/${item.id}`}>Redaktə Et</Link>
+                                            <Link href={`/telebe-teskilati-paneli/updates/edit/${item.id}`}>Redaktə Et</Link>
                                         </DropdownMenuItem>
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
