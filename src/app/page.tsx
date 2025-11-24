@@ -13,14 +13,14 @@ import { StatCard } from '@/components/stat-card';
 import { StudentCard } from '@/components/student-card';
 import { CategoryPieChart } from '@/components/charts/category-pie-chart';
 import { FacultyBarChart } from '@/components/charts/faculty-bar-chart';
-import { Student, Project, CategoryData, Achievement, News, StudentOrganization, StudentOrgUpdate } from '@/types';
+import { Student, Project, CategoryData, Achievement, News } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAuth, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, limit, doc, getDocs, documentId } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, where, orderBy, limit } from 'firebase/firestore';
 import { selectTopStories } from '@/app/actions';
 import { format } from 'date-fns';
 
@@ -56,13 +56,8 @@ const SuccessStoryCard = ({ story }: { story: SuccessStory }) => (
     </Card>
 );
 
-interface EnrichedUpdate extends StudentOrgUpdate {
-    organization?: StudentOrganization;
-}
-
 export default function HomePage() {
   const firestore = useFirestore();
-  const { user } = useAuth();
 
   const studentsQuery = useMemoFirebase(() => query(collection(firestore, "users"), where("status", "==", "təsdiqlənmiş"), where("role", "==", "student")), [firestore]);
   const projectsQuery = useMemoFirebase(() => collection(firestore, "projects"), [firestore]);
@@ -71,40 +66,20 @@ export default function HomePage() {
   const achievementsQuery = useMemoFirebase(() => collection(firestore, "achievements"), [firestore]);
   const newsQuery = useMemoFirebase(() => query(collection(firestore, 'news'), orderBy('createdAt', 'desc'), limit(3)), [firestore]);
   
-  const studentOrgUpdatesQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null; // Only fetch if user is logged in
-    return query(collection(firestore, "student-org-updates"), orderBy('createdAt', 'desc'), limit(3));
-  }, [firestore, user]);
-
   const { data: students, isLoading: studentsLoading } = useCollection<Student>(studentsQuery);
   const { data: projects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
   const { data: studentOrgs, isLoading: studentOrgsLoading } = useCollection<StudentOrganization>(studentOrgsQuery);
   const { data: categories, isLoading: categoriesLoading } = useCollection<CategoryData>(categoriesQuery);
   const { data: achievements, isLoading: achievementsLoading } = useCollection<Achievement>(achievementsQuery);
   const { data: latestNews, isLoading: newsLoading } = useCollection<News>(newsQuery);
-  const { data: latestOrgUpdates, isLoading: orgUpdatesLoading } = useCollection<StudentOrgUpdate>(studentOrgUpdatesQuery);
-
 
   const [topTalents, setTopTalents] = useState<Student[]>([]);
   const [newMembers, setNewMembers] = useState<Student[]>([]);
   const [strongestProjects, setStrongestProjects] = useState<EnrichedProject[]>([]);
   const [popularSkills, setPopularSkills] = useState<string[]>([]);
   const [successStories, setSuccessStories] = useState<SuccessStory[]>([]);
-  const [enrichedOrgUpdates, setEnrichedOrgUpdates] = useState<EnrichedUpdate[]>([]);
   
-  const isLoading = studentsLoading || projectsLoading || studentOrgsLoading || categoriesLoading || achievementsLoading || newsLoading || (user && orgUpdatesLoading);
-
-  useEffect(() => {
-    if (latestOrgUpdates && studentOrgs) {
-        const orgMap = new Map(studentOrgs.map(org => [org.id, org]));
-        const enriched = latestOrgUpdates.map(update => ({
-            ...update,
-            organization: orgMap.get(update.organizationId)
-        })).filter(update => update.organization); // Filter out updates where the organization wasn't found
-        setEnrichedOrgUpdates(enriched);
-    }
-  }, [latestOrgUpdates, studentOrgs]);
-
+  const isLoading = studentsLoading || projectsLoading || studentOrgsLoading || categoriesLoading || achievementsLoading || newsLoading;
 
   useEffect(() => {
     if (!students || students.length === 0) return;
@@ -285,44 +260,6 @@ export default function HomePage() {
                 </div>
              )}
           </section>
-
-             {user && (
-                 <section className="py-12 bg-muted -mx-4 px-4 rounded-lg">
-                   <div className="text-center mb-12">
-                      <h2 className="text-3xl md:text-4xl font-bold">Təşkilat Yenilikləri</h2>
-                      <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Tələbə təşkilatlarımızın fəaliyyətləri və elanları ilə tanış olun.</p>
-                  </div>
-                   {orgUpdatesLoading ? (
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                              <Skeleton className="h-64 w-full" />
-                              <Skeleton className="h-64 w-full" />
-                              <Skeleton className="h-64 w-full" />
-                          </div>
-                      ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                          {enrichedOrgUpdates && enrichedOrgUpdates.length > 0 ? enrichedOrgUpdates.map(update => (
-                               <Link key={update.id} href={`/telebe-teskilatlari/yenilikler/${update.id}`} className="block group">
-                                    <Card className="overflow-hidden h-full flex flex-col">
-                                        {update.coverImageUrl && (
-                                            <div className="relative h-48 w-full">
-                                                <Image src={update.coverImageUrl} alt={update.title} fill className="object-cover transition-transform duration-300 group-hover:scale-105"/>
-                                            </div>
-                                        )}
-                                        <div className="p-4 flex flex-col flex-grow">
-                                            <p className="text-xs font-semibold text-primary">{update.organization?.name}</p>
-                                            <CardTitle className="text-lg line-clamp-2 mt-1 mb-2 group-hover:text-primary">{update.title}</CardTitle>
-                                            <CardDescription className="text-xs">{update.createdAt ? format(update.createdAt.toDate(), 'dd MMMM, yyyy') : ''}</CardDescription>
-                                            <p className="line-clamp-2 text-sm text-muted-foreground mt-2 flex-grow">{update.content.replace(/<[^>]*>?/gm, '').substring(0, 100)}...</p>
-                                        </div>
-                                    </Card>
-                                </Link>
-                          )) : (
-                              <p className="text-center col-span-full text-muted-foreground">Hazırda təşkilat yeniliyi yoxdur.</p>
-                          )}
-                      </div>
-                  )}
-              </section>
-             )}
           
           <section className="py-12 grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
               <div className="lg:col-span-2">
@@ -442,3 +379,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+    
