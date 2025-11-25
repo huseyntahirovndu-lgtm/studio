@@ -13,7 +13,7 @@ import { StatCard } from '@/components/stat-card';
 import { StudentCard } from '@/components/student-card';
 import { CategoryPieChart } from '@/components/charts/category-pie-chart';
 import { FacultyBarChart } from '@/components/charts/faculty-bar-chart';
-import { Student, Project, CategoryData, Achievement, News, StudentOrganization } from '@/types';
+import { Student, Project, CategoryData, Achievement, StudentOrganization } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -21,40 +21,10 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useCollection, useFirestore, useMemoFirebase, useAuth } from '@/firebase';
 import { collection, query, where, orderBy, limit } from 'firebase/firestore';
-import { selectTopStories } from '@/app/actions';
-import { format } from 'date-fns';
 
 interface EnrichedProject extends Project {
     student?: Student;
 }
-
-interface SuccessStory {
-    studentId: string;
-    name: string;
-    faculty: string;
-    story: string;
-    profilePictureUrl?: string;
-}
-
-const SuccessStoryCard = ({ story }: { story: SuccessStory }) => (
-    <Card className="flex flex-col overflow-hidden">
-         <CardHeader className="flex flex-row items-start gap-4">
-            <Link href={`/profile/${story.studentId}`} className="flex items-center gap-4 group">
-                <Avatar className="h-12 w-12 border">
-                    <AvatarImage src={story.profilePictureUrl} alt={story.name} />
-                    <AvatarFallback>{story.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div>
-                    <CardTitle className="group-hover:underline">{story.name}</CardTitle>
-                    <CardDescription>{story.faculty}</CardDescription>
-                </div>
-            </Link>
-        </CardHeader>
-        <CardContent>
-            <p className="text-sm text-muted-foreground line-clamp-3">"{story.story}"</p>
-        </CardContent>
-    </Card>
-);
 
 export default function HomePage() {
   const firestore = useFirestore();
@@ -65,22 +35,19 @@ export default function HomePage() {
   const studentOrgsQuery = useMemoFirebase(() => query(collection(firestore, "student-organizations"), where("status", "==", "təsdiqlənmiş")), [firestore]);
   const categoriesQuery = useMemoFirebase(() => collection(firestore, "categories"), [firestore]);
   const achievementsQuery = useMemoFirebase(() => collection(firestore, "achievements"), [firestore]);
-  const newsQuery = useMemoFirebase(() => query(collection(firestore, 'news'), orderBy('createdAt', 'desc'), limit(3)), [firestore]);
   
   const { data: students, isLoading: studentsLoading } = useCollection<Student>(studentsQuery);
   const { data: projects, isLoading: projectsLoading } = useCollection<Project>(projectsQuery);
   const { data: studentOrgs, isLoading: studentOrgsLoading } = useCollection<StudentOrganization>(studentOrgsQuery);
   const { data: categories, isLoading: categoriesLoading } = useCollection<CategoryData>(categoriesQuery);
   const { data: achievements, isLoading: achievementsLoading } = useCollection<Achievement>(achievementsQuery);
-  const { data: latestNews, isLoading: newsLoading } = useCollection<News>(newsQuery);
 
   const [topTalents, setTopTalents] = useState<Student[]>([]);
   const [newMembers, setNewMembers] = useState<Student[]>([]);
   const [strongestProjects, setStrongestProjects] = useState<EnrichedProject[]>([]);
   const [popularSkills, setPopularSkills] = useState<string[]>([]);
-  const [successStories, setSuccessStories] = useState<SuccessStory[]>([]);
   
-  const isLoading = studentsLoading || projectsLoading || studentOrgsLoading || categoriesLoading || achievementsLoading || newsLoading;
+  const isLoading = studentsLoading || projectsLoading || studentOrgsLoading || categoriesLoading || achievementsLoading;
 
   useEffect(() => {
     if (!students || students.length === 0) return;
@@ -99,40 +66,6 @@ export default function HomePage() {
 
     const sortedSkills = Object.keys(skillCounts).sort((a, b) => skillCounts[b] - skillCounts[a]);
     setPopularSkills(sortedSkills.slice(0, 10));
-    
-    const fetchStories = async () => {
-        const storiesToConsider = students
-            .filter(s => s.successStory && s.successStory.trim().length > 10)
-            .map(s => ({ id: s.id, firstName: s.firstName, lastName: s.lastName, faculty: s.faculty, successStory: s.successStory!, profilePictureUrl: s.profilePictureUrl }));
-        
-        if (storiesToConsider.length === 0) return;
-
-        if (storiesToConsider.length <= 2) {
-            setSuccessStories(storiesToConsider.map(s => ({
-                studentId: s.id,
-                name: `${s.firstName} ${s.lastName}`,
-                faculty: s.faculty,
-                story: s.successStory,
-                profilePictureUrl: s.profilePictureUrl
-            })));
-            return;
-        }
-
-        try {
-            const result = await selectTopStories({ stories: storiesToConsider });
-            setSuccessStories(result.selectedStories.map(s => ({...s, profilePictureUrl: storiesToConsider.find(stc => stc.id === s.studentId)?.profilePictureUrl})));
-        } catch (error) {
-            console.error("AI story selection failed, using fallback:", error);
-            setSuccessStories(storiesToConsider.slice(0, 2).map(s => ({
-                 studentId: s.id,
-                 name: `${s.firstName} ${s.lastName}`,
-                 faculty: s.faculty,
-                 story: s.successStory,
-                 profilePictureUrl: s.profilePictureUrl
-            })));
-        }
-    };
-    fetchStories();
 
   }, [students]);
 
@@ -195,46 +128,6 @@ export default function HomePage() {
                 value={isLoading ? '...' : (achievements?.length.toString() ?? '0')}
                 icon={Trophy}
               />
-            </div>
-          </section>
-
-          <section className="py-12">
-             <div className="text-center mb-12">
-                <h2 className="text-3xl md:text-4xl font-bold">Son Xəbərlər</h2>
-                <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Universitet və tələbə həyatı ilə bağlı ən son yeniliklər.</p>
-            </div>
-            {newsLoading ? (
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <Skeleton className="h-96 w-full" />
-                    <Skeleton className="h-96 w-full" />
-                    <Skeleton className="h-96 w-full" />
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {latestNews && latestNews.length > 0 ? latestNews.map(news => (
-                        <Card key={news.id} className="overflow-hidden group">
-                           <Link href={`/xeberler/${news.slug}`}>
-                                <div className="relative h-56 w-full">
-                                    <Image src={news.coverImageUrl || 'https://picsum.photos/seed/news/600/400'} alt={news.title} fill className="object-cover transition-transform duration-300 group-hover:scale-105"/>
-                                </div>
-                                <CardHeader>
-                                    <CardTitle className="line-clamp-2 group-hover:text-primary">{news.title}</CardTitle>
-                                    <CardDescription>{news.createdAt ? format(news.createdAt.toDate(), 'dd MMMM, yyyy') : ''}</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="line-clamp-3 text-sm text-muted-foreground">{news.content.replace(/<[^>]*>?/gm, '').substring(0, 100)}...</p>
-                                </CardContent>
-                           </Link>
-                        </Card>
-                    )) : (
-                         <p className="text-center col-span-full text-muted-foreground">Hazırda heç bir xəbər yoxdur.</p>
-                    )}
-                </div>
-            )}
-             <div className="text-center mt-8">
-                <Button asChild variant="outline">
-                    <Link href="/xeberler">Bütün Xəbərlər <ArrowRight className="ml-2 h-4 w-4" /></Link>
-                </Button>
             </div>
           </section>
 
@@ -327,30 +220,6 @@ export default function HomePage() {
                 </div>
             </div>
           </section>
-          
-          <section className="py-12">
-              <div className="text-center mb-12">
-                  <h2 className="text-3xl md:text-4xl font-bold">Tələbə Uğur Hekayələri</h2>
-                  <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Platformamızın tələbələrimizin karyera yoluna necə təsir etdiyini kəşf edin.</p>
-              </div>
-              {isLoading ? (
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <Skeleton className="h-48 w-full" />
-                      <Skeleton className="h-48 w-full" />
-                  </div>
-              ) : successStories.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      {successStories.map(story => (
-                          <SuccessStoryCard key={story.studentId} story={story} />
-                      ))}
-                  </div>
-              ) : (
-                  <div className="text-center py-10 text-muted-foreground">
-                      <p>Hələlik paylaşılacaq uğur hekayəsi yoxdur.</p>
-                  </div>
-              )}
-          </section>
-
 
           <section className="py-12">
             <div className="flex justify-between items-center mb-8">
