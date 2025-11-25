@@ -42,7 +42,7 @@ export default function OrganizationMembersPage() {
   const { data: allStudents } = useCollection<Student>(allStudentsQuery);
 
   const studentOptions =
-    allStudents?.filter(s => !organization?.memberIds?.includes(s.id)).map(s => ({
+    allStudents?.filter(s => !organization?.memberIds?.includes(s.id) && s.id !== organization?.leaderId).map(s => ({
         value: s.id,
         label: `${s.firstName} ${s.lastName} (${s.faculty})`,
       })) || [];
@@ -50,7 +50,7 @@ export default function OrganizationMembersPage() {
   const handleAddMember = async () => {
     if (!organization || !selectedStudentId) return;
     setIsAddingMember(true);
-    const orgDocRef = doc(firestore, 'users', organization.id);
+    const orgDocRef = doc(firestore, 'student-organizations', organization.id);
     const newMemberIds = [...(organization.memberIds || []), selectedStudentId];
 
     await updateDocumentNonBlocking(orgDocRef, { memberIds: newMemberIds });
@@ -61,7 +61,7 @@ export default function OrganizationMembersPage() {
   
   const handleRemoveMember = async (memberId: string) => {
     if(!organization) return;
-    const orgDocRef = doc(firestore, 'users', organization.id);
+    const orgDocRef = doc(firestore, 'student-organizations', organization.id);
     const newMemberIds = organization.memberIds.filter(id => id !== memberId);
     
     await updateDocumentNonBlocking(orgDocRef, { memberIds: newMemberIds });
@@ -128,7 +128,9 @@ export default function OrganizationMembersPage() {
                                  <TableCell className="text-right">
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>
-                                            <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                                            <Button variant="ghost" size="icon" disabled={member.id === organization.leaderId}>
+                                                <Trash2 className="h-4 w-4 text-destructive"/>
+                                            </Button>
                                         </AlertDialogTrigger>
                                         <AlertDialogContent>
                                             <AlertDialogHeader>

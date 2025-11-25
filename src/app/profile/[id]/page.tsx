@@ -24,6 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import NextImage from 'next/image';
 import { useDoc, useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, doc, query, where, getDoc, writeBatch } from 'firebase/firestore';
+import Head from 'next/head';
 
 
 function SocialLink({ href, icon: Icon, text }: { href: string; icon: React.ElementType; text: string }) {
@@ -205,9 +206,19 @@ export default function ProfilePage() {
     return { name: 'Təşkilat Layihəsi' };
   };
 
+  const pageTitle = `${student.firstName} ${student.lastName} - ${student.major} | İstedad Mərkəzi`;
+  const description = `${student.firstName} ${student.lastName}, Naxçıvan Dövlət Universitetinin ${student.faculty} fakültəsinin ${student.major} ixtisası üzrə tələbəsidir. Bacarıqları: ${student.skills?.map(s => s.name).join(', ')}.`;
 
   return (
       <main className="flex-1">
+        <Head>
+            <title>{pageTitle}</title>
+            <meta name="description" content={description} />
+            <meta property="og:title" content={pageTitle} />
+            <meta property="og:description" content={description} />
+            <meta property="og:image" content={student.profilePictureUrl || 'https://i.ibb.co/cXv2KzRR/q2.jpg'} />
+            <meta property="og:type" content="profile" />
+        </Head>
         <div className="container mx-auto max-w-6xl py-8 md:py-12 px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Left Sidebar */}

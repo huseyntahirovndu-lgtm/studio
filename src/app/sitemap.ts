@@ -1,6 +1,6 @@
 import { getDocs, collection } from 'firebase/firestore';
 import { initializeServerFirebase } from '@/firebase/server-init';
-import { Student, News } from '@/types';
+import { Student, News, StudentOrganization } from '@/types';
 
 const BASE_URL = 'https://istedadmerkezi.net';
 
@@ -8,7 +8,7 @@ export default async function sitemap() {
   const { firestore } = initializeServerFirebase();
 
   // Static pages
-  const routes = ['', '/search', '/rankings', '/xeberler'].map((route) => ({
+  const routes = ['', '/search', '/rankings', '/telebe-teskilatlari'].map((route) => ({
     url: `${BASE_URL}${route}`,
     lastModified: new Date().toISOString(),
   }));
@@ -27,14 +27,28 @@ export default async function sitemap() {
     console.error("Could not fetch students for sitemap", e);
   }
 
+  let orgUrls: any[] = [];
+    try {
+        const orgsSnapshot = await getDocs(collection(firestore, 'student-organizations'));
+        orgUrls = orgsSnapshot.docs.map((doc) => {
+            const org = doc.data() as StudentOrganization;
+            return {
+                url: `${BASE_URL}/telebe-teskilatlari/${org.id}`,
+                lastModified: org.createdAt?.toDate().toISOString() || new Date().toISOString(),
+            };
+        });
+    } catch (e) {
+        console.error("Could not fetch organizations for sitemap", e);
+    }
+
 
   let newsUrls: any[] = [];
   try {
-    const newsSnapshot = await getDocs(collection(firestore, 'news'));
+    const newsSnapshot = await getDocs(collection(firestore, 'student-org-updates'));
     newsUrls = newsSnapshot.docs.map((doc) => {
       const news = doc.data() as News;
       return {
-        url: `${BASE_URL}/xeberler/${news.slug}`,
+        url: `${BASE_URL}/telebe-teskilatlari/yenilikler/${news.id}`,
         lastModified: news.updatedAt?.toDate().toISOString() || news.createdAt.toDate().toISOString(),
       };
     });
@@ -43,5 +57,5 @@ export default async function sitemap() {
   }
 
 
-  return [...routes, ...studentUrls, ...newsUrls];
+  return [...routes, ...studentUrls, ...orgUrls, ...newsUrls];
 }

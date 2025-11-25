@@ -5,7 +5,7 @@ import { doc } from 'firebase/firestore';
 import { StudentOrgUpdate } from '@/types';
 import OrgUpdateEditForm from '../../edit-form';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useStudentOrg } from '../../../layout';
+import { useStudentOrg } from '@/app/(student-org-panel)/layout';
 import { useMemoFirebase } from '@/firebase/provider';
 
 export default function EditOrgUpdatePage() {
